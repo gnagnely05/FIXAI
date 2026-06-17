@@ -1,0 +1,19 @@
+{
+  "name": "fixai",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "mobile": "turbo run dev --filter=mobile",
+    "api": "turbo run dev --filter=api"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.3"
+  },
+  "packageManager": "yarn@1.22.22"
+}
