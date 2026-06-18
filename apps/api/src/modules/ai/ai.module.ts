@@ -9,6 +9,6 @@ import { CatalogModule } from '../catalog/catalog.module';
   imports: [CatalogModule],
   controllers: [AiController, DevisProController],
   providers: [AiService, DevisProService],
-  exports: [AiService],
+  exports: [AiService, DevisProService],
 })
 export class AiModule {}

@@ -1,41 +1,15 @@
-import { Controller, Post, Get, Body, Query, UseGuards } from '@nestjs/common';
-import { AiService, GenerateVisualizationDto, RoomType, DecorationStyle } from './ai.service';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { AiService } from './ai.service';
+import { GenerateDecorationDto } from './dto/decoration.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { IsEnum, IsNumber, Min } from 'class-validator';
-
-class EstimateCostDto {
-  @IsEnum(RoomType)
-  roomType: RoomType;
-
-  @IsNumber()
-  @Min(1)
-  surfaceM2: number;
-
-  @IsEnum(DecorationStyle)
-  style: DecorationStyle;
-}
 
 @UseGuards(JwtAuthGuard)
 @Controller('ai')
 export class AiController {
   constructor(private readonly service: AiService) {}
 
-  @Post('visualize')
-  visualize(@Body() dto: GenerateVisualizationDto) {
+  @Post('decoration/visualize')
+  visualize(@Body() dto: GenerateDecorationDto) {
     return this.service.generateDecorationVisualization(dto);
-  }
-
-  @Post('estimate')
-  estimate(@Body() dto: EstimateCostDto) {
-    return this.service.estimateDecorationCost(dto.roomType, dto.surfaceM2, dto.style);
-  }
-
-  @Get('cost-estimate')
-  costEstimate(
-    @Query('roomType') roomType: RoomType,
-    @Query('surfaceM2') surfaceM2: string,
-    @Query('style') style: DecorationStyle,
-  ) {
-    return this.service.estimateDecorationCost(roomType, parseFloat(surfaceM2), style);
   }
 }
