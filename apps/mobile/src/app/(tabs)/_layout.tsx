@@ -11,7 +11,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#FF6B00',
+        tabBarActiveTintColor: '#6B3FA0',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: {
           borderTopWidth: 1,
@@ -53,6 +53,22 @@ export default function TabsLayout() {
           title: 'Profil',
           tabBarIcon: ({ focused }) => <TabIcon name="person" focused={focused} />,
           headerTitle: 'Mon profil',
+        }}
+      />
+      <Tabs.Screen
+        name="decouvrir"
+        options={{
+          title: 'Découvrir',
+          tabBarIcon: ({ focused }) => <TabIcon name="storefront" focused={focused} />,
+          headerTitle: 'Découvrir',
+        }}
+      />
+      <Tabs.Screen
+        name="devis-pro"
+        options={{
+          title: 'Devis Pro',
+          tabBarIcon: ({ focused }) => <TabIcon name="document-text" focused={focused} />,
+          headerTitle: 'Devis Pro',
         }}
       />
     </Tabs>
