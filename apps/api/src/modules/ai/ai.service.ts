@@ -1,139 +1,211 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import Anthropic from '@anthropic-ai/sdk';
+import { Injectable, BadRequestException, Logger, ServiceUnavailableException } from '@nestjs/common';
 
-export interface DecorationVisualizationRequest {
-  roomType: string;
-  style: string;
-  budget: number;
-  currentDescription?: string;
-  imageUrl?: string;
+export enum RoomType {
+  SALON = 'SALON',
+  CHAMBRE = 'CHAMBRE',
+  CUISINE = 'CUISINE',
+  SALLE_DE_BAIN = 'SALLE_DE_BAIN',
+  BUREAU = 'BUREAU',
+  TERRASSE = 'TERRASSE',
 }
 
-export interface DecorationVisualizationResponse {
-  description: string;
-  suggestions: string[];
-  estimatedCost: { min: number; max: number };
-  recommendedArtisans: string[];
+export enum DecorationStyle {
+  MODERNE = 'MODERNE',
+  TRADITIONNEL = 'TRADITIONNEL',
+  MINIMALISTE = 'MINIMALISTE',
+  AFRICAIN_CONTEMPORAIN = 'AFRICAIN_CONTEMPORAIN',
+  TROPICAL = 'TROPICAL',
 }
 
-export interface CostEstimateRequest {
-  serviceType: string;
-  surfaceArea?: number;
-  location: string;
-  additionalDetails: string;
+export interface GenerateVisualizationDto {
+  roomType: RoomType;
+  style: DecorationStyle;
+  productIds?: string[];
+  additionalNotes?: string;
 }
 
-export interface CostEstimateResponse {
-  estimatedCost: { min: number; max: number };
-  breakdown: Array<{ item: string; cost: number }>;
-  timeline: string;
-  notes: string;
+interface BoutiqueProduct {
+  id: string;
+  name: string;
+  category: string;
 }
+
+const ROOM_TYPE_LABELS: Record<RoomType, string> = {
+  [RoomType.SALON]: 'living room',
+  [RoomType.CHAMBRE]: 'bedroom',
+  [RoomType.CUISINE]: 'kitchen',
+  [RoomType.SALLE_DE_BAIN]: 'bathroom',
+  [RoomType.BUREAU]: 'home office',
+  [RoomType.TERRASSE]: 'terrace',
+};
+
+const STYLE_DESCRIPTORS: Record<DecorationStyle, string> = {
+  [DecorationStyle.MODERNE]: 'modern, sleek, minimalist with clean lines',
+  [DecorationStyle.TRADITIONNEL]: 'traditional Ivorian, warm wood tones, craft patterns',
+  [DecorationStyle.MINIMALISTE]: 'minimalist, neutral colors, uncluttered, zen',
+  [DecorationStyle.AFRICAIN_CONTEMPORAIN]: 'contemporary African, bold patterns, earth tones, woven textiles',
+  [DecorationStyle.TROPICAL]: 'tropical, lush greenery, natural materials, bright accents',
+};
 
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
-  private readonly anthropic: Anthropic;
+  private readonly replicateToken = process.env.REPLICATE_API_TOKEN!;
+  private readonly replicateBaseUrl = 'https://api.replicate.com/v1';
+  private readonly fluxModel = 'black-forest-labs/flux-pro';
 
-  constructor(private readonly configService: ConfigService) {
-    this.anthropic = new Anthropic({
-      apiKey: this.configService.get<string>('ANTHROPIC_API_KEY'),
+  /**
+   * Generates a decoration visualization image using FLUX.2 Pro via Replicate.
+   * Products from the boutiques database are embedded in the prompt.
+   */
+  async generateDecorationVisualization(dto: GenerateVisualizationDto): Promise<{ imageUrl: string; prompt: string }> {
+    const products = await this.fetchBoutiqueProducts(dto.roomType, dto.style, dto.productIds);
+    const prompt = this.buildDecorationPrompt(dto.roomType, dto.style, products, dto.additionalNotes);
+
+    this.logger.log(`Generating decoration visualization: ${dto.roomType} / ${dto.style}`);
+
+    const predictionId = await this.createPrediction(prompt);
+    const imageUrl = await this.pollPrediction(predictionId);
+
+    return { imageUrl, prompt };
+  }
+
+  /**
+   * Estimates renovation/decoration cost for a given room type and surface area.
+   */
+  async estimateDecorationCost(roomType: RoomType, surfaceM2: number, style: DecorationStyle): Promise<{ minCost: number; maxCost: number; currency: string }> {
+    // Base cost per m² in FCFA by style
+    const costPerM2: Record<DecorationStyle, { min: number; max: number }> = {
+      [DecorationStyle.MINIMALISTE]: { min: 15_000, max: 30_000 },
+      [DecorationStyle.MODERNE]: { min: 25_000, max: 60_000 },
+      [DecorationStyle.TRADITIONNEL]: { min: 20_000, max: 45_000 },
+      [DecorationStyle.AFRICAIN_CONTEMPORAIN]: { min: 30_000, max: 70_000 },
+      [DecorationStyle.TROPICAL]: { min: 20_000, max: 50_000 },
+    };
+    const range = costPerM2[style];
+    return {
+      minCost: range.min * surfaceM2,
+      maxCost: range.max * surfaceM2,
+      currency: 'XOF',
+    };
+  }
+
+  private buildDecorationPrompt(
+    roomType: RoomType,
+    style: DecorationStyle,
+    products: BoutiqueProduct[],
+    additionalNotes?: string,
+  ): string {
+    const room = ROOM_TYPE_LABELS[roomType];
+    const styleDesc = STYLE_DESCRIPTORS[style];
+    const productList = products.length > 0
+      ? `, featuring ${products.map((p) => p.name).join(', ')}`
+      : '';
+    const notes = additionalNotes ? `, ${additionalNotes}` : '';
+
+    return (
+      `A beautifully decorated ${room} in Ivory Coast, ${styleDesc} style${productList}. ` +
+      `Bright natural light, high-end interior photography, architectural digest quality, ` +
+      `warm and inviting atmosphere${notes}. 4K resolution, photorealistic.`
+    );
+  }
+
+  private async fetchBoutiqueProducts(
+    roomType: RoomType,
+    style: DecorationStyle,
+    productIds?: string[],
+  ): Promise<BoutiqueProduct[]> {
+    // TODO: Replace with real DB query against boutiques.products table
+    // SELECT * FROM products WHERE id = ANY($1) AND category = $2 LIMIT 5
+    const mockProducts: Record<RoomType, BoutiqueProduct[]> = {
+      [RoomType.SALON]: [
+        { id: 'p1', name: 'canapé en rotin tressé', category: 'mobilier' },
+        { id: 'p2', name: 'tapis berbère coloré', category: 'textile' },
+        { id: 'p3', name: 'table basse en bois d\'iroko', category: 'mobilier' },
+      ],
+      [RoomType.CHAMBRE]: [
+        { id: 'p4', name: 'lit baldaquin en bois massif', category: 'mobilier' },
+        { id: 'p5', name: 'tissu kente comme tête de lit', category: 'textile' },
+      ],
+      [RoomType.CUISINE]: [
+        { id: 'p6', name: 'plan de travail en granit local', category: 'materiaux' },
+      ],
+      [RoomType.SALLE_DE_BAIN]: [
+        { id: 'p7', name: 'vasque en céramique artisanale', category: 'sanitaire' },
+      ],
+      [RoomType.BUREAU]: [
+        { id: 'p8', name: 'bureau en acajou massif', category: 'mobilier' },
+      ],
+      [RoomType.TERRASSE]: [
+        { id: 'p9', name: 'salon de jardin en bambou', category: 'mobilier' },
+        { id: 'p10', name: 'jardinières en terre cuite', category: 'decoration' },
+      ],
+    };
+
+    const baseProducts = mockProducts[roomType] ?? [];
+    if (productIds && productIds.length > 0) {
+      return baseProducts.filter((p) => productIds.includes(p.id));
+    }
+    return baseProducts.slice(0, 3);
+  }
+
+  private async createPrediction(prompt: string): Promise<string> {
+    const response = await fetch(`${this.replicateBaseUrl}/models/${this.fluxModel}/predictions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.replicateToken}`,
+        'Content-Type': 'application/json',
+        Prefer: 'wait',
+      },
+      body: JSON.stringify({
+        input: {
+          prompt,
+          width: 1024,
+          height: 1024,
+          output_format: 'webp',
+          output_quality: 90,
+          safety_tolerance: 2,
+        },
+      }),
     });
+
+    if (!response.ok) {
+      const error = await response.text();
+      this.logger.error(`Replicate API error: ${error}`);
+      throw new ServiceUnavailableException('Service de visualisation temporairement indisponible');
+    }
+
+    const prediction = await response.json();
+    return prediction.id as string;
   }
 
-  async generateDecorationVisualization(
-    request: DecorationVisualizationRequest,
-  ): Promise<DecorationVisualizationResponse> {
-    const prompt = `Tu es un expert en décoration intérieure spécialisé pour le marché ivoirien (Côte d'Ivoire).
+  private async pollPrediction(predictionId: string, maxWaitMs = 60_000): Promise<string> {
+    const startTime = Date.now();
+    const pollInterval = 3_000;
 
-Un client souhaite décorer:
-- Type de pièce: ${request.roomType}
-- Style souhaité: ${request.style}
-- Budget: ${request.budget} FCFA
-${request.currentDescription ? `- Description actuelle: ${request.currentDescription}` : ''}
+    while (Date.now() - startTime < maxWaitMs) {
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
 
-Fournis une réponse en JSON avec:
-1. Une description détaillée de la décoration recommandée
-2. Une liste de 5 suggestions pratiques
-3. Une estimation de coût (min/max en FCFA)
-4. Les types d'artisans recommandés (ex: peintre, menuisier, etc.)
-
-Réponds uniquement en JSON valide.`;
-
-    try {
-      const message = await this.anthropic.messages.create({
-        model: 'claude-opus-4-5',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
+      const response = await fetch(`${this.replicateBaseUrl}/predictions/${predictionId}`, {
+        headers: { Authorization: `Bearer ${this.replicateToken}` },
       });
 
-      const content = message.content[0];
-      if (content.type !== 'text') {
-        throw new Error('Unexpected response type from AI');
+      if (!response.ok) throw new ServiceUnavailableException('Erreur lors de la vérification du statut');
+
+      const prediction = await response.json();
+
+      if (prediction.status === 'succeeded') {
+        const output = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+        if (!output) throw new BadRequestException('Aucune image générée');
+        return output as string;
       }
 
-      const parsed = JSON.parse(content.text) as DecorationVisualizationResponse;
-      return parsed;
-    } catch (error) {
-      this.logger.error('AI visualization failed', error);
-      return {
-        description: `Décoration ${request.style} pour votre ${request.roomType}`,
-        suggestions: [
-          'Choisissez des couleurs adaptées au climat tropical',
-          'Privilégiez des matériaux locaux durables',
-          'Intégrez des éléments de décoration africaine',
-          'Optimisez la ventilation naturelle',
-          'Consultez un artisan local certifié FixAI',
-        ],
-        estimatedCost: { min: request.budget * 0.8, max: request.budget * 1.2 },
-        recommendedArtisans: ['Peintre', 'Menuisier', 'Décorateur'],
-      };
-    }
-  }
-
-  async estimateProjectCost(request: CostEstimateRequest): Promise<CostEstimateResponse> {
-    const prompt = `Tu es un expert en construction et rénovation en Côte d'Ivoire avec une connaissance des prix du marché local.
-
-Estime le coût pour ce projet:
-- Type de service: ${request.serviceType}
-- Localisation: ${request.location}
-${request.surfaceArea ? `- Surface: ${request.surfaceArea} m²` : ''}
-- Détails: ${request.additionalDetails}
-
-Fournis une réponse JSON avec:
-1. estimatedCost: {min, max} en FCFA
-2. breakdown: liste de {item, cost} pour chaque poste de dépense
-3. timeline: durée estimée en jours
-4. notes: conseils importants
-
-Base tes estimations sur les prix réels du marché ivoirien en 2024.`;
-
-    try {
-      const message = await this.anthropic.messages.create({
-        model: 'claude-opus-4-5',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
-      });
-
-      const content = message.content[0];
-      if (content.type !== 'text') {
-        throw new Error('Unexpected response type from AI');
+      if (prediction.status === 'failed' || prediction.status === 'canceled') {
+        this.logger.error(`Prediction ${predictionId} failed: ${prediction.error}`);
+        throw new ServiceUnavailableException('La génération d\'image a échoué');
       }
-
-      return JSON.parse(content.text) as CostEstimateResponse;
-    } catch (error) {
-      this.logger.error('AI cost estimation failed', error);
-      return {
-        estimatedCost: { min: 50000, max: 500000 },
-        breakdown: [
-          { item: 'Main d\'oeuvre', cost: 200000 },
-          { item: 'Matériaux', cost: 200000 },
-          { item: 'Frais divers', cost: 50000 },
-        ],
-        timeline: '3-7 jours',
-        notes: 'Estimation indicative. Contactez un artisan pour un devis précis.',
-      };
     }
+
+    throw new ServiceUnavailableException('Délai dépassé pour la génération d\'image (60s)');
   }
 }

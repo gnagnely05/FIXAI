@@ -7,9 +7,15 @@ import { ArtisansModule } from './modules/artisans/artisans.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { AiModule } from './modules/ai/ai.module';
-import { UserEntity } from './modules/users/entities/user.entity';
-import { ArtisanEntity } from './modules/artisans/entities/artisan.entity';
+import { DepannageModule } from './modules/depannage/depannage.module';
+import { RenovationModule } from './modules/renovation/renovation.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { User } from './modules/users/entities/user.entity';
+import { Artisan } from './modules/artisans/entities/artisan.entity';
 import { OrderEntity } from './modules/orders/entities/order.entity';
+import { DepannageRequest } from './modules/depannage/entities/depannage-request.entity';
+import { RenovationProject } from './modules/renovation/entities/renovation-project.entity';
+import { Payment } from './modules/payments/entities/payment.entity';
 
 @Module({
   imports: [
@@ -27,7 +33,7 @@ import { OrderEntity } from './modules/orders/entities/order.entity';
         username: config.get<string>('DB_USER', 'postgres'),
         password: config.get<string>('DB_PASSWORD', 'postgres'),
         database: config.get<string>('DB_NAME', 'fixai'),
-        entities: [UserEntity, ArtisanEntity, OrderEntity],
+        entities: [User, Artisan, OrderEntity, DepannageRequest, RenovationProject, Payment],
         synchronize: config.get<string>('NODE_ENV') !== 'production',
         logging: config.get<string>('NODE_ENV') === 'development',
       }),
@@ -38,6 +44,9 @@ import { OrderEntity } from './modules/orders/entities/order.entity';
     OrdersModule,
     PaymentsModule,
     AiModule,
+    DepannageModule,
+    RenovationModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
