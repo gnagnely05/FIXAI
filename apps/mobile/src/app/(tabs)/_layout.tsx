@@ -1,11 +1,57 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
 function TabIcon({ name, focused }: { name: IoniconName; focused: boolean }) {
-  return <Ionicons name={name} size={24} color={focused ? '#FF6B00' : '#9CA3AF'} />;
+  return <Ionicons name={name} size={22} color={focused ? '#6B3FA0' : '#9CA3AF'} />;
 }
+
+function FixAIHeader() {
+  return (
+    <View style={header.container}>
+      <View style={header.logo}>
+        <View style={header.logoBox}>
+          <Text style={header.logoBoxText}>fx</Text>
+        </View>
+        <Text style={header.logoText}>fixAI</Text>
+      </View>
+      <View style={header.actions}>
+        <TouchableOpacity style={header.iconBtn}>
+          <Ionicons name="chatbubble-outline" size={22} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity style={header.iconBtn}>
+          <Ionicons name="person-circle-outline" size={26} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const header = StyleSheet.create({
+  container: {
+    backgroundColor: '#6B3FA0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  logo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logoBox: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoBoxText: { fontSize: 14, fontWeight: '900', color: '#6B3FA0' },
+  logoText: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconBtn: { padding: 4 },
+});
 
 export default function TabsLayout() {
   return (
@@ -17,10 +63,10 @@ export default function TabsLayout() {
           borderTopWidth: 1,
           borderTopColor: '#F3F4F6',
           paddingBottom: 4,
+          height: 60,
         },
-        headerStyle: { backgroundColor: '#FF6B00' },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        header: () => <FixAIHeader />,
       }}
     >
       <Tabs.Screen
@@ -28,47 +74,34 @@ export default function TabsLayout() {
         options={{
           title: 'Accueil',
           tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />,
-          headerTitle: 'FixAI',
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
-          title: 'Recherche',
-          tabBarIcon: ({ focused }) => <TabIcon name="search" focused={focused} />,
-          headerTitle: 'Trouver un artisan',
-        }}
-      />
-      <Tabs.Screen
-        name="orders"
-        options={{
-          title: 'Commandes',
-          tabBarIcon: ({ focused }) => <TabIcon name="receipt" focused={focused} />,
-          headerTitle: 'Mes commandes',
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profil',
-          tabBarIcon: ({ focused }) => <TabIcon name="person" focused={focused} />,
-          headerTitle: 'Mon profil',
+          title: 'Réparation',
+          tabBarIcon: ({ focused }) => <TabIcon name="build" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="decouvrir"
         options={{
-          title: 'Découvrir',
-          tabBarIcon: ({ focused }) => <TabIcon name="storefront" focused={focused} />,
-          headerTitle: 'Découvrir',
+          title: 'Décoration',
+          tabBarIcon: ({ focused }) => <TabIcon name="color-palette" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="devis-pro"
+        name="orders"
+        options={{
+          title: 'Rénovation',
+          tabBarIcon: ({ focused }) => <TabIcon name="home-outline" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
         options={{
           title: 'Devis Pro',
-          tabBarIcon: ({ focused }) => <TabIcon name="document-text" focused={focused} />,
-          headerTitle: 'Devis Pro',
+          tabBarIcon: ({ focused }) => <TabIcon name="briefcase" focused={focused} />,
         }}
       />
     </Tabs>
