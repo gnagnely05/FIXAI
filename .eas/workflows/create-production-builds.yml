@@ -1,0 +1,11 @@
+name: Créer des versions de production
+
+jobs:
+  build_android:
+    type: build
+    settings:
+      platform: android
+  build_ios:
+    type: build
+    settings:
+      platform: ios
