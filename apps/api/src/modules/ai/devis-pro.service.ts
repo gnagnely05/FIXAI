@@ -1,16 +1,17 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import Anthropic from '@anthropic-ai/sdk';
 import { CatalogService } from '../catalog/catalog.service';
 import { ProductEntity } from '../catalog/entities/product.entity';
+import { ReplicateService } from './replicate.service';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 export type SupportedMimeType =
   | 'image/jpeg'
   | 'image/png'
   | 'image/webp'
-  | 'image/gif'
-  | 'application/pdf';
+  | 'image/gif';
 
 export interface QuoteFile {
+  /** Base64-encoded image data */
   base64: string;
   mimeType: SupportedMimeType;
   name?: string;
@@ -31,108 +32,81 @@ export interface DevisProResult {
   totalEstimateXof: number;
 }
 
-const IMAGE_MIMES: SupportedMimeType[] = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const PDF_MIME: SupportedMimeType = 'application/pdf';
-
-const ALLOWED_MIMES: SupportedMimeType[] = [...IMAGE_MIMES, PDF_MIME];
+const ALLOWED_MIMES: SupportedMimeType[] = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 @Injectable()
 export class DevisProService {
   private readonly logger = new Logger(DevisProService.name);
-  private readonly client: Anthropic;
 
-  constructor(private readonly catalogService: CatalogService) {
-    this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  }
+  constructor(
+    private readonly catalogService: CatalogService,
+    private readonly replicate: ReplicateService,
+    private readonly subscriptions: SubscriptionsService,
+  ) {}
 
-  async analyzeQuoteFiles(files: QuoteFile[]): Promise<DevisProResult> {
+  async analyzeQuoteFiles(userId: string, files: QuoteFile[]): Promise<DevisProResult> {
     if (!files.length || files.length > 3) {
-      throw new BadRequestException('Provide 1 to 3 files (images or PDFs)');
+      throw new BadRequestException('Fournissez 1 à 3 images de devis');
     }
 
     for (const f of files) {
       if (!ALLOWED_MIMES.includes(f.mimeType)) {
         throw new BadRequestException(
-          `Unsupported file type: ${f.mimeType}. Allowed: JPEG, PNG, WEBP, GIF, PDF`,
+          `Type de fichier non supporté: ${f.mimeType}. Formats acceptés: JPEG, PNG, WEBP, GIF`,
         );
       }
     }
 
-    const contentBlocks = this.buildContentBlocks(files);
+    // Check and consume quota
+    await this.subscriptions.assertAiAllowed(userId);
 
-    const extractionResponse = await this.client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            ...contentBlocks,
-            {
-              type: 'text',
-              text: `Tu es un assistant spécialisé dans la lecture de devis de construction en Côte d'Ivoire.
-Analyse ces documents (images et/ou PDF de devis) et extrait UNIQUEMENT les lignes de produits/matériaux.
+    // Build data URIs from base64 images and analyze the first image with vision
+    // (Replicate vision models process one image at a time)
+    const allLines: Array<{ originalText: string; quantity: number | null }> = [];
+
+    for (const file of files) {
+      const dataUri = `data:${file.mimeType};base64,${file.base64}`;
+      const prompt = `Tu es un assistant spécialisé dans la lecture de devis de construction en Côte d'Ivoire.
+Analyse cette image de devis et extrait UNIQUEMENT les lignes de produits/matériaux.
 Ignore les totaux, sous-totaux, TVA, conditions de paiement, en-têtes, pieds de page.
 Pour chaque ligne produit, retourne un JSON array avec: {"originalText": "texte exact de la ligne", "quantity": nombre ou null}
-Ne retourne QUE le JSON array brut, sans markdown ni explication.`,
-            },
-          ],
-        },
-      ],
-    });
+Ne retourne QUE le JSON array brut, sans markdown ni explication.
+Exemple: [{"originalText":"Ciment CPA 50 kg","quantity":20},{"originalText":"Sable de rivière","quantity":null}]`;
 
-    let rawLines: Array<{ originalText: string; quantity: number | null }> = [];
-    try {
-      const content = extractionResponse.content[0];
-      if (content.type === 'text') {
-        const jsonMatch = content.text.match(/\[[\s\S]*\]/);
-        if (jsonMatch) rawLines = JSON.parse(jsonMatch[0]);
+      try {
+        const response = await this.replicate.analyzeWithVision(prompt, dataUri);
+        const jsonMatch = response.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]) as Array<{ originalText: string; quantity: number | null }>;
+          allLines.push(...parsed);
+        }
+      } catch (e) {
+        this.logger.warn(`Vision analysis failed for file ${file.name ?? 'unknown'}`, e);
       }
-    } catch (e) {
-      this.logger.warn('Failed to parse extraction response', e);
+    }
+
+    await this.subscriptions.consumeAiRequest(userId);
+
+    if (!allLines.length) {
       return { matched: [], unavailable: [], uninterpreted: [], totalEstimateXof: 0 };
     }
 
     const allProducts = await this.catalogService.search({});
-    const results = rawLines.map(line => this.matchLine(line, allProducts));
+    const results = allLines.map(line => this.matchLine(line, allProducts));
 
-    const matched = results.filter(r => r.status === 'MATCHED');
-    const unavailable = results.filter(r => r.status === 'UNAVAILABLE');
+    const matched      = results.filter(r => r.status === 'MATCHED');
+    const unavailable  = results.filter(r => r.status === 'UNAVAILABLE');
     const uninterpreted = results.filter(r => r.status === 'UNINTERPRETED');
     const totalEstimateXof = matched.reduce((sum, r) => sum + (r.totalXof ?? 0), 0);
 
     return { matched, unavailable, uninterpreted, totalEstimateXof };
   }
 
-  private buildContentBlocks(files: QuoteFile[]): Anthropic.MessageParam['content'] {
-    const blocks: Anthropic.MessageParam['content'] = [];
-
-    for (const file of files) {
-      if (file.mimeType === PDF_MIME) {
-        blocks.push({
-          type: 'document',
-          source: {
-            type: 'base64',
-            media_type: 'application/pdf',
-            data: file.base64,
-          },
-          ...(file.name ? { title: file.name } : {}),
-        } as Anthropic.DocumentBlockParam);
-      } else {
-        blocks.push({
-          type: 'image',
-          source: {
-            type: 'base64',
-            media_type: file.mimeType as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif',
-            data: file.base64,
-          },
-        });
-      }
-    }
-
-    return blocks;
-  }
-
+  /**
+   * Anti-hallucination: only MATCHED when a real catalog product is found.
+   * Unknown lines stay UNAVAILABLE (known material) or UNINTERPRETED (unknown).
+   * No price is ever invented.
+   */
   private matchLine(
     line: { originalText: string; quantity: number | null },
     catalog: ProductEntity[],

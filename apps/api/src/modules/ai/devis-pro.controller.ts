@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, BadRequestException, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DevisProService, QuoteFile, SupportedMimeType } from './devis-pro.service';
 
@@ -12,15 +12,18 @@ export class DevisProController {
   constructor(private readonly service: DevisProService) {}
 
   @Post('analyze')
-  analyze(@Body() dto: AnalyzeQuoteDto) {
+  analyze(
+    @Request() req: { user: { sub: string } },
+    @Body() dto: AnalyzeQuoteDto,
+  ) {
     if (!dto.files?.length || dto.files.length > 3) {
-      throw new BadRequestException('Provide 1 to 3 files (images or PDFs)');
+      throw new BadRequestException('Fournissez 1 à 3 images de devis');
     }
     const files: QuoteFile[] = dto.files.map(f => ({
       base64: f.base64,
       mimeType: f.mimeType as SupportedMimeType,
       name: f.name,
     }));
-    return this.service.analyzeQuoteFiles(files);
+    return this.service.analyzeQuoteFiles(req.user.sub, files);
   }
 }

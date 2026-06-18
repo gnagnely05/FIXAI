@@ -3,12 +3,14 @@ import { AiService } from './ai.service';
 import { AiController } from './ai.controller';
 import { DevisProService } from './devis-pro.service';
 import { DevisProController } from './devis-pro.controller';
+import { ReplicateService } from './replicate.service';
 import { CatalogModule } from '../catalog/catalog.module';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 @Module({
-  imports: [CatalogModule],
+  imports: [CatalogModule, SubscriptionsModule],
   controllers: [AiController, DevisProController],
-  providers: [AiService, DevisProService],
-  exports: [AiService, DevisProService],
+  providers: [AiService, DevisProService, ReplicateService],
+  exports: [AiService, DevisProService, ReplicateService],
 })
 export class AiModule {}

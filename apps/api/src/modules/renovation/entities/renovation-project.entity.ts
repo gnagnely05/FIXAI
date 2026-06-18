@@ -161,3 +161,5 @@ export class RenovationProjectEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+
+export { RenovationProjectEntity as RenovationProject };
