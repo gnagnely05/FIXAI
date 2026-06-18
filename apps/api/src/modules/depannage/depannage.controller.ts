@@ -1,47 +1,55 @@
-import { Controller, Post, Patch, Get, Body, Param, Request, UseGuards } from '@nestjs/common';
-import { DepannageService } from './depannage.service';
-import {
-  CreateDepannageDto, SetCategoryDto, SetModeDto, SetLocationDto, SelectArtisanDto,
-} from './dto/create-depannage.dto';
+import { Controller, Post, Get, Patch, Body, Param, Request, UseGuards, Query } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { DepannageService } from './depannage.service';
+import { CreateDepannageDto, StepCategoryDto, StepModeDto, StepLocationDto, StepArtisanDto } from './dto/create-depannage.dto';
+import { ArtisanSpecialty } from '../artisans/entities/artisan.entity';
 
-@UseGuards(JwtAuthGuard)
 @Controller('depannage')
+@UseGuards(JwtAuthGuard)
 export class DepannageController {
   constructor(private readonly service: DepannageService) {}
 
   @Post()
-  create(@Body() dto: CreateDepannageDto, @Request() req: any) {
-    return this.service.create(req.user.id, dto);
+  create(@Request() req: { user: { sub: string } }, @Body() dto: CreateDepannageDto) {
+    return this.service.create(req.user.sub, dto);
   }
 
-  @Patch(':id/category')
-  setCategory(@Param('id') id: string, @Body() dto: SetCategoryDto, @Request() req: any) {
-    return this.service.setCategory(id, req.user.id, dto);
+  @Patch(':id/step')
+  advanceStep(
+    @Request() req: { user: { sub: string } },
+    @Param('id') id: string,
+    @Body() body: StepCategoryDto | StepModeDto | StepLocationDto | StepArtisanDto,
+  ) {
+    return this.service.advanceStep(id, req.user.sub, body);
   }
 
-  @Patch(':id/mode')
-  setMode(@Param('id') id: string, @Body() dto: SetModeDto, @Request() req: any) {
-    return this.service.setMode(id, req.user.id, dto);
+  @Get('nearby-artisans')
+  findNearby(
+    @Query('category') category: ArtisanSpecialty,
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+    @Query('radius') radius?: string,
+  ) {
+    return this.service.findNearbyArtisans(category, parseFloat(lat), parseFloat(lng), radius ? parseFloat(radius) : 20);
   }
 
-  @Patch(':id/location')
-  setLocation(@Param('id') id: string, @Body() dto: SetLocationDto, @Request() req: any) {
-    return this.service.setLocation(id, req.user.id, dto);
+  @Get('my-requests')
+  findMyRequests(@Request() req: { user: { sub: string } }) {
+    return this.service.findByClient(req.user.sub);
   }
 
-  @Patch(':id/artisan')
-  assignArtisan(@Param('id') id: string, @Body() dto: SelectArtisanDto, @Request() req: any) {
-    return this.service.assignArtisan(id, req.user.id, dto);
+  @Get('artisan-requests')
+  findArtisanRequests(@Request() req: { user: { sub: string } }) {
+    return this.service.findByArtisan(req.user.sub);
   }
 
-  @Get('mine')
-  myRequests(@Request() req: any) {
-    return this.service.findByClient(req.user.id);
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.service.findOne(id);
   }
 
-  @Get('artisan/mine')
-  artisanRequests(@Request() req: any) {
-    return this.service.findByArtisan(req.user.id);
+  @Patch(':id/assign-artisan')
+  assignArtisan(@Param('id') id: string, @Body('artisanId') artisanId: string) {
+    return this.service.assignArtisan(id, artisanId);
   }
 }

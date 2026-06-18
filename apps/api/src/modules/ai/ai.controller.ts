@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, UseGuards } from '@nestjs/common';
 import { AiService, GenerateVisualizationDto, RoomType, DecorationStyle } from './ai.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { IsEnum, IsNumber, Min } from 'class-validator';
@@ -28,5 +28,14 @@ export class AiController {
   @Post('estimate')
   estimate(@Body() dto: EstimateCostDto) {
     return this.service.estimateDecorationCost(dto.roomType, dto.surfaceM2, dto.style);
+  }
+
+  @Get('cost-estimate')
+  costEstimate(
+    @Query('roomType') roomType: RoomType,
+    @Query('surfaceM2') surfaceM2: string,
+    @Query('style') style: DecorationStyle,
+  ) {
+    return this.service.estimateDecorationCost(roomType, parseFloat(surfaceM2), style);
   }
 }

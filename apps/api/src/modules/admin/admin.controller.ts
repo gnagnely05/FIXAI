@@ -1,33 +1,42 @@
 import { Controller, Get, Patch, Param, Body, UseGuards } from '@nestjs/common';
-import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { AdminService } from './admin.service';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
 @Controller('admin')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminController {
   constructor(private readonly service: AdminService) {}
 
   @Get('pending-verifications')
-  pendingVerifications() {
+  @Roles(UserRole.ADMIN as any)
+  getPendingVerifications() {
     return this.service.getPendingVerifications();
   }
 
   @Patch('verify/:userId')
-  approve(@Param('userId') userId: string) {
-    return this.service.approveVerification(userId);
+  @Roles(UserRole.ADMIN as any)
+  verifyUser(@Param('userId') userId: string) {
+    return this.service.verifyUser(userId);
   }
 
   @Patch('reject/:userId')
-  reject(@Param('userId') userId: string, @Body('reason') reason: string) {
-    return this.service.rejectVerification(userId, reason);
+  @Roles(UserRole.ADMIN as any)
+  rejectUser(@Param('userId') userId: string, @Body('reason') reason: string) {
+    return this.service.rejectUser(userId, reason);
   }
 
   @Get('escrow-overview')
-  escrowOverview() {
+  @Roles(UserRole.ADMIN as any)
+  getEscrowOverview() {
     return this.service.getEscrowOverview();
+  }
+
+  @Get('disputes')
+  @Roles(UserRole.ADMIN as any)
+  getDisputes() {
+    return this.service.getDisputes();
   }
 }

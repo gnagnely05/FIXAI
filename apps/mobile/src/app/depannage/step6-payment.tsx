@@ -1,84 +1,120 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-const PROVIDERS = [
-  { id: 'ORANGE_MONEY', label: 'Orange Money', color: '#FF6600', emoji: '🟠' },
-  { id: 'MTN_MONEY', label: 'MTN Money', color: '#FFCC00', emoji: '🟡' },
-  { id: 'WAVE', label: 'Wave', color: '#1B75FF', emoji: '🔵' },
-  { id: 'MOOV_MONEY', label: 'Moov Money', color: '#00A651', emoji: '🟢' },
+const OPERATORS = [
+  { id: 'ORANGE_MONEY', label: 'Orange Money', color: '#FF6600', prefix: '07' },
+  { id: 'MTN_MONEY', label: 'MTN Money', color: '#FFCC00', textColor: '#111', prefix: '05' },
+  { id: 'WAVE', label: 'Wave', color: '#00B4D8', prefix: '01' },
+  { id: 'MOOV_MONEY', label: 'Moov Money', color: '#005EB8', prefix: '01' },
 ];
 
 export default function Step6Payment() {
-  const params = useLocalSearchParams();
-  const [provider, setProvider] = useState<string | null>(null);
-  const [phone, setPhone] = useState('');
+  const params = useLocalSearchParams<{ mode: string }>();
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [operator, setOperator] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const amount = 15000; // TODO: from artisan hourly rate
-  const urgencyFee = params.mode === 'URGENT' ? 2000 : 0;
-  const total = amount + urgencyFee;
-  const commission = Math.round(total * 0.05);
+  const baseAmount = 15000;
+  const urgencyFee = params.mode === 'URGENT' ? Math.round(baseAmount * 0.15) : 0;
+  const total = baseAmount + urgencyFee;
+
+  const isValid = phoneNumber.replace(/\s/g, '').length >= 10 && operator !== null;
 
   const handlePay = async () => {
-    if (!provider || phone.length < 10) return;
+    if (!isValid) return;
     setLoading(true);
-    // TODO: call API POST /payments/initiate → open paymentLink in WebView
-    setTimeout(() => {
-      router.push({ pathname: '/depannage/step7-confirmation', params });
-      setLoading(false);
-    }, 2000);
+    // Simulate API call
+    await new Promise((r) => setTimeout(r, 1500));
+    setLoading(false);
+    router.replace({ pathname: '/depannage/step7-confirmation', params: { ...params, total: String(total) } });
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Paiement sécurisé par escrow</Text>
-      <Text style={styles.subtitle}>Vos fonds sont retenus par fixAI et libérés après validation de la prestation.</Text>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.stepIndicator}><Text style={styles.stepText}>Étape 6 / 7</Text></View>
+        <Text style={styles.title}>Paiement sécurisé</Text>
 
-      <View style={styles.summary}>
-        <View style={styles.summaryRow}><Text>Prestation</Text><Text style={styles.summaryAmount}>{amount.toLocaleString('fr-CI')} FCFA</Text></View>
-        {urgencyFee > 0 && <View style={styles.summaryRow}><Text>Supplément urgence</Text><Text style={styles.summaryAmount}>+{urgencyFee.toLocaleString('fr-CI')} FCFA</Text></View>}
-        <View style={styles.summaryRow}><Text>Commission fixAI (5%)</Text><Text style={styles.summaryAmount}>{commission.toLocaleString('fr-CI')} FCFA</Text></View>
-        <View style={[styles.summaryRow, styles.totalRow]}><Text style={styles.totalLabel}>Total</Text><Text style={styles.totalAmount}>{total.toLocaleString('fr-CI')} FCFA</Text></View>
+        <View style={styles.amountCard}>
+          <View style={styles.amountRow}><Text style={styles.amountLabel}>Prestation</Text><Text style={styles.amountValue}>{baseAmount.toLocaleString()} FCFA</Text></View>
+          {urgencyFee > 0 && <View style={styles.amountRow}><Text style={[styles.amountLabel, { color: '#EF4444' }]}>Frais d'urgence (+15%)</Text><Text style={[styles.amountValue, { color: '#EF4444' }]}>+{urgencyFee.toLocaleString()} FCFA</Text></View>}
+          <View style={styles.divider} />
+          <View style={styles.amountRow}><Text style={styles.totalLabel}>Total en escrow</Text><Text style={styles.totalValue}>{total.toLocaleString()} FCFA</Text></View>
+          <Text style={styles.escrowNote}>
+            Le paiement est sécurisé. L'artisan ne reçoit son paiement qu'après validation de votre part.
+          </Text>
+        </View>
+
+        <Text style={styles.sectionLabel}>Opérateur Mobile Money</Text>
+        <View style={styles.operatorGrid}>
+          {OPERATORS.map((op) => (
+            <TouchableOpacity
+              key={op.id}
+              style={[styles.operatorCard, operator === op.id && { borderColor: op.color, borderWidth: 2 }]}
+              onPress={() => setOperator(op.id)}
+            >
+              <View style={[styles.operatorDot, { backgroundColor: op.color }]} />
+              <Text style={styles.operatorLabel}>{op.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.sectionLabel}>Numéro de téléphone</Text>
+        <View style={styles.phoneRow}>
+          <View style={styles.flag}><Text>+225</Text></View>
+          <TextInput
+            style={styles.phoneInput}
+            placeholder="07 00 00 00 00"
+            placeholderTextColor="#9CA3AF"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            keyboardType="phone-pad"
+            maxLength={14}
+          />
+        </View>
+      </ScrollView>
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[styles.payButton, (!isValid || loading) && styles.payButtonDisabled]}
+          onPress={handlePay}
+          disabled={!isValid || loading}
+        >
+          {loading
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.payButtonText}>Payer {total.toLocaleString()} FCFA</Text>
+          }
+        </TouchableOpacity>
       </View>
-
-      <Text style={styles.label}>Mode de paiement Mobile Money</Text>
-      <View style={styles.providerGrid}>
-        {PROVIDERS.map((p) => (
-          <TouchableOpacity key={p.id} style={[styles.providerCard, provider === p.id && { borderColor: p.color, borderWidth: 2 }]} onPress={() => setProvider(p.id)}>
-            <Text style={styles.providerEmoji}>{p.emoji}</Text>
-            <Text style={styles.providerLabel}>{p.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.label}>Numéro de téléphone</Text>
-      <TextInput style={styles.input} placeholder="07 00 00 00 00" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
-
-      <TouchableOpacity style={[styles.button, (!provider || phone.length < 10) && styles.buttonDisabled]} onPress={handlePay} disabled={!provider || phone.length < 10 || loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Payer {total.toLocaleString('fr-CI')} FCFA</Text>}
-      </TouchableOpacity>
-    </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 20, fontWeight: '700', marginBottom: 8 },
-  subtitle: { fontSize: 13, color: '#666', marginBottom: 20, lineHeight: 20 },
-  summary: { backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16, marginBottom: 24 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  summaryAmount: { fontWeight: '600' },
-  totalRow: { borderTopWidth: 1, borderColor: '#e5e7eb', paddingTop: 8, marginTop: 4 },
-  totalLabel: { fontWeight: '700', fontSize: 16 },
-  totalAmount: { fontWeight: '700', fontSize: 16, color: '#F97316' },
-  label: { fontSize: 14, fontWeight: '600', marginBottom: 10, color: '#333' },
-  providerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  providerCard: { width: '47%', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 14, alignItems: 'center' },
-  providerEmoji: { fontSize: 28, marginBottom: 6 },
-  providerLabel: { fontSize: 12, fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 24, backgroundColor: '#f9f9f9' },
-  button: { backgroundColor: '#F97316', borderRadius: 12, padding: 16, alignItems: 'center' },
-  buttonDisabled: { backgroundColor: '#ccc' },
-  buttonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  content: { padding: 20 },
+  stepIndicator: { marginBottom: 8 },
+  stepText: { color: '#FF6B00', fontWeight: '600', fontSize: 13 },
+  title: { fontSize: 22, fontWeight: '700', color: '#111', marginBottom: 20 },
+  amountCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  amountRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  amountLabel: { fontSize: 14, color: '#6B7280' },
+  amountValue: { fontSize: 14, fontWeight: '600', color: '#111' },
+  divider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 8 },
+  totalLabel: { fontSize: 16, fontWeight: '700', color: '#111' },
+  totalValue: { fontSize: 18, fontWeight: '800', color: '#FF6B00' },
+  escrowNote: { fontSize: 12, color: '#6B7280', marginTop: 10, lineHeight: 18 },
+  sectionLabel: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 10 },
+  operatorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  operatorCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fff', borderRadius: 12, padding: 12, borderWidth: 1.5, borderColor: '#E5E7EB', flex: 1, minWidth: '45%' },
+  operatorDot: { width: 12, height: 12, borderRadius: 6 },
+  operatorLabel: { fontSize: 13, fontWeight: '600', color: '#111' },
+  phoneRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: '#E5E7EB', overflow: 'hidden' },
+  flag: { paddingHorizontal: 14, paddingVertical: 14, borderRightWidth: 1, borderRightColor: '#E5E7EB' },
+  phoneInput: { flex: 1, paddingHorizontal: 14, paddingVertical: 14, fontSize: 16, color: '#111' },
+  footer: { padding: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  payButton: { backgroundColor: '#FF6B00', borderRadius: 14, padding: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  payButtonDisabled: { backgroundColor: '#FCA97E' },
+  payButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 });

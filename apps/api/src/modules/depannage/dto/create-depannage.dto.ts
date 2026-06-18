@@ -1,18 +1,19 @@
-import { IsString, IsEnum, IsOptional, IsNumber, IsDateString, MinLength } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsNumber, IsDateString, MinLength, IsLatitude, IsLongitude } from 'class-validator';
+import { ArtisanSpecialty } from '../../artisans/entities/artisan.entity';
 import { DepannageMode } from '../entities/depannage-request.entity';
 
 export class CreateDepannageDto {
   @IsString()
-  @MinLength(20, { message: 'Décrivez le problème en au moins 20 caractères' })
+  @MinLength(10)
   description: string;
 }
 
-export class SetCategoryDto {
-  @IsString()
-  category: string;
+export class StepCategoryDto {
+  @IsEnum(ArtisanSpecialty)
+  category: ArtisanSpecialty;
 }
 
-export class SetModeDto {
+export class StepModeDto {
   @IsEnum(DepannageMode)
   mode: DepannageMode;
 
@@ -21,7 +22,7 @@ export class SetModeDto {
   scheduledAt?: string;
 }
 
-export class SetLocationDto {
+export class StepLocationDto {
   @IsString()
   address: string;
 
@@ -29,15 +30,23 @@ export class SetLocationDto {
   city: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsLatitude()
   latitude?: number;
 
   @IsOptional()
-  @IsNumber()
+  @IsLongitude()
   longitude?: number;
 }
 
-export class SelectArtisanDto {
+export class StepArtisanDto {
   @IsString()
   artisanId: string;
+}
+
+export class StepPaymentDto {
+  @IsNumber()
+  amount: number;
+
+  @IsString()
+  phoneNumber: string;
 }

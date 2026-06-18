@@ -1,8 +1,6 @@
-import {
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn,
-  UpdateDateColumn, ManyToOne, JoinColumn,
-} from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { UserEntity } from '../../users/entities/user.entity';
+import { EscrowStatus } from '../../orders/entities/order.entity';
 
 export enum ProjectType {
   CONSTRUCTION = 'CONSTRUCTION',
@@ -11,7 +9,7 @@ export enum ProjectType {
   FINISHING = 'FINISHING',
 }
 
-export enum ProjectStatus {
+export enum RenovationStatus {
   DRAFT = 'DRAFT',
   QUOTE_REQUESTED = 'QUOTE_REQUESTED',
   QUOTE_RECEIVED = 'QUOTE_RECEIVED',
@@ -22,38 +20,26 @@ export enum ProjectStatus {
   DISPUTED = 'DISPUTED',
 }
 
-export enum EscrowStatus {
-  NOT_FUNDED = 'NOT_FUNDED',
-  FUNDED = 'FUNDED',
-  PARTIALLY_RELEASED = 'PARTIALLY_RELEASED',
-  RELEASED = 'RELEASED',
-  REFUNDED = 'REFUNDED',
-  DISPUTED = 'DISPUTED',
-}
-
 export interface Milestone {
   id: string;
   title: string;
   description: string;
-  percentage: number;
-  completedAt: string | null;
-  paymentReleased: boolean;
+  dueDate: string;
+  completedAt?: string;
+  amount: number;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
 }
 
 @Entity('renovation_projects')
-export class RenovationProject {
+export class RenovationProjectEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, { eager: false })
-  @JoinColumn({ name: 'client_id' })
-  client: User;
-
-  @Column({ name: 'client_id' })
+  @Column()
   clientId: string;
 
-  @Column({ name: 'company_id', nullable: true })
-  companyId: string | null;
+  @Column({ nullable: true })
+  companyId: string;
 
   @Column()
   title: string;
@@ -70,25 +56,25 @@ export class RenovationProject {
   @Column()
   city: string;
 
-  @Column({ type: 'decimal', precision: 14, scale: 2, nullable: true })
-  budget: number | null;
+  @Column({ type: 'decimal', precision: 14, scale: 2, default: 0 })
+  budget: number;
 
   @Column({ type: 'decimal', precision: 14, scale: 2, nullable: true })
-  quotedAmount: number | null;
+  quotedAmount: number;
 
-  @Column({ type: 'timestamp', nullable: true })
-  startDate: Date | null;
+  @Column({ type: 'date', nullable: true })
+  startDate: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
-  endDate: Date | null;
+  @Column({ type: 'date', nullable: true })
+  endDate: Date;
 
-  @Column({ type: 'enum', enum: ProjectStatus, default: ProjectStatus.DRAFT })
-  status: ProjectStatus;
+  @Column({ type: 'enum', enum: RenovationStatus, default: RenovationStatus.DRAFT })
+  status: RenovationStatus;
 
   @Column({ type: 'jsonb', default: [] })
   milestones: Milestone[];
 
-  @Column({ type: 'simple-array', default: '' })
+  @Column({ type: 'simple-array', nullable: true })
   progressPhotos: string[];
 
   @Column({ type: 'decimal', precision: 14, scale: 2, default: 0 })
@@ -96,6 +82,10 @@ export class RenovationProject {
 
   @Column({ type: 'enum', enum: EscrowStatus, default: EscrowStatus.NOT_FUNDED })
   escrowStatus: EscrowStatus;
+
+  @ManyToOne(() => UserEntity)
+  @JoinColumn({ name: 'clientId' })
+  client: UserEntity;
 
   @CreateDateColumn()
   createdAt: Date;

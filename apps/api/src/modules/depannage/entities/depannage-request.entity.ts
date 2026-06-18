@@ -1,9 +1,12 @@
-import {
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn,
-  UpdateDateColumn, ManyToOne, JoinColumn,
-} from 'typeorm';
-import { User } from '../../users/entities/user.entity';
-import { Artisan } from '../../artisans/entities/artisan.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { UserEntity } from '../../users/entities/user.entity';
+import { ArtisanEntity, ArtisanSpecialty } from '../../artisans/entities/artisan.entity';
+import { OrderStatus, EscrowStatus } from '../../orders/entities/order.entity';
+
+export enum DepannageMode {
+  URGENT = 'URGENT',
+  PLANNED = 'PLANNED',
+}
 
 export enum DepannageStep {
   DESCRIPTION = 'DESCRIPTION',
@@ -15,77 +18,46 @@ export enum DepannageStep {
   CONFIRMATION = 'CONFIRMATION',
 }
 
-export enum DepannageMode {
-  URGENT = 'URGENT',
-  PLANNED = 'PLANNED',
-}
-
-export enum DepannageStatus {
-  DRAFT = 'DRAFT',
-  SEARCHING = 'SEARCHING',
-  ARTISAN_ASSIGNED = 'ARTISAN_ASSIGNED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  DISPUTED = 'DISPUTED',
-}
-
-export enum EscrowStatus {
-  NOT_FUNDED = 'NOT_FUNDED',
-  FUNDED = 'FUNDED',
-  RELEASED = 'RELEASED',
-  REFUNDED = 'REFUNDED',
-  DISPUTED = 'DISPUTED',
-}
-
 @Entity('depannage_requests')
-export class DepannageRequest {
+export class DepannageRequestEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, { eager: false })
-  @JoinColumn({ name: 'client_id' })
-  client: User;
-
-  @Column({ name: 'client_id' })
+  @Column()
   clientId: string;
 
-  @ManyToOne(() => Artisan, { eager: false, nullable: true })
-  @JoinColumn({ name: 'artisan_id' })
-  artisan: Artisan | null;
-
-  @Column({ name: 'artisan_id', nullable: true })
-  artisanId: string | null;
+  @Column({ nullable: true })
+  artisanId: string;
 
   @Column({ type: 'text' })
   description: string;
 
-  @Column({ nullable: true })
-  category: string;
+  @Column({ type: 'enum', enum: ArtisanSpecialty, nullable: true })
+  category: ArtisanSpecialty;
 
   @Column({ type: 'enum', enum: DepannageMode, nullable: true })
-  mode: DepannageMode | null;
+  mode: DepannageMode;
 
   @Column({ type: 'enum', enum: DepannageStep, default: DepannageStep.DESCRIPTION })
   currentStep: DepannageStep;
 
-  @Column({ type: 'enum', enum: DepannageStatus, default: DepannageStatus.DRAFT })
-  status: DepannageStatus;
+  @Column({ type: 'timestamptz', nullable: true })
+  scheduledAt: Date;
 
   @Column({ nullable: true })
-  address: string | null;
+  address: string;
 
   @Column({ nullable: true })
-  city: string | null;
+  city: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
-  latitude: number | null;
+  @Column({ type: 'decimal', precision: 9, scale: 6, nullable: true })
+  latitude: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
-  longitude: number | null;
+  @Column({ type: 'decimal', precision: 9, scale: 6, nullable: true })
+  longitude: number;
 
-  @Column({ type: 'timestamp', nullable: true })
-  scheduledAt: Date | null;
+  @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
+  status: OrderStatus;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   escrowAmount: number;
@@ -93,9 +65,16 @@ export class DepannageRequest {
   @Column({ type: 'enum', enum: EscrowStatus, default: EscrowStatus.NOT_FUNDED })
   escrowStatus: EscrowStatus;
 
-  /** Extra fee charged for urgent mode (2000 FCFA) */
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   urgencyFee: number;
+
+  @ManyToOne(() => UserEntity, { nullable: false })
+  @JoinColumn({ name: 'clientId' })
+  client: UserEntity;
+
+  @ManyToOne(() => ArtisanEntity, { nullable: true })
+  @JoinColumn({ name: 'artisanId' })
+  artisan: ArtisanEntity;
 
   @CreateDateColumn()
   createdAt: Date;

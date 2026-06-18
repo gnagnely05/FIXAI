@@ -1,6 +1,4 @@
-import {
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 export enum PaymentStatus {
   PENDING = 'PENDING',
@@ -13,61 +11,64 @@ export enum PaymentStatus {
 export enum OrderType {
   DEPANNAGE = 'DEPANNAGE',
   RENOVATION = 'RENOVATION',
+  ORDER = 'ORDER',
 }
 
 export interface AuditLogEntry {
   action: string;
   timestamp: string;
-  userId: string | null;
+  userId: string;
   details: Record<string, unknown>;
 }
 
 @Entity('payments')
-export class Payment {
+export class PaymentEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'order_id' })
+  @Column()
   orderId: string;
 
-  @Column({ type: 'enum', enum: OrderType })
+  @Column({ type: 'enum', enum: OrderType, default: OrderType.DEPANNAGE })
   orderType: OrderType;
 
-  /** Amount in FCFA (XOF). Stored as integer cents to avoid floating point errors. */
-  @Column({ type: 'bigint' })
+  @Column({ type: 'decimal', precision: 14, scale: 2 })
   amount: number;
 
   @Column({ default: 'XOF' })
   currency: string;
 
+  @Column({ default: 'CINETPAY' })
+  provider: string;
+
   @Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.PENDING })
   status: PaymentStatus;
 
-  /** CinetPay transaction_id returned after initiation */
-  @Column({ name: 'cinetpay_transaction_id', nullable: true })
-  cinetpayTransactionId: string | null;
+  @Column({ nullable: true })
+  transactionId: string;
 
-  /** Payment URL to redirect / display to user */
-  @Column({ name: 'payment_link', nullable: true, type: 'text' })
-  paymentLink: string | null;
+  @Column({ nullable: true })
+  cinetpayTransactionId: string;
 
-  @Column({ name: 'phone_number', nullable: true })
-  phoneNumber: string | null;
+  @Column({ type: 'text', nullable: true })
+  paymentLink: string;
 
-  @Column({ name: 'released_at', type: 'timestamp', nullable: true })
-  releasedAt: Date | null;
+  @Column()
+  phoneNumber: string;
 
-  @Column({ name: 'refunded_at', type: 'timestamp', nullable: true })
-  refundedAt: Date | null;
+  @Column({ type: 'timestamptz', nullable: true })
+  releasedAt: Date;
 
-  @Column({ name: 'released_by', nullable: true })
-  releasedBy: string | null;
+  @Column({ type: 'timestamptz', nullable: true })
+  refundedAt: Date;
 
-  @Column({ name: 'refund_reason', type: 'text', nullable: true })
-  refundReason: string | null;
+  @Column({ nullable: true })
+  releasedBy: string;
 
-  /** Immutable audit trail — append-only, never mutate existing entries */
-  @Column({ name: 'audit_log', type: 'jsonb', default: [] })
+  @Column({ type: 'text', nullable: true })
+  refundReason: string;
+
+  @Column({ type: 'jsonb', default: [] })
   auditLog: AuditLogEntry[];
 
   @CreateDateColumn()
@@ -76,3 +77,6 @@ export class Payment {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+
+// Alias for backward compat
+export { PaymentEntity as Payment };

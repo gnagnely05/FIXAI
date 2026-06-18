@@ -1,67 +1,74 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../users/entities/user.entity';
-import { Artisan } from '../artisans/entities/artisan.entity';
-import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
+import { UserEntity } from '../users/entities/user.entity';
+import { ArtisanEntity } from '../artisans/entities/artisan.entity';
+import { OrderEntity, OrderStatus, EscrowStatus } from '../orders/entities/order.entity';
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
-    @InjectRepository(Artisan)
-    private readonly artisanRepo: Repository<Artisan>,
-    @InjectRepository(Payment)
-    private readonly paymentRepo: Repository<Payment>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepo: Repository<UserEntity>,
+    @InjectRepository(ArtisanEntity)
+    private readonly artisansRepo: Repository<ArtisanEntity>,
+    @InjectRepository(OrderEntity)
+    private readonly ordersRepo: Repository<OrderEntity>,
   ) {}
 
-  async getPendingVerifications(): Promise<Artisan[]> {
-    return this.artisanRepo.find({
-      where: { isVerified: false },
-      relations: ['user'],
-      order: { createdAt: 'ASC' },
-    });
+  async getPendingVerifications(): Promise<{ users: UserEntity[]; artisans: ArtisanEntity[] }> {
+    const [users, artisans] = await Promise.all([
+      this.usersRepo.find({ where: { isVerified: false } }),
+      this.artisansRepo.find({ where: { isVerified: false }, relations: ['user'] }),
+    ]);
+    return { users, artisans };
   }
 
-  async approveVerification(userId: string): Promise<{ success: boolean }> {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('Utilisateur introuvable');
-
-    await this.userRepo.update(userId, { isVerified: true });
-
-    const artisan = await this.artisanRepo.findOne({ where: { userId } });
-    if (artisan) await this.artisanRepo.update(artisan.id, { isVerified: true });
-
-    return { success: true };
+  async verifyUser(userId: string): Promise<UserEntity> {
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    user.isVerified = true;
+    this.logger.log(`Admin verified user ${userId}`);
+    return this.usersRepo.save(user);
   }
 
-  async rejectVerification(userId: string, reason: string): Promise<{ success: boolean }> {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('Utilisateur introuvable');
-    // TODO: envoyer notification au prestataire avec la raison du rejet
-    return { success: true };
+  async rejectUser(userId: string, reason: string): Promise<{ message: string }> {
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    // In production: send rejection notification with reason
+    this.logger.warn(`Admin rejected user ${userId}: ${reason}`);
+    return { message: `User ${userId} rejected. Reason: ${reason}` };
   }
 
   async getEscrowOverview(): Promise<{
     totalFunded: number;
     totalReleased: number;
     totalRefunded: number;
-    pendingRelease: number;
-    payments: Payment[];
+    pendingEscrow: number;
+    orders: OrderEntity[];
   }> {
-    const payments = await this.paymentRepo.find({ order: { createdAt: 'DESC' } });
+    const orders = await this.ordersRepo.find({ relations: ['client', 'artisan'] });
 
-    const funded = payments.filter((p) => p.status === PaymentStatus.COMPLETED && !p.releasedAt && !p.refundedAt);
-    const released = payments.filter((p) => !!p.releasedAt);
-    const refunded = payments.filter((p) => p.status === PaymentStatus.REFUNDED);
+    const funded = orders.filter(o => o.escrowStatus === EscrowStatus.FUNDED);
+    const released = orders.filter(o => o.escrowStatus === EscrowStatus.RELEASED);
+    const refunded = orders.filter(o => o.escrowStatus === EscrowStatus.REFUNDED);
 
     return {
-      totalFunded: funded.reduce((s, p) => s + Number(p.amount), 0),
-      totalReleased: released.reduce((s, p) => s + Number(p.amount), 0),
-      totalRefunded: refunded.reduce((s, p) => s + Number(p.amount), 0),
-      pendingRelease: funded.length,
-      payments,
+      totalFunded: funded.reduce((sum, o) => sum + Number(o.escrowAmount), 0),
+      totalReleased: released.reduce((sum, o) => sum + Number(o.escrowAmount), 0),
+      totalRefunded: refunded.reduce((sum, o) => sum + Number(o.escrowAmount), 0),
+      pendingEscrow: funded.reduce((sum, o) => sum + Number(o.escrowAmount), 0),
+      orders,
     };
+  }
+
+  async getDisputes(): Promise<OrderEntity[]> {
+    return this.ordersRepo.find({
+      where: { status: OrderStatus.DISPUTED },
+      relations: ['client', 'artisan'],
+      order: { createdAt: 'DESC' },
+    });
   }
 }

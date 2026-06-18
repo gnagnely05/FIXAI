@@ -67,6 +67,26 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Main Service Tiles */}
+      <View style={styles.serviceTiles}>
+        <TouchableOpacity style={[styles.serviceTile, styles.tilePrimary]} onPress={() => router.push('/depannage/step1-description')}>
+          <View style={styles.tileUrgentBadge}><Text style={styles.tileUrgentBadgeText}>URGENT</Text></View>
+          <Ionicons name="flash" size={32} color="#fff" style={styles.tileIcon} />
+          <Text style={styles.tileTitleLarge}>Dépannage</Text>
+          <Text style={styles.tileSubtitle}>Intervention rapide</Text>
+        </TouchableOpacity>
+        <View style={styles.tileColumn}>
+          <TouchableOpacity style={[styles.serviceTileSmall, styles.tileIndigo]} onPress={() => router.push('/decoration')}>
+            <Ionicons name="sparkles" size={22} color="#fff" />
+            <Text style={styles.tileTitleSmall}>Décoration IA</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.serviceTileSmall, styles.tileGreen]} onPress={() => router.push('/renovation')}>
+            <Ionicons name="construct" size={22} color="#fff" />
+            <Text style={styles.tileTitleSmall}>Rénovation</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* AI Feature Banner */}
       <TouchableOpacity style={styles.aiBanner}>
         <View style={styles.aiBannerContent}>
@@ -316,4 +336,17 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 2,
   },
+  serviceTiles: { flexDirection: 'row', gap: 10, padding: 16, paddingBottom: 0 },
+  serviceTile: { flex: 1.2, borderRadius: 20, padding: 16, minHeight: 150, justifyContent: 'flex-end', overflow: 'hidden' },
+  tilePrimary: { backgroundColor: '#EF4444' },
+  tileColumn: { flex: 1, gap: 10 },
+  serviceTileSmall: { flex: 1, borderRadius: 16, padding: 14, justifyContent: 'center', alignItems: 'flex-start', gap: 6 },
+  tileIndigo: { backgroundColor: '#6366F1' },
+  tileGreen: { backgroundColor: '#10B981' },
+  tileIcon: { marginBottom: 8 },
+  tileUrgentBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  tileUrgentBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  tileTitleLarge: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 2 },
+  tileSubtitle: { fontSize: 12, color: "rgba(255,255,255,0.85)" },
+  tileTitleSmall: { fontSize: 14, fontWeight: '700', color: '#fff' },
 });
