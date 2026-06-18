@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FF6B00"
+      "backgroundColor": "#6B3FA0"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -19,7 +19,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FF6B00"
+        "backgroundColor": "#6B3FA0"
       },
       "package": "com.fixai.app"
     },
@@ -27,6 +27,12 @@
     "scheme": "fixai",
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_PROJECT_ID"
+      }
+    },
+    "owner": "adikofrancis05"
   }
 }
