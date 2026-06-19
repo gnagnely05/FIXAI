@@ -50,3 +50,5 @@ export class UserEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+
+export { UserEntity as User };

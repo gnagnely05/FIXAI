@@ -24,14 +24,14 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post(':id/release')
-  release(@Param('id') id: string, @Request() req: any) {
+  release(@Param('id') id: string, @Request() req: { user: { id: string } }) {
     return this.service.releaseEscrow(id, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post(':id/refund')
-  refund(@Param('id') id: string, @Body('reason') reason: string, @Request() req: any) {
+  refund(@Param('id') id: string, @Body('reason') reason: string, @Request() req: { user: { id: string } }) {
     return this.service.refundEscrow(id, req.user.id, reason);
   }
 

@@ -1,4 +1,5 @@
 export enum PaymentProvider {
+  CINETPAY = 'CINETPAY',
   ORANGE_MONEY = 'ORANGE_MONEY',
   MTN_MONEY = 'MTN_MONEY',
   WAVE = 'WAVE',

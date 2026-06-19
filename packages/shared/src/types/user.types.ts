@@ -5,6 +5,7 @@ export enum UserRole {
   ENTREPRISE_BTP = 'ENTREPRISE_BTP',
   BOUTIQUE = 'BOUTIQUE',
   QUINCAILLERIE = 'QUINCAILLERIE',
+  ADMIN = 'ADMIN',
 }
 
 export interface User {

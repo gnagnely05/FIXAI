@@ -66,7 +66,7 @@ export class ArtisanEntity {
   @Column({ default: 0 })
   yearsOfExperience: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   hourlyRate: number;
 
   @Column({ type: 'simple-array', nullable: true })
@@ -81,3 +81,5 @@ export class ArtisanEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+
+export { ArtisanEntity as Artisan };
