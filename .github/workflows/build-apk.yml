@@ -22,19 +22,29 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Enable Corepack (Yarn)
+        run: corepack enable
 
       - name: Install root dependencies
-        run: npm install --legacy-peer-deps
+        run: yarn install --ignore-engines
 
       - name: Install mobile dependencies
         working-directory: apps/mobile
-        run: npm install --legacy-peer-deps
+        run: yarn install --ignore-engines
 
       - name: Setup EAS CLI
         run: npm install -g eas-cli
 
-      - name: Build Android APK (local)
+      - name: Setup Java (required for Android local build)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build Android APK (EAS local)
         working-directory: apps/mobile
         run: eas build --platform android --profile preview --local --non-interactive --output build-output.apk
         env:
