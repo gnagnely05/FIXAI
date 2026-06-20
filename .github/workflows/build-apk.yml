@@ -80,21 +80,19 @@ jobs:
           echo "=== Directory structure of app/build/outputs ==="
           ls -lR apps/mobile/android/app/build/outputs/ 2>/dev/null || echo "outputs/ directory not found"
 
+      # ── Stage APK in root folder ──────────────────────────────────────────
+      - name: Find and Stage APK
+        run: |
+          mkdir -p build-output
+          find . -name "*.apk" -exec cp {} build-output/ \;
+          echo "=== APKs staged ==="
+          ls -lh build-output/
+
       # ── Upload APK artifact ───────────────────────────────────────────────
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: fixai-android-apk
-          path: apps/mobile/android/app/build/outputs/apk/release/*.apk
+          path: build-output/
           retention-days: 30
           if-no-files-found: warn
-
-      # ── Fallback: Upload any APK from mobile directory ────────────────────
-      - name: Fallback - Upload any APK found
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: fixai-android-apk-fallback
-          path: apps/mobile/**/*.apk
-          retention-days: 30
-          if-no-files-found: ignore
