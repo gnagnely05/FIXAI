@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# Keep compiled shared package so EAS can resolve @fixai/shared without a build step
+!packages/shared/dist/
 .expo/
 *.log
 .env
