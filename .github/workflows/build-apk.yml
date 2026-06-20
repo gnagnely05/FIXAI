@@ -69,7 +69,7 @@ jobs:
             echo "  🔗 $BUILD_URL"
           else
             echo "  ℹ️  Consulte les logs EAS ci-dessus pour le lien de téléchargement"
-            echo "  🔗 https://expo.dev/accounts/adikofrancis05/projects/fixai/builds"
+            echo "  🔗 https://expo.dev/accounts/adikof/projects/fixai/builds"
           fi
 
           echo ""
