@@ -21,7 +21,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#6B3FA0"
       },
-      "package": "com.fixai.app"
+      "package": "com.fixai.app",
+      "kotlinVersion": "1.9.25"
     },
     "plugins": ["expo-router", "expo-secure-store"],
     "scheme": "fixai",
