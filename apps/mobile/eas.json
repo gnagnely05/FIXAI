@@ -3,9 +3,6 @@
     "version": ">= 20.0.0",
     "appVersionSource": "remote"
   },
-  "experimental": {
-    "disableIsolatedModules": false
-  },
   "build": {
     "development": {
       "developmentClient": true,
