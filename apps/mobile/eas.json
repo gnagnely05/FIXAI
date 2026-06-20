@@ -18,11 +18,7 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "extraBuildArgs": [
-          "-Pandroid.kotlinVersion=1.9.25",
-          "-Pandroidx.compose.compiler.suppressKotlinVersionCompatibilityCheck=true"
-        ]
+        "buildType": "apk"
       },
       "ios": {
         "simulator": false
@@ -31,11 +27,7 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle",
-        "extraBuildArgs": [
-          "-Pandroid.kotlinVersion=1.9.25",
-          "-Pandroidx.compose.compiler.suppressKotlinVersionCompatibilityCheck=true"
-        ]
+        "buildType": "app-bundle"
       },
       "ios": {
         "simulator": false
