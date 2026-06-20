@@ -34,15 +34,44 @@ jobs:
 
       # ── EAS Build (Expo Cloud Build) ───────────────────────────────────────
       - name: Build APK with EAS (preview profile → APK)
+        id: eas_build
         working-directory: apps/mobile
         run: |
-          npx eas-cli@latest build --platform android --profile preview --wait
+          npx eas-cli@latest build \
+            --platform android \
+            --profile preview \
+            --wait \
+            --non-interactive \
+            2>&1 | tee /tmp/eas_output.txt
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      # ── Display Build Status ───────────────────────────────────────────────
-      - name: Build Success
+      # ── Extraire et afficher le lien de téléchargement ────────────────────
+      - name: Afficher le lien de téléchargement APK
+        if: always()
         run: |
-          echo "✅ APK build completed successfully!"
-          echo "📱 Download link will be displayed in EAS Build console"
-          echo "ℹ️  Check the build logs above for the download URL"
+          echo ""
+          echo "======================================================"
+          echo "  📱  FIXAI Android APK — Lien de téléchargement"
+          echo "======================================================"
+
+          # Extraire l'URL du fichier APK depuis les logs EAS
+          APK_URL=$(grep -oP 'https://expo\.dev/artifacts/[^\s]+' /tmp/eas_output.txt | head -1 || true)
+
+          # Extraire l'URL de la page du build EAS
+          BUILD_URL=$(grep -oP 'https://expo\.dev/accounts/[^\s]+/builds/[^\s]+' /tmp/eas_output.txt | head -1 || true)
+
+          if [ -n "$APK_URL" ]; then
+            echo "  ✅ APK prêt à télécharger :"
+            echo "  🔗 $APK_URL"
+          elif [ -n "$BUILD_URL" ]; then
+            echo "  ✅ Build terminé — Voir la page EAS pour le téléchargement :"
+            echo "  🔗 $BUILD_URL"
+          else
+            echo "  ℹ️  Consulte les logs EAS ci-dessus pour le lien de téléchargement"
+            echo "  🔗 https://expo.dev/accounts/adikofrancis05/projects/fixai/builds"
+          fi
+
+          echo ""
+          echo "  📲 QR Code disponible sur la page du build EAS"
+          echo "======================================================"
