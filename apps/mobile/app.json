@@ -28,11 +28,6 @@
     "experiments": {
       "typedRoutes": true
     },
-    "extra": {
-      "eas": {
-        "projectId": "REPLACE_WITH_PROJECT_ID"
-      }
-    },
     "owner": "adikofrancis05"
   }
 }
