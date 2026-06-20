@@ -12,7 +12,7 @@ on:
 
 jobs:
   build-android:
-    name: Build Android APK
+    name: Build Android APK with EAS
     runs-on: ubuntu-latest
 
     steps:
@@ -32,67 +32,17 @@ jobs:
       - name: Install monorepo dependencies
         run: yarn install --ignore-engines --network-timeout 300000
 
-      # ── Java 17 (required for Gradle / Android build) ─────────────────────
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      # ── Android SDK ───────────────────────────────────────────────────────
-      - name: Setup Android SDK components
-        uses: android-actions/setup-android@v3
-
-      - name: Install required SDK packages
-        run: |
-          sdkmanager --install \
-            "platforms;android-35" \
-            "build-tools;35.0.0" \
-            "ndk;26.1.10909125" 2>&1 | tail -5
-
-      # ── Expo Prebuild → native Android project ────────────────────────────
-      - name: Generate native Android project (expo prebuild)
+      # ── EAS Build (Expo Cloud Build) ───────────────────────────────────────
+      - name: Build APK with EAS (preview profile → APK)
         working-directory: apps/mobile
         run: |
-          npx expo install --fix
-          npx expo prebuild --platform android --clean --no-install
+          npx eas-cli@latest build --platform android --profile preview --wait
         env:
-          EXPO_NO_TELEMETRY: 1
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      # ── Gradle build ──────────────────────────────────────────────────────
-      - name: Build APK with Gradle
-        working-directory: apps/mobile/android
+      # ── Display Build Status ───────────────────────────────────────────────
+      - name: Build Success
         run: |
-          chmod +x ./gradlew
-          ./gradlew assembleRelease --no-daemon \
-            -Pandroid.useAndroidX=true \
-            -Preact.packager.port=8081 2>&1 | tail -30
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
-          JAVA_HOME: ${{ env.JAVA_HOME }}
-
-      # ── Debug: List APK outputs ───────────────────────────────────────────
-      - name: Debug - Find all APK files
-        run: |
-          echo "=== Searching for APK files ==="
-          find apps/mobile -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
-          echo ""
-          echo "=== Directory structure of app/build/outputs ==="
-          ls -lR apps/mobile/android/app/build/outputs/ 2>/dev/null || echo "outputs/ directory not found"
-
-      # ── Stage APK in root folder ──────────────────────────────────────────
-      - name: Find and Stage APK
-        run: |
-          mkdir -p build-output
-          find . -name "*.apk" -exec cp {} build-output/ \;
-          echo "=== APKs staged ==="
-          ls -lh build-output/
-
-      # ── Upload APK artifact ───────────────────────────────────────────────
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: fixai-android-apk
-          path: build-output/
-          retention-days: 30
-          if-no-files-found: warn
+          echo "✅ APK build completed successfully!"
+          echo "📱 Download link will be displayed in EAS Build console"
+          echo "ℹ️  Check the build logs above for the download URL"
