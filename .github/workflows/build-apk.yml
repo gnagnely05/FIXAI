@@ -71,11 +71,30 @@ jobs:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           JAVA_HOME: ${{ env.JAVA_HOME }}
 
+      # ── Debug: List APK outputs ───────────────────────────────────────────
+      - name: Debug - Find all APK files
+        run: |
+          echo "=== Searching for APK files ==="
+          find apps/mobile -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
+          echo ""
+          echo "=== Directory structure of app/build/outputs ==="
+          ls -lR apps/mobile/android/app/build/outputs/ 2>/dev/null || echo "outputs/ directory not found"
+
       # ── Upload APK artifact ───────────────────────────────────────────────
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: fixai-android-apk
-          path: apps/mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          path: apps/mobile/android/app/build/outputs/apk/release/*.apk
           retention-days: 30
           if-no-files-found: warn
+
+      # ── Fallback: Upload any APK from mobile directory ────────────────────
+      - name: Fallback - Upload any APK found
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: fixai-android-apk-fallback
+          path: apps/mobile/**/*.apk
+          retention-days: 30
+          if-no-files-found: ignore
