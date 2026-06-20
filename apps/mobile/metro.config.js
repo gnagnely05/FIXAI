@@ -6,8 +6,13 @@ const monorepoRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-config.watchFolders = [monorepoRoot];
+// Add monorepo packages to watchFolders while preserving Expo defaults
+config.watchFolders = [
+  ...config.watchFolders,
+  path.resolve(monorepoRoot, 'packages/shared'),
+];
 
+// Ensure node_modules resolution works for both local and monorepo
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(monorepoRoot, 'node_modules'),

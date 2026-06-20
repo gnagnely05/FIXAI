@@ -45,6 +45,7 @@ jobs:
             2>&1 | tee /tmp/eas_output.txt
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_BUILD_DISABLE_BUNDLE_JAVASCRIPT_STEP: 1
 
       # ── Extraire et afficher le lien de téléchargement ────────────────────
       - name: Afficher le lien de téléchargement APK
