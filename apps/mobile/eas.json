@@ -8,6 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "android": {
+        "image": "latest",
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug"
       },
@@ -18,6 +19,7 @@
     "preview": {
       "distribution": "internal",
       "android": {
+        "image": "latest",
         "buildType": "apk"
       },
       "ios": {
@@ -27,6 +29,7 @@
     "production": {
       "autoIncrement": true,
       "android": {
+        "image": "latest",
         "buildType": "app-bundle"
       },
       "ios": {
