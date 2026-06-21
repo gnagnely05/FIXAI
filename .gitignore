@@ -2,6 +2,8 @@ node_modules/
 dist/
 # Keep compiled shared package so EAS can resolve @fixai/shared without a build step
 !packages/shared/dist/
+# Keep web PWA export for Hostinger deployment
+!apps/mobile/dist/
 .expo/
 *.log
 .env
