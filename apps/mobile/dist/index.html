@@ -5,6 +5,9 @@
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>FixAI</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#6B3FA0" />
+    <link rel="apple-touch-icon" href="/icon.png" />
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
       /* These styles make the body full-height */
@@ -33,5 +36,12 @@
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
   <script src="/_expo/static/js/web/entry-bdafe6e52d532e2f2502ffda660fae5c.js" defer></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/service-worker.js');
+      });
+    }
+  </script>
 </body>
 </html>
