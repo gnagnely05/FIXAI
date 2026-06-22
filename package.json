@@ -9,7 +9,8 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "mobile": "turbo run dev --filter=mobile",
-    "api": "turbo run dev --filter=api"
+    "api": "turbo run dev --filter=api",
+    "web:build": "cd apps/mobile && npx expo export --platform web"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
