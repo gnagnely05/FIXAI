@@ -94,6 +94,18 @@ export function useAuth() {
     setState({ user: null, accessToken: null, isLoading: false });
   }, []);
 
+  const registerProvider = useCallback(async (data: Record<string, any>) => {
+    const response = await api.post<LoginResponse>('/auth/register-provider', data);
+    const { user, accessToken, refreshToken } = response.data;
+    await Promise.all([
+      SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken),
+      SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken),
+      SecureStore.setItemAsync(USER_KEY, JSON.stringify(user)),
+    ]);
+    api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+    setState({ user, accessToken, isLoading: false });
+  }, []);
+
   return {
     user: state.user,
     accessToken: state.accessToken,
@@ -101,6 +113,7 @@ export function useAuth() {
     isAuthenticated: !!state.user,
     login,
     register,
+    registerProvider,
     logout,
   };
 }
