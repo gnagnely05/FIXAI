@@ -1,4 +1,6 @@
-import { Controller, Post, Get, Patch, Body, Param, Request, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller, Post, Get, Patch, Body, Param, Request, UseGuards, Query,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DepannageService } from './depannage.service';
 import { ArtisanSpecialty } from '../artisans/entities/artisan.entity';
@@ -27,8 +29,12 @@ export class DepannageController {
 
   // Étape 1 — Client confirme le devis IA et ouvre l'appel d'offre
   @Patch(':id/confirm-quote')
-  confirmQuote(@Param('id') id: string, @Request() req: { user: { sub: string } }) {
-    return this.service.confirmQuote(id, req.user.sub);
+  confirmQuote(
+    @Param('id') id: string,
+    @Request() req: { user: { sub: string } },
+    @Body('category') category?: ArtisanSpecialty,
+  ) {
+    return this.service.confirmQuote(id, req.user.sub, category);
   }
 
   // Étape 3 — Artisan soumet une proposition
@@ -38,7 +44,13 @@ export class DepannageController {
     @Request() req: { user: { sub: string } },
     @Body() dto: { priceXof: number; estimatedDurationMin: number; artisanName: string },
   ) {
-    return this.service.submitProposal(id, req.user.sub, dto.artisanName, dto.priceXof, dto.estimatedDurationMin);
+    return this.service.submitProposal(
+      id,
+      req.user.sub,
+      dto.artisanName,
+      dto.priceXof,
+      dto.estimatedDurationMin,
+    );
   }
 
   // Étape 4 — Client choisit un artisan (ouvre le chat)
@@ -58,7 +70,12 @@ export class DepannageController {
     @Request() req: { user: { sub: string } },
     @Body() dto: { mode: DepannageMode; scheduledAt?: string },
   ) {
-    return this.service.chooseMode(id, req.user.sub, dto.mode, dto.scheduledAt ? new Date(dto.scheduledAt) : undefined);
+    return this.service.chooseMode(
+      id,
+      req.user.sub,
+      dto.mode,
+      dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
+    );
   }
 
   // Étape 5 — Artisan confirme l'intervention urgente
@@ -67,13 +84,13 @@ export class DepannageController {
     return this.service.artisanConfirmUrgent(id, req.user.sub);
   }
 
-  // Étape 6 — Accord de prix (calcule montant escrow)
+  // Étape 6a — Accord de prix (calcule montant escrow)
   @Patch(':id/reach-agreement')
   reachAgreement(@Param('id') id: string, @Request() req: { user: { sub: string } }) {
     return this.service.reachAgreement(id, req.user.sub);
   }
 
-  // Étape 6 — Client alimente l'escrow
+  // Étape 6b/6c — Client alimente l'escrow (déclenché par webhook paiement)
   @Patch(':id/fund-escrow')
   fundEscrow(
     @Param('id') id: string,
@@ -83,7 +100,7 @@ export class DepannageController {
     return this.service.fundEscrow(id, req.user.sub, transactionRef);
   }
 
-  // Étape 6 — Verrouiller l'intervention (fonds confirmés)
+  // Étape 6c — Verrouiller l'intervention (fonds confirmés)
   @Patch(':id/lock-intervention')
   lockIntervention(
     @Param('id') id: string,
@@ -98,13 +115,13 @@ export class DepannageController {
     return this.service.completeIntervention(id, req.user.sub);
   }
 
-  // Étape 6 — Client libère le paiement
+  // Étape 6d — Client libère le paiement
   @Patch(':id/release-payment')
   releasePayment(@Param('id') id: string, @Request() req: { user: { sub: string } }) {
     return this.service.releasePayment(id, req.user.sub);
   }
 
-  // Étape 7 — Marquer les pièces comme envoyées
+  // Étape 7 — Marquer les pièces comme envoyées (boutique partenaire)
   @Patch(':id/dispatch-parts')
   dispatchParts(@Param('id') id: string) {
     return this.service.dispatchParts(id);
