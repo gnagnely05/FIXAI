@@ -51,6 +51,15 @@ const ROLES = [
     color: '#4E342E',
     params: { type: 'QUINCAILLERIE' },
   },
+  {
+    id: 'entreprise',
+    label: 'Entreprise BTP',
+    icon: '🏗️',
+    desc: 'Je dirige une entreprise de BTP (Mode Agence, Artisan ou Mixte)',
+    route: '/(auth)/register-entreprise',
+    color: '#5D4037',
+    params: {},
+  },
 ];
 
 export default function RegisterScreen() {

@@ -30,6 +30,7 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
+    const initialStatus = this.getInitialStatus(dto.role, dto.documents);
     const user = this.usersRepo.create({
       email: dto.email,
       phone: dto.phone,
@@ -40,15 +41,17 @@ export class AuthService {
       city: dto.city,
       radiusKm: dto.radiusKm,
       btpMode: dto.btpMode,
-      verificationStatus: dto.documentUrls?.length
-        ? VerificationStatus.DOCS_SUBMITTED
-        : VerificationStatus.REGISTERED,
+      verificationStatus: initialStatus,
     });
     await this.usersRepo.save(user);
 
-    if (dto.documentUrls?.length) {
-      const docs = dto.documentUrls.map((url) =>
-        this.docsRepo.create({ userId: user.id, type: DocumentType.OTHER, fileUrl: url }),
+    if (dto.documents?.length) {
+      const docs = dto.documents.map(({ type, url }) =>
+        this.docsRepo.create({
+          userId: user.id,
+          type: (DocumentType[type as keyof typeof DocumentType] ?? DocumentType.OTHER),
+          fileUrl: url,
+        }),
       );
       await this.docsRepo.save(docs);
     }
@@ -123,6 +126,23 @@ export class AuthService {
   private async updateRefreshToken(userId: string, refreshToken: string) {
     const hashed = await bcrypt.hash(refreshToken, 10);
     await this.usersRepo.update(userId, { refreshToken: hashed });
+  }
+
+  private getInitialStatus(role: string, documents?: { type: string; url: string }[]): VerificationStatus {
+    const hasDocs = documents && documents.length > 0;
+    switch (role) {
+      case UserRole.BOUTIQUE:
+        return VerificationStatus.SHOP_REGISTERED;
+      case UserRole.QUINCAILLERIE:
+        return VerificationStatus.HARDWARE_REGISTERED;
+      case UserRole.AGENCE_HOTE:
+      case UserRole.ENTREPRISE_BTP:
+        return hasDocs ? VerificationStatus.DOCS_SUBMITTED : VerificationStatus.REGISTERED;
+      case UserRole.ARTISAN:
+        return hasDocs ? VerificationStatus.DOCS_SUBMITTED : VerificationStatus.REGISTERED;
+      default:
+        return VerificationStatus.REGISTERED;
+    }
   }
 
   private sanitizeUser(user: UserEntity) {

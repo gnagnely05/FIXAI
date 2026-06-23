@@ -5,12 +5,19 @@ import {
 import { UserEntity } from '../../users/entities/user.entity';
 
 export enum DocumentType {
-  NATIONAL_ID      = 'NATIONAL_ID',
-  PASSPORT         = 'PASSPORT',
-  BUSINESS_LICENSE = 'BUSINESS_LICENSE',
-  INSURANCE        = 'INSURANCE',
-  DIPLOMA          = 'DIPLOMA',
-  OTHER            = 'OTHER',
+  NATIONAL_ID              = 'NATIONAL_ID',
+  PASSPORT                 = 'PASSPORT',
+  SELFIE                   = 'SELFIE',
+  RCCM                     = 'RCCM',
+  STATUTS_SOCIETE          = 'STATUTS_SOCIETE',
+  ATTESTATION_FISCALE      = 'ATTESTATION_FISCALE',
+  CNI_REPRESENTANT         = 'CNI_REPRESENTANT',
+  MOBILE_MONEY_PROOF       = 'MOBILE_MONEY_PROOF',
+  JUSTIFICATIF_COMPETENCE  = 'JUSTIFICATIF_COMPETENCE',
+  BUSINESS_LICENSE         = 'BUSINESS_LICENSE',
+  INSURANCE                = 'INSURANCE',
+  DIPLOMA                  = 'DIPLOMA',
+  OTHER                    = 'OTHER',
 }
 
 export enum DocumentStatus {

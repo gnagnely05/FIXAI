@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsEnum, IsOptional, IsArray, IsUrl, MinLength } from 'class-validator';
+import { IsEmail, IsString, IsEnum, IsOptional, IsArray, IsNumber, MinLength } from 'class-validator';
 import { UserRole } from '../../../common/enums/user-role.enum';
 import { BtpMode } from '../../../common/enums/btp-mode.enum';
 
@@ -35,17 +35,60 @@ export class RegisterProviderDto {
   @IsOptional()
   city?: string;
 
+  @IsNumber()
   @IsOptional()
   radiusKm?: number;
 
-  /** Required if role === ENTREPRISE_BTP */
   @IsEnum(BtpMode)
   @IsOptional()
   btpMode?: BtpMode;
 
-  /** Document URLs (KYC) uploaded by the provider */
-  @IsArray()
-  @IsUrl({}, { each: true })
+  // Artisan
+  @IsString()
   @IsOptional()
-  documentUrls?: string[];
+  specialty?: string;
+
+  @IsString()
+  @IsOptional()
+  bio?: string;
+
+  @IsNumber()
+  @IsOptional()
+  yearsOfExperience?: number;
+
+  @IsNumber()
+  @IsOptional()
+  hourlyRate?: number;
+
+  @IsString()
+  @IsOptional()
+  mobileMoneyNumber?: string;
+
+  // Agence / Entreprise BTP
+  @IsString()
+  @IsOptional()
+  agencyName?: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  // Boutique / Quincaillerie
+  @IsString()
+  @IsOptional()
+  shopName?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  catalogCategories?: string[];
+
+  // Documents KYC: array of { type, url }
+  @IsArray()
+  @IsOptional()
+  documents?: { type: string; url: string }[];
 }

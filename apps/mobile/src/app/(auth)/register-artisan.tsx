@@ -20,8 +20,7 @@ const SPECIALTIES = [
 ];
 
 const CITIES = ['Abidjan', 'Bouaké', 'Daloa', 'San-Pédro', 'Yamoussoukro', 'Korhogo', 'Man', 'Divo'];
-
-const STEPS = ['Identité', 'Spécialité', 'Profil'];
+const STEPS = ['Identité', 'Spécialité', 'Profil', 'Documents'];
 
 export default function RegisterArtisan() {
   const router = useRouter();
@@ -36,6 +35,8 @@ export default function RegisterArtisan() {
     city: '', bio: '',
     yearsOfExperience: '',
     hourlyRate: '',
+    mobileMoneyNumber: '',
+    mobileMoneyOperator: '',
   });
 
   const set = (k: keyof typeof form, v: string) => setForm(p => ({ ...p, [k]: v }));
@@ -58,11 +59,16 @@ export default function RegisterArtisan() {
     if (step === 1 && !form.specialty) {
       return Alert.alert('Erreur', 'Choisissez une spécialité.');
     }
+    if (step === 2 && !form.city) {
+      return Alert.alert('Erreur', 'Indiquez votre ville.');
+    }
     setStep(s => s + 1);
   };
 
   const handleSubmit = async () => {
-    if (!form.city) return Alert.alert('Erreur', 'Indiquez votre ville.');
+    if (!form.mobileMoneyNumber || !form.mobileMoneyOperator) {
+      return Alert.alert('Erreur', 'Le numéro Mobile Money est obligatoire.');
+    }
     setLoading(true);
     try {
       await registerProvider({
@@ -77,6 +83,7 @@ export default function RegisterArtisan() {
         bio: form.bio,
         yearsOfExperience: form.yearsOfExperience ? parseInt(form.yearsOfExperience) : undefined,
         hourlyRate: form.hourlyRate ? parseInt(form.hourlyRate) : undefined,
+        mobileMoneyNumber: `${form.mobileMoneyOperator}:${form.mobileMoneyNumber}`,
       });
       router.replace('/(tabs)');
     } catch (e: any) {
@@ -88,7 +95,6 @@ export default function RegisterArtisan() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Step indicator */}
       <View style={styles.stepBar}>
         {STEPS.map((s, i) => (
           <View key={s} style={styles.stepItem}>
@@ -106,7 +112,6 @@ export default function RegisterArtisan() {
           <Text style={styles.backText}>← {step > 0 ? 'Précédent' : 'Retour'}</Text>
         </TouchableOpacity>
 
-        {/* STEP 0 — Identité */}
         {step === 0 && (
           <View>
             <Text style={styles.stepTitle}>👋 Votre identité</Text>
@@ -119,7 +124,6 @@ export default function RegisterArtisan() {
           </View>
         )}
 
-        {/* STEP 1 — Spécialité */}
         {step === 1 && (
           <View>
             <Text style={styles.stepTitle}>🔧 Votre spécialité</Text>
@@ -141,7 +145,6 @@ export default function RegisterArtisan() {
           </View>
         )}
 
-        {/* STEP 2 — Profil */}
         {step === 2 && (
           <View>
             <Text style={styles.stepTitle}>📋 Votre profil</Text>
@@ -179,7 +182,51 @@ export default function RegisterArtisan() {
           </View>
         )}
 
-        {step < 2 ? (
+        {step === 3 && (
+          <View>
+            <Text style={styles.stepTitle}>📄 Documents & Paiement</Text>
+            <Text style={styles.stepSub}>Votre compte sera activé après vérification</Text>
+
+            <View style={styles.infoBox}>
+              <Text style={styles.infoText}>ℹ️ Vous pourrez uploader vos documents (CNI + selfie) depuis votre profil après inscription.</Text>
+            </View>
+
+            <Text style={styles.label}>Opérateur Mobile Money *</Text>
+            <View style={styles.operatorRow}>
+              {[
+                { id: 'ORANGE', label: 'Orange Money', icon: '🟠' },
+                { id: 'MTN', label: 'MTN MoMo', icon: '🟡' },
+                { id: 'WAVE', label: 'Wave', icon: '🔵' },
+              ].map(op => (
+                <TouchableOpacity
+                  key={op.id}
+                  style={[styles.operatorChip, form.mobileMoneyOperator === op.id && styles.operatorChipSelected]}
+                  onPress={() => set('mobileMoneyOperator', op.id)}
+                >
+                  <Text style={styles.operatorIcon}>{op.icon}</Text>
+                  <Text style={[styles.operatorText, form.mobileMoneyOperator === op.id && styles.operatorTextSelected]}>{op.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Field
+              label="Numéro Mobile Money *"
+              value={form.mobileMoneyNumber}
+              onChangeText={v => set('mobileMoneyNumber', v)}
+              placeholder="Ex: 0701234567"
+              keyboardType="phone-pad"
+            />
+
+            <View style={styles.docsInfoBox}>
+              <Text style={styles.docsInfoTitle}>Documents requis (à uploader après inscription)</Text>
+              <Text style={styles.docsInfoItem}>• CNI / Carte nationale d'identité (photo recto-verso)</Text>
+              <Text style={styles.docsInfoItem}>• Selfie avec la CNI</Text>
+              <Text style={styles.docsInfoItem}>• Justificatif de compétence (optionnel)</Text>
+            </View>
+          </View>
+        )}
+
+        {step < 3 ? (
           <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
             <Text style={styles.nextBtnText}>Suivant →</Text>
           </TouchableOpacity>
@@ -225,20 +272,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F0F0F0',
     position: 'relative',
   },
-  stepLine: {
-    position: 'absolute', top: 28, left: '20%', right: '20%',
-    height: 2, backgroundColor: '#E5E7EB', zIndex: 0,
-  },
+  stepLine: { position: 'absolute', top: 28, left: '15%', right: '15%', height: 2, backgroundColor: '#E5E7EB', zIndex: 0 },
   stepItem: { alignItems: 'center', zIndex: 1 },
-  stepDot: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center',
-    marginBottom: 4,
-  },
+  stepDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   stepDotActive: { backgroundColor: '#2E7D32' },
   stepNum: { fontSize: 14, fontWeight: '700', color: '#9CA3AF' },
   stepNumActive: { color: '#fff' },
-  stepLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '500' },
+  stepLabel: { fontSize: 10, color: '#9CA3AF', fontWeight: '500' },
   stepLabelActive: { color: '#2E7D32', fontWeight: '700' },
   content: { padding: 20, paddingBottom: 40 },
   backBtn: { marginBottom: 16 },
@@ -247,28 +287,29 @@ const styles = StyleSheet.create({
   stepSub: { fontSize: 13, color: '#6B7280', marginBottom: 20 },
   label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 },
   specialtyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  specialtyCard: {
-    width: '30%', alignItems: 'center', paddingVertical: 14,
-    backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: '#E5E7EB',
-  },
+  specialtyCard: { width: '30%', alignItems: 'center', paddingVertical: 14, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: '#E5E7EB' },
   specialtyCardSelected: { borderColor: '#2E7D32', backgroundColor: '#E8F5E9' },
   specialtyIcon: { fontSize: 26, marginBottom: 6 },
   specialtyLabel: { fontSize: 11, color: '#374151', fontWeight: '600', textAlign: 'center' },
   specialtyLabelSelected: { color: '#2E7D32' },
   citiesScroll: { marginBottom: 18 },
-  cityChip: {
-    paddingHorizontal: 16, paddingVertical: 9,
-    borderRadius: 20, borderWidth: 1.5, borderColor: '#E5E7EB',
-    backgroundColor: '#fff', marginRight: 8,
-  },
+  cityChip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#fff', marginRight: 8 },
   cityChipSelected: { borderColor: '#2E7D32', backgroundColor: '#2E7D32' },
   cityText: { fontSize: 13, color: '#374151', fontWeight: '500' },
   cityTextSelected: { color: '#fff' },
   row: { flexDirection: 'row' },
-  nextBtn: {
-    backgroundColor: '#2E7D32', borderRadius: 14,
-    paddingVertical: 16, alignItems: 'center', marginTop: 8,
-  },
+  infoBox: { backgroundColor: '#E3F2FD', borderRadius: 12, padding: 14, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: '#1565C0' },
+  infoText: { fontSize: 13, color: '#1565C0', lineHeight: 19 },
+  operatorRow: { flexDirection: 'row', gap: 8, marginBottom: 16, flexWrap: 'wrap' },
+  operatorChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#fff' },
+  operatorChipSelected: { borderColor: '#2E7D32', backgroundColor: '#E8F5E9' },
+  operatorIcon: { fontSize: 16 },
+  operatorText: { fontSize: 13, color: '#374151', fontWeight: '500' },
+  operatorTextSelected: { color: '#2E7D32', fontWeight: '700' },
+  docsInfoBox: { backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E5E7EB', marginTop: 8 },
+  docsInfoTitle: { fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 10 },
+  docsInfoItem: { fontSize: 13, color: '#6B7280', marginBottom: 6, lineHeight: 19 },
+  nextBtn: { backgroundColor: '#2E7D32', borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
   nextBtnDisabled: { backgroundColor: '#D1D5DB' },
   nextBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
