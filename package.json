@@ -10,7 +10,8 @@
     "test": "turbo run test",
     "mobile": "turbo run dev --filter=mobile",
     "api": "turbo run dev --filter=api",
-    "web:build": "cd apps/mobile && npx expo export --platform web"
+    "web:build": "cd apps/mobile && npx expo export --platform web",
+    "hostinger-build": "yarn workspace @fixai/mobile expo export --platform web"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
