@@ -4,7 +4,8 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "build": "npm --workspace=@fixai/mobile run build",
+    "build": "npm --workspace=@fixai/api run build",
+    "start": "npm --workspace=@fixai/api run start",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
