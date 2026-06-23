@@ -3,12 +3,13 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { UserEntity } from '../users/entities/user.entity';
 import { ArtisanEntity } from '../artisans/entities/artisan.entity';
 import { OrderEntity, OrderStatus, EscrowStatus } from '../orders/entities/order.entity';
 import { DocumentEntity, DocumentStatus } from '../documents/entities/document.entity';
 import { CommissionConfigEntity } from './entities/commission-config.entity';
+import { ProductEntity } from '../catalog/entities/product.entity';
 import { VerificationStatus } from '../../common/enums/verification-status.enum';
 import { VerifyStepDto, VerifyAction } from './dto/verify-step.dto';
 
@@ -36,6 +37,8 @@ export class AdminService {
     private readonly docsRepo: Repository<DocumentEntity>,
     @InjectRepository(CommissionConfigEntity)
     private readonly commissionRepo: Repository<CommissionConfigEntity>,
+    @InjectRepository(ProductEntity)
+    private readonly productsRepo: Repository<ProductEntity>,
   ) {}
 
   async getPendingVerifications(): Promise<{ users: UserEntity[]; documents: DocumentEntity[] }> {
@@ -120,6 +123,83 @@ export class AdminService {
 
   // ── Escrow / orders overview ───────────────────────────────────────
 
+  // ── Actors CRUD ──────────────────────────────────────────────────────
+
+  async getActors(role?: string, status?: string, q?: string): Promise<UserEntity[]> {
+    const qb = this.usersRepo.createQueryBuilder('u')
+      .where('u.role != :admin', { admin: 'ADMIN' });
+    if (role) qb.andWhere('u.role = :role', { role });
+    if (status) qb.andWhere('u.verificationStatus = :status', { status });
+    if (q) qb.andWhere('(u.firstName ILIKE :q OR u.lastName ILIKE :q OR u.email ILIKE :q)', { q: `%${q}%` });
+    qb.orderBy('u.createdAt', 'DESC');
+    const users = await qb.getMany();
+    return users.map(({ passwordHash, refreshToken, ...safe }: any) => safe);
+  }
+
+  async getActorById(id: string): Promise<any> {
+    const user = await this.usersRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    const { passwordHash, refreshToken, ...safe } = user as any;
+    const docs = await this.docsRepo.find({ where: { userId: id } });
+    return { ...safe, documents: docs };
+  }
+
+  async updateActor(id: string, updates: Partial<UserEntity>): Promise<any> {
+    const forbidden = ['passwordHash', 'refreshToken', 'id', 'email'];
+    forbidden.forEach(k => delete (updates as any)[k]);
+    await this.usersRepo.update(id, updates);
+    return this.getActorById(id);
+  }
+
+  async deleteActor(id: string): Promise<{ message: string }> {
+    const user = await this.usersRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    await this.usersRepo.delete(id);
+    this.logger.warn(`Admin deleted user ${id} (${user.email})`);
+    return { message: `User ${user.email} deleted` };
+  }
+
+  async suspendActor(id: string, reason?: string): Promise<any> {
+    await this.usersRepo.update(id, { verificationStatus: VerificationStatus.SUSPENDED });
+    this.logger.warn(`Admin suspended user ${id}: ${reason ?? 'no reason'}`);
+    return this.getActorById(id);
+  }
+
+  async activateActor(id: string): Promise<any> {
+    await this.usersRepo.update(id, { verificationStatus: VerificationStatus.ACTIVE });
+    return this.getActorById(id);
+  }
+
+  // ── Products CRUD ─────────────────────────────────────────────────────
+
+  async getProducts(merchantId?: string, merchantType?: string, q?: string): Promise<ProductEntity[]> {
+    const qb = this.productsRepo.createQueryBuilder('p');
+    if (merchantId) qb.andWhere('p.merchantId = :merchantId', { merchantId });
+    if (merchantType) qb.andWhere('p.merchantType = :merchantType', { merchantType });
+    if (q) qb.andWhere('p.name ILIKE :q', { q: `%${q}%` });
+    return qb.orderBy('p.createdAt', 'DESC').getMany();
+  }
+
+  async createProduct(data: Partial<ProductEntity>): Promise<ProductEntity> {
+    const product = this.productsRepo.create(data);
+    return this.productsRepo.save(product);
+  }
+
+  async updateProduct(id: string, data: Partial<ProductEntity>): Promise<ProductEntity> {
+    const product = await this.productsRepo.findOne({ where: { id } });
+    if (!product) throw new NotFoundException('Product not found');
+    Object.assign(product, data);
+    return this.productsRepo.save(product);
+  }
+
+  async deleteProduct(id: string): Promise<{ message: string }> {
+    const product = await this.productsRepo.findOne({ where: { id } });
+    if (!product) throw new NotFoundException('Product not found');
+    await this.productsRepo.delete(id);
+    return { message: `Product "${product.name}" deleted` };
+  }
+
+  // ── Seed admin ────────────────────────────────────────────────────────
   async seedAdmin(email: string, password: string, firstName: string, lastName: string) {
     const existing = await this.usersRepo.findOne({ where: { email } });
     if (existing) throw new ConflictException('Email already registered');

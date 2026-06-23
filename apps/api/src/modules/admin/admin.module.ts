@@ -7,10 +7,11 @@ import { ArtisanEntity } from '../artisans/entities/artisan.entity';
 import { OrderEntity } from '../orders/entities/order.entity';
 import { DocumentEntity } from '../documents/entities/document.entity';
 import { CommissionConfigEntity } from './entities/commission-config.entity';
+import { ProductEntity } from '../catalog/entities/product.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, ArtisanEntity, OrderEntity, DocumentEntity, CommissionConfigEntity]),
+    TypeOrmModule.forFeature([UserEntity, ArtisanEntity, OrderEntity, DocumentEntity, CommissionConfigEntity, ProductEntity]),
   ],
   providers: [AdminService],
   controllers: [AdminController],

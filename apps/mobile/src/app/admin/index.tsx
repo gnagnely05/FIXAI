@@ -15,8 +15,10 @@ interface Stats {
 
 const MENU = [
   { id: 'verifications', label: 'Vérifications KYC', icon: '✅', color: '#2E7D32', desc: 'Approuver / rejeter les inscriptions' },
+  { id: 'actors', label: 'Acteurs', icon: '👥', color: '#1565C0', desc: 'Artisans, agences, boutiques, BTP' },
+  { id: 'products', label: 'Produits', icon: '📦', color: '#7B1FA2', desc: 'Catalogue boutiques & quincailleries' },
   { id: 'commission', label: 'Commissions', icon: '💰', color: '#E65100', desc: 'Configurer les taux fixAI / agence' },
-  { id: 'escrow', label: 'Escrow & Paiements', icon: '🏦', color: '#1565C0', desc: 'Vue globale des fonds en escrow' },
+  { id: 'escrow', label: 'Escrow & Paiements', icon: '🏦', color: '#0277BD', desc: 'Vue globale des fonds en escrow' },
   { id: 'disputes', label: 'Litiges', icon: '⚠️', color: '#B71C1C', desc: 'Gérer les commandes disputées' },
 ];
 

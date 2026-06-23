@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Post, Patch, Param, Body, UseGuards, UnauthorizedException,
+  Controller, Get, Post, Patch, Put, Delete, Param, Body, Query, UseGuards, UnauthorizedException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -67,6 +67,61 @@ export class AdminController {
 
   // ── Escrow ─────────────────────────────────────────────────────────
 
+  // ── Actors CRUD ────────────────────────────────────────────────────
+
+  @Get('actors')
+  getActors(@Query('role') role?: string, @Query('status') status?: string, @Query('q') q?: string) {
+    return this.service.getActors(role, status, q);
+  }
+
+  @Get('actors/:id')
+  getActor(@Param('id') id: string) {
+    return this.service.getActorById(id);
+  }
+
+  @Patch('actors/:id')
+  updateActor(@Param('id') id: string, @Body() body: Record<string, any>) {
+    return this.service.updateActor(id, body);
+  }
+
+  @Delete('actors/:id')
+  deleteActor(@Param('id') id: string) {
+    return this.service.deleteActor(id);
+  }
+
+  @Patch('actors/:id/suspend')
+  suspendActor(@Param('id') id: string, @Body('reason') reason?: string) {
+    return this.service.suspendActor(id, reason);
+  }
+
+  @Patch('actors/:id/activate')
+  activateActor(@Param('id') id: string) {
+    return this.service.activateActor(id);
+  }
+
+  // ── Products CRUD ───────────────────────────────────────────────────
+
+  @Get('products')
+  getProducts(@Query('merchantId') merchantId?: string, @Query('merchantType') merchantType?: string, @Query('q') q?: string) {
+    return this.service.getProducts(merchantId, merchantType, q);
+  }
+
+  @Post('products')
+  createProduct(@Body() body: Record<string, any>) {
+    return this.service.createProduct(body);
+  }
+
+  @Put('products/:id')
+  updateProduct(@Param('id') id: string, @Body() body: Record<string, any>) {
+    return this.service.updateProduct(id, body);
+  }
+
+  @Delete('products/:id')
+  deleteProduct(@Param('id') id: string) {
+    return this.service.deleteProduct(id);
+  }
+
+  // ── Escrow ─────────────────────────────────────────────────────────
   @Get('escrow-overview')
   getEscrowOverview() {
     return this.service.getEscrowOverview();

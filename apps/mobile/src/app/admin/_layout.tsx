@@ -33,6 +33,9 @@ export default function AdminLayout() {
       <Stack.Screen name="commission" options={{ title: 'Commissions' }} />
       <Stack.Screen name="escrow" options={{ title: 'Escrow & Paiements' }} />
       <Stack.Screen name="disputes" options={{ title: 'Litiges' }} />
+      <Stack.Screen name="actors" options={{ title: 'Acteurs' }} />
+      <Stack.Screen name="actor-edit" options={{ title: 'Modifier un acteur' }} />
+      <Stack.Screen name="products" options={{ title: 'Produits' }} />
     </Stack>
   );
 }
