@@ -30,7 +30,9 @@ let ReplicateService = ReplicateService_1 = class ReplicateService {
         this.TEXT_MODEL = 'meta/llama-3.3-70b-instruct';
         const token = process.env.REPLICATE_API_TOKEN;
         if (!token) {
-            throw new Error('REPLICATE_API_TOKEN not configured');
+            this.logger.warn('REPLICATE_API_TOKEN not configured — AI features will be unavailable');
+            this.client = null;
+            return;
         }
         this.client = new replicate_1.default({ auth: token });
     }

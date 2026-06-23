@@ -19,7 +19,9 @@ export class ReplicateService {
   constructor() {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) {
-      throw new Error('REPLICATE_API_TOKEN not configured');
+      this.logger.warn('REPLICATE_API_TOKEN not configured — AI features will be unavailable');
+      this.client = null as any;
+      return;
     }
     this.client = new Replicate({ auth: token });
   }
