@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import * as express from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -23,15 +24,15 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // SPA fallback: toutes les routes non-API renvoient index.html
-  const distPath = join(__dirname, '..', '..', '..', 'apps', 'mobile', 'dist');
-  app.useStaticAssets(distPath);
+  // Serve Expo web build — process.cwd() = project root on Hostinger
+  const webDist = join(process.cwd(), 'apps', 'mobile', 'dist');
+  app.use(express.static(webDist));
+  // SPA fallback: routes non-API → index.html
   const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.get('*', (req: any, res: any) => {
-    if (!req.path.startsWith('/api/')) {
-      res.sendFile(join(distPath, 'index.html'));
-    }
+  expressApp.get(/^(?!\/api\/).*/, (_req: any, res: any) => {
+    res.sendFile(join(webDist, 'index.html'));
   });
+  console.log(`[Static] Serving web from: ${webDist}`);
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);

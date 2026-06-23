@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ArtisansModule } from './modules/artisans/artisans.module';
@@ -31,11 +29,6 @@ import { CommissionConfigEntity } from './modules/admin/entities/commission-conf
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-    }),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', '..', 'apps', 'mobile', 'dist'),
-      exclude: ['/api/v1/(.*)'],
-      serveStaticOptions: { index: false },
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
