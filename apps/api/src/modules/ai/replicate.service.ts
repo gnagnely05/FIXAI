@@ -1,116 +1,165 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import Replicate from 'replicate';
 
 /**
- * Unified Replicate API client.
- * All AI calls (image generation + vision analysis) go through this single service.
+ * Unified Replicate API client using official SDK.
+ * Handles all AI operations: image generation, vision, and text.
  */
 @Injectable()
 export class ReplicateService {
   private readonly logger = new Logger(ReplicateService.name);
-  private readonly token = process.env.REPLICATE_API_TOKEN!;
-  private readonly baseUrl = 'https://api.replicate.com/v1';
+  private readonly client: Replicate;
 
   // ─── Models ───────────────────────────────────────────────────────────────
-  readonly FLUX_MODEL        = 'black-forest-labs/flux-pro';
+  readonly FLUX_PRO          = 'black-forest-labs/flux-pro';
+  readonly FLUX_FILL         = 'black-forest-labs/flux-fill';
   readonly VISION_MODEL      = 'meta/llama-3.2-90b-vision-instruct';
   readonly TEXT_MODEL        = 'meta/llama-3.3-70b-instruct';
 
-  // ─── Core API ─────────────────────────────────────────────────────────────
-
-  async createPrediction(model: string, input: Record<string, unknown>): Promise<string> {
-    const url = model.includes('/')
-      ? `${this.baseUrl}/models/${model}/predictions`
-      : `${this.baseUrl}/predictions`;
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-        Prefer: 'wait',
-      },
-      body: JSON.stringify({ input }),
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      this.logger.error(`Replicate error (${model}): ${err}`);
-      throw new ServiceUnavailableException('Service IA temporairement indisponible');
+  constructor() {
+    const token = process.env.REPLICATE_API_TOKEN;
+    if (!token) {
+      throw new Error('REPLICATE_API_TOKEN not configured');
     }
-
-    const prediction = await res.json();
-    if (prediction.status === 'succeeded') return prediction.id as string;
-    return prediction.id as string;
+    this.client = new Replicate({ auth: token });
   }
 
-  async pollPrediction(predictionId: string, maxWaitMs = 90_000): Promise<unknown> {
-    const start = Date.now();
-    while (Date.now() - start < maxWaitMs) {
-      await new Promise(r => setTimeout(r, 3_000));
+  // ─── Image generation (FLUX Pro) ──────────────────────────────────────────
 
-      const res = await fetch(`${this.baseUrl}/predictions/${predictionId}`, {
-        headers: { Authorization: `Bearer ${this.token}` },
-      });
-      if (!res.ok) throw new ServiceUnavailableException('Erreur vérification statut Replicate');
+  /**
+   * Generate a new image from a text prompt.
+   * Optionally starts from a base image (image-to-image).
+   */
+  async generateImage(
+    prompt: string,
+    options?: {
+      baseImageUrl?: string;
+      width?: number;
+      height?: number;
+      promptStrength?: number;
+    },
+  ): Promise<string> {
+    try {
+      const width = options?.width ?? 1024;
+      const height = options?.height ?? 1024;
+      const promptStrength = options?.promptStrength ?? 0.75;
 
-      const p = await res.json();
-      if (p.status === 'succeeded') return p.output;
-      if (p.status === 'failed' || p.status === 'canceled') {
-        throw new ServiceUnavailableException(`Replicate: génération échouée — ${p.error ?? 'raison inconnue'}`);
+      const input: Record<string, unknown> = {
+        prompt,
+        width,
+        height,
+        output_format: 'webp',
+        output_quality: 90,
+        safety_tolerance: 2,
+      };
+
+      // Use image-to-image if base image provided
+      if (options?.baseImageUrl) {
+        input.image = options.baseImageUrl;
+        input.prompt_strength = promptStrength;
       }
+
+      this.logger.log(`[Image Gen] Prompt: "${prompt.slice(0, 50)}..." | Model: ${this.FLUX_PRO}`);
+
+      const output = await this.client.run(this.FLUX_PRO, { input });
+
+      // Extract URL from output
+      const url = Array.isArray(output) ? output[0] : output;
+      if (!url || typeof url !== 'string') {
+        throw new Error('Invalid output from Replicate');
+      }
+
+      this.logger.log(`[Image Gen] Success: ${url}`);
+      return url;
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? String(e);
+      this.logger.error(`Replicate error: ${msg}`);
+      throw new ServiceUnavailableException('Image generation failed. Please try again.');
     }
-    throw new ServiceUnavailableException('Délai dépassé (90s) pour la requête IA');
   }
 
-  // ─── Image generation (FLUX) ──────────────────────────────────────────────
+  /**
+   * Inpaint or modify specific regions of an image.
+   * Requires mask indicating areas to modify.
+   */
+  async inpaintImage(
+    prompt: string,
+    imageUrl: string,
+    maskUrl: string,
+  ): Promise<string> {
+    try {
+      const input: Record<string, unknown> = {
+        prompt,
+        image: imageUrl,
+        mask: maskUrl,
+        width: 1024,
+        height: 1024,
+        output_format: 'webp',
+        output_quality: 90,
+      };
 
-  async generateImage(prompt: string, baseImageUrl?: string): Promise<string> {
-    const input: Record<string, unknown> = {
-      prompt,
-      width: 1024,
-      height: 1024,
-      output_format: 'webp',
-      output_quality: 90,
-      safety_tolerance: 2,
-    };
-    if (baseImageUrl) {
-      input.image = baseImageUrl;
-      input.prompt_strength = 0.75;
+      this.logger.log(`[Inpaint] Prompt: "${prompt.slice(0, 50)}..."`);
+
+      const output = await this.client.run(this.FLUX_FILL, { input });
+      const url = Array.isArray(output) ? output[0] : output;
+      if (!url || typeof url !== 'string') {
+        throw new Error('Invalid output from Replicate');
+      }
+
+      return url;
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? String(e);
+      this.logger.error(`Replicate inpaint error: ${msg}`);
+      throw new ServiceUnavailableException('Inpainting failed. Please try again.');
     }
-
-    const id = await this.createPrediction(this.FLUX_MODEL, input);
-    const output = await this.pollPrediction(id);
-    const url = Array.isArray(output) ? output[0] : output;
-    if (!url) throw new ServiceUnavailableException('Aucune image générée');
-    return url as string;
   }
 
   // ─── Vision analysis (Llama Vision) ───────────────────────────────────────
 
+  /**
+   * Analyze an image with vision capabilities + text context.
+   */
   async analyzeWithVision(prompt: string, imageUrl?: string): Promise<string> {
-    const input: Record<string, unknown> = { prompt };
-    if (imageUrl) input.image = imageUrl;
+    try {
+      const input: Record<string, unknown> = { prompt };
+      if (imageUrl) input.image = imageUrl;
 
-    const id = await this.createPrediction(this.VISION_MODEL, input);
-    const output = await this.pollPrediction(id);
-    return Array.isArray(output) ? (output as string[]).join('') : String(output ?? '');
+      this.logger.log(`[Vision] Analyzing image with prompt: "${prompt.slice(0, 50)}..."`);
+
+      const output = await this.client.run(this.VISION_MODEL, { input });
+      return Array.isArray(output) ? (output as string[]).join('') : String(output ?? '');
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? String(e);
+      this.logger.error(`Replicate vision error: ${msg}`);
+      throw new ServiceUnavailableException('Image analysis failed. Please try again.');
+    }
   }
 
   // ─── Text completion (Llama) ──────────────────────────────────────────────
 
+  /**
+   * Generate text completions using Llama 3.3.
+   */
   async complete(prompt: string, systemPrompt?: string): Promise<string> {
-    const fullPrompt = systemPrompt
-      ? `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n${prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>`
-      : prompt;
+    try {
+      const fullPrompt = systemPrompt
+        ? `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n${prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>`
+        : prompt;
 
-    const input: Record<string, unknown> = {
-      prompt: fullPrompt,
-      max_tokens: 2048,
-      temperature: 0.1,
-    };
+      const input: Record<string, unknown> = {
+        prompt: fullPrompt,
+        max_tokens: 2048,
+        temperature: 0.1,
+      };
 
-    const id = await this.createPrediction(this.TEXT_MODEL, input);
-    const output = await this.pollPrediction(id);
-    return Array.isArray(output) ? (output as string[]).join('') : String(output ?? '');
+      this.logger.log(`[Text] Completing prompt: "${prompt.slice(0, 50)}..."`);
+
+      const output = await this.client.run(this.TEXT_MODEL, { input });
+      return Array.isArray(output) ? (output as string[]).join('') : String(output ?? '');
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? String(e);
+      this.logger.error(`Replicate text error: ${msg}`);
+      throw new ServiceUnavailableException('Text generation failed. Please try again.');
+    }
   }
 }

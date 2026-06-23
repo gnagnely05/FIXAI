@@ -156,4 +156,19 @@ export class AiService {
 
     return parts.join(' ');
   }
+
+  async generateImage(userId: string, prompt: string, baseImageUrl?: string): Promise<string> {
+    await this.subscriptions.assertAiAllowed(userId);
+    const imageUrl = await this.replicate.generateImage(prompt, { baseImageUrl });
+    await this.subscriptions.consumeAiRequest(userId);
+    return imageUrl;
+  }
+
+  async analyzeImage(userId: string, prompt: string, imageUrl?: string): Promise<string> {
+    await this.subscriptions.assertAiAllowed(userId);
+    const analysis = await this.replicate.analyzeWithVision(prompt, imageUrl);
+    await this.subscriptions.consumeAiRequest(userId);
+    return analysis;
+  }
+
 }
