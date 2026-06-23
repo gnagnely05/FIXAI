@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = require("@nestjs/core");
 const common_1 = require("@nestjs/common");
+const path_1 = require("path");
 const app_module_1 = require("./app.module");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
@@ -15,6 +16,15 @@ async function bootstrap() {
         origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'],
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         credentials: true,
+    });
+    // SPA fallback: toutes les routes non-API renvoient index.html
+    const distPath = (0, path_1.join)(__dirname, '..', '..', '..', 'apps', 'mobile', 'dist');
+    app.useStaticAssets(distPath);
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.get('*', (req, res) => {
+        if (!req.path.startsWith('/api/')) {
+            res.sendFile((0, path_1.join)(distPath, 'index.html'));
+        }
     });
     const port = process.env.PORT ?? 3001;
     await app.listen(port);

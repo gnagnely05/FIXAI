@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.setGlobalPrefix('api/v1');
 
@@ -19,6 +21,16 @@ async function bootstrap() {
     origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
+  });
+
+  // SPA fallback: toutes les routes non-API renvoient index.html
+  const distPath = join(__dirname, '..', '..', '..', 'apps', 'mobile', 'dist');
+  app.useStaticAssets(distPath);
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.get('*', (req: any, res: any) => {
+    if (!req.path.startsWith('/api/')) {
+      res.sendFile(join(distPath, 'index.html'));
+    }
   });
 
   const port = process.env.PORT ?? 3001;
