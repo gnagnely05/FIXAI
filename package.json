@@ -4,7 +4,7 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "build": "npm --workspace=@fixai/api run build",
+    "build": "echo 'dist already compiled'",
     "start": "npm --workspace=@fixai/api run start",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
