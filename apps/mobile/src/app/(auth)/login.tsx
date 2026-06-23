@@ -20,7 +20,14 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(email, password);
-      router.replace('/(tabs)');
+      // Redirect admin to admin dashboard
+      const stored = await import('expo-secure-store').then(m => m.getItemAsync('fixai_user'));
+      const user = stored ? JSON.parse(stored) : null;
+      if (user?.role === 'ADMIN') {
+        router.replace('/admin' as any);
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch {
       Alert.alert('Erreur', 'Email ou mot de passe incorrect');
     } finally {
