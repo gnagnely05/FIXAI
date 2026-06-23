@@ -96,7 +96,7 @@ export class DepannageRequestEntity {
   @Column({ type: 'enum', enum: DepannageStatus, default: DepannageStatus.DIAGNOSIS_PENDING })
   status: DepannageStatus;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   scheduledAt: Date;
 
   @Column({ nullable: true })
@@ -111,10 +111,10 @@ export class DepannageRequestEntity {
   @Column({ type: 'decimal', precision: 9, scale: 6, nullable: true })
   longitude: number;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   diagnosisReport: DiagnosisReport;
 
-  @Column({ type: 'jsonb', default: [] })
+  @Column({ type: 'json', default: [] })
   proposals: ArtisanProposal[];
 
   @Column({ type: 'bigint', default: 0 })

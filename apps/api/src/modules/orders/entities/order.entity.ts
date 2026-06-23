@@ -46,10 +46,10 @@ export class OrderEntity {
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 
-  @Column({ type: 'timestamptz' })
+  @Column({ type: 'timestamp' })
   scheduledAt: Date;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   completedAt?: Date;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })

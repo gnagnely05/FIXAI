@@ -56,10 +56,10 @@ export class PaymentEntity {
   @Column()
   phoneNumber: string;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   releasedAt: Date;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   refundedAt: Date;
 
   @Column({ nullable: true })
@@ -68,7 +68,7 @@ export class PaymentEntity {
   @Column({ type: 'text', nullable: true })
   refundReason: string;
 
-  @Column({ type: 'jsonb', default: [] })
+  @Column({ type: 'json', default: [] })
   auditLog: AuditLogEntry[];
 
   @CreateDateColumn()

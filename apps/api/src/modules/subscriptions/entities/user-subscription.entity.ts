@@ -33,10 +33,10 @@ export class UserSubscriptionEntity {
   @Column({ type: 'enum', enum: SubscriptionState, default: SubscriptionState.ACTIVE })
   state: SubscriptionState;
 
-  @Column({ type: 'timestamptz' })
+  @Column({ type: 'timestamp' })
   startsAt: Date;
 
-  @Column({ type: 'timestamptz' })
+  @Column({ type: 'timestamp' })
   expiresAt: Date;
 
   /** Requêtes IA consommées sur la période courante */
@@ -44,7 +44,7 @@ export class UserSubscriptionEntity {
   aiRequestsUsed: number;
 
   /** Réinitialise à chaque renouvellement */
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   lastResetAt: Date;
 
   /** Référence paiement CinetPay */

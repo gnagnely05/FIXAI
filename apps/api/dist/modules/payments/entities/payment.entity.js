@@ -74,11 +74,11 @@ __decorate([
     __metadata("design:type", String)
 ], PaymentEntity.prototype, "phoneNumber", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], PaymentEntity.prototype, "releasedAt", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], PaymentEntity.prototype, "refundedAt", void 0);
 __decorate([
@@ -90,7 +90,7 @@ __decorate([
     __metadata("design:type", String)
 ], PaymentEntity.prototype, "refundReason", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb', default: [] }),
+    (0, typeorm_1.Column)({ type: 'json', default: [] }),
     __metadata("design:type", Array)
 ], PaymentEntity.prototype, "auditLog", void 0);
 __decorate([

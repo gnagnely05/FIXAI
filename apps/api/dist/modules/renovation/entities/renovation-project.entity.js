@@ -105,11 +105,11 @@ __decorate([
     __metadata("design:type", String)
 ], RenovationProjectEntity.prototype, "status", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    (0, typeorm_1.Column)({ type: 'json', nullable: true }),
     __metadata("design:type", Object)
 ], RenovationProjectEntity.prototype, "diagnosisReport", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb', default: [] }),
+    (0, typeorm_1.Column)({ type: 'json', default: [] }),
     __metadata("design:type", Array)
 ], RenovationProjectEntity.prototype, "proposals", void 0);
 __decorate([
@@ -121,7 +121,7 @@ __decorate([
     __metadata("design:type", Number)
 ], RenovationProjectEntity.prototype, "agreedPriceXof", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb', default: [] }),
+    (0, typeorm_1.Column)({ type: 'json', default: [] }),
     __metadata("design:type", Array)
 ], RenovationProjectEntity.prototype, "milestones", void 0);
 __decorate([

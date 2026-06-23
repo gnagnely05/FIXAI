@@ -117,10 +117,10 @@ export class RenovationProjectEntity {
   @Column({ type: 'enum', enum: RenovationStatus, default: RenovationStatus.DIAGNOSIS_PENDING })
   status: RenovationStatus;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'json', nullable: true })
   diagnosisReport: DiagnosisReport;
 
-  @Column({ type: 'jsonb', default: [] })
+  @Column({ type: 'json', default: [] })
   proposals: CompanyProposal[];
 
   /** Budget indicatif client (XOF entier) */
@@ -132,7 +132,7 @@ export class RenovationProjectEntity {
   agreedPriceXof: number;
 
   /** Jalons de paiement */
-  @Column({ type: 'jsonb', default: [] })
+  @Column({ type: 'json', default: [] })
   milestones: Milestone[];
 
   /** Escrow total actuellement retenu */

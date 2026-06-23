@@ -92,7 +92,7 @@ __decorate([
     __metadata("design:type", String)
 ], DepannageRequestEntity.prototype, "status", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], DepannageRequestEntity.prototype, "scheduledAt", void 0);
 __decorate([
@@ -112,11 +112,11 @@ __decorate([
     __metadata("design:type", Number)
 ], DepannageRequestEntity.prototype, "longitude", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    (0, typeorm_1.Column)({ type: 'json', nullable: true }),
     __metadata("design:type", Object)
 ], DepannageRequestEntity.prototype, "diagnosisReport", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb', default: [] }),
+    (0, typeorm_1.Column)({ type: 'json', default: [] }),
     __metadata("design:type", Array)
 ], DepannageRequestEntity.prototype, "proposals", void 0);
 __decorate([

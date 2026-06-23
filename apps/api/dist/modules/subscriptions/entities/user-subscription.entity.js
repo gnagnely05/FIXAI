@@ -48,11 +48,11 @@ __decorate([
     __metadata("design:type", String)
 ], UserSubscriptionEntity.prototype, "state", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamptz' }),
+    (0, typeorm_1.Column)({ type: 'timestamp' }),
     __metadata("design:type", Date)
 ], UserSubscriptionEntity.prototype, "startsAt", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamptz' }),
+    (0, typeorm_1.Column)({ type: 'timestamp' }),
     __metadata("design:type", Date)
 ], UserSubscriptionEntity.prototype, "expiresAt", void 0);
 __decorate([
@@ -60,7 +60,7 @@ __decorate([
     __metadata("design:type", Number)
 ], UserSubscriptionEntity.prototype, "aiRequestsUsed", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], UserSubscriptionEntity.prototype, "lastResetAt", void 0);
 __decorate([
