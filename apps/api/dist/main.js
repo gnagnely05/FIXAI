@@ -19,6 +19,7 @@ async function bootstrap() {
     const port = process.env.PORT ?? 3001;
     await app.listen(port);
     console.log(`FixAI API running on port ${port}`);
+    console.log(`[DB] host=${process.env.DB_HOST} port=${process.env.DB_PORT} user=${process.env.DB_USER} db=${process.env.DB_NAME} NODE_ENV=${process.env.NODE_ENV}`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map
