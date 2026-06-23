@@ -1,6 +1,7 @@
 import {
-  Injectable, NotFoundException, BadRequestException, Logger,
+  Injectable, NotFoundException, BadRequestException, ConflictException, Logger,
 } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../users/entities/user.entity';
@@ -118,6 +119,25 @@ export class AdminService {
   }
 
   // ── Escrow / orders overview ───────────────────────────────────────
+
+  async seedAdmin(email: string, password: string, firstName: string, lastName: string) {
+    const existing = await this.usersRepo.findOne({ where: { email } });
+    if (existing) throw new ConflictException('Email already registered');
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const admin = this.usersRepo.create({
+      email,
+      passwordHash,
+      firstName,
+      lastName,
+      role: UserRole.ADMIN as any,
+      verificationStatus: VerificationStatus.ACTIVE,
+    });
+    await this.usersRepo.save(admin);
+    this.logger.log(`Admin account created: ${email}`);
+    const { passwordHash: _, refreshToken: __, ...safe } = admin as any;
+    return { message: 'Admin account created successfully', user: safe };
+  }
 
   async getEscrowOverview(): Promise<{
     totalFunded: number;

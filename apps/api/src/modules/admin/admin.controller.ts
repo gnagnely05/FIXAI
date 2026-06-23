@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Post, Patch, Param, Body, UseGuards,
+  Controller, Get, Post, Patch, Param, Body, UseGuards, UnauthorizedException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -43,6 +43,18 @@ export class AdminController {
 
   // ── Commission ─────────────────────────────────────────────────────
 
+  // ── Seed admin (one-shot, protected by ADMIN_SETUP_SECRET env var) ────
+  // No JWT guard — callable before any admin exists
+  @Post('seed-admin')
+  async seedAdmin(@Body() body: { setupSecret: string; email: string; password: string; firstName: string; lastName: string }) {
+    const secret = process.env.ADMIN_SETUP_SECRET;
+    if (!secret || body.setupSecret !== secret) {
+      throw new UnauthorizedException('Invalid setup secret');
+    }
+    return this.service.seedAdmin(body.email, body.password, body.firstName, body.lastName);
+  }
+
+  // ── Commission ─────────────────────────────────────────────────────
   @Get('commission')
   getCommission() {
     return this.service.getActiveCommission();
