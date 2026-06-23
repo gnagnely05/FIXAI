@@ -1,133 +1,174 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
+  View, Text, TextInput, TouchableOpacity,
+  StyleSheet, SafeAreaView, ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import TunnelHeader, { getTunnelTitle } from '../../components/TunnelHeader';
 
-export default function Step2Diagnosis() {
-  const params = useLocalSearchParams<{
-    serviceType: string;
-    diagnosisResult: string;
-    images: string;
-    messages: string;
-  }>();
+export default function Step2Location() {
+  const params = useLocalSearchParams<Record<string, string>>();
   const router = useRouter();
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [address, setAddress] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
 
-  const diagnosisResult = params.diagnosisResult
-    ? JSON.parse(decodeURIComponent(params.diagnosisResult))
-    : null;
+  const canNext = address.trim().length >= 5 || confirmed;
+
+  const handleConfirm = () => {
+    if (!address.trim()) setAddress('Position GPS actuelle');
+    setConfirmed(true);
+  };
 
   const handleNext = () => {
+    const locationParam = encodeURIComponent(
+      JSON.stringify({ address: address.trim() || 'Position GPS actuelle' })
+    );
     router.push(
-      `/tunnel/step3-location?serviceType=${params.serviceType}&diagnosisResult=${params.diagnosisResult}&images=${params.images}&messages=${params.messages}&selectedAnswer=${encodeURIComponent(selectedAnswer || '')}`
+      `/tunnel/step3-location?serviceType=${params.serviceType}` +
+      `&diagnosisResult=${params.diagnosisResult}` +
+      `&images=${params.images}` +
+      `&messages=${params.messages}` +
+      `&location=${locationParam}`
     );
   };
 
-  if (!diagnosisResult) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Aucun diagnostic disponible.</Text>
-      </View>
-    );
-  }
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.diagnosisCard}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.robotIcon}>🤖</Text>
-          <Text style={styles.cardTitle}>Diagnostic IA</Text>
-        </View>
+    <SafeAreaView style={styles.safe}>
+      <TunnelHeader title={getTunnelTitle(params.serviceType)} />
 
-        <Text style={styles.summaryText}>{diagnosisResult.summary}</Text>
-        <Text style={styles.issueText}>{diagnosisResult.detectedIssue}</Text>
-
-        <View style={styles.questionBox}>
-          <Text style={styles.questionLabel}>Question de précision :</Text>
-          <Text style={styles.questionText}>{diagnosisResult.question}</Text>
-        </View>
-
-        {diagnosisResult.estimatedPriceMinXof && (
-          <View style={styles.priceRange}>
-            <Text style={styles.priceLabel}>Estimation :</Text>
-            <Text style={styles.priceValue}>
-              {diagnosisResult.estimatedPriceMinXof.toLocaleString()} – {diagnosisResult.estimatedPriceMaxXof.toLocaleString()} FCFA
-            </Text>
-          </View>
-        )}
+      {/* Address search bar */}
+      <View style={styles.searchBar}>
+        <Text style={styles.pinIcon}>📍</Text>
+        <TextInput
+          style={styles.searchInput}
+          value={address}
+          onChangeText={v => { setAddress(v); setConfirmed(false); }}
+          placeholder="Rechercher une adresse..."
+          placeholderTextColor="#9CA3AF"
+          returnKeyType="search"
+        />
+        <TouchableOpacity onPress={handleConfirm}>
+          <Text style={styles.searchIcon}>🔍</Text>
+        </TouchableOpacity>
       </View>
 
-      <Text style={styles.optionsTitle}>Choisissez une réponse :</Text>
-      {(diagnosisResult.options || []).map((option: string, index: number) => (
+      {/* Map placeholder */}
+      <View style={styles.mapContainer}>
+        <View style={styles.mapPlaceholder}>
+          {/* Grid lines to simulate map */}
+          {[0,1,2,3,4].map(i => (
+            <View key={`h${i}`} style={[styles.gridLineH, { top: `${i * 25}%` as any }]} />
+          ))}
+          {[0,1,2,3,4].map(i => (
+            <View key={`v${i}`} style={[styles.gridLineV, { left: `${i * 25}%` as any }]} />
+          ))}
+          {/* Center pin */}
+          <View style={styles.centerPin}>
+            <Text style={styles.centerPinText}>📍</Text>
+          </View>
+          {/* GPS button */}
+          <TouchableOpacity style={styles.gpsBtn} onPress={handleConfirm}>
+            <Text style={styles.gpsBtnText}>◎</Text>
+          </TouchableOpacity>
+          {/* Google label */}
+          <Text style={styles.googleLabel}>Google</Text>
+        </View>
+
+        <Text style={styles.hint}>
+          Vous pouvez confirmer avec l'adresse seule si la carte n'est pas disponible.
+        </Text>
+
         <TouchableOpacity
-          key={index}
-          style={[styles.optionBtn, selectedAnswer === option && styles.optionBtnSelected]}
-          onPress={() => setSelectedAnswer(option)}
+          style={[styles.confirmBtn, !address.trim() && styles.confirmBtnOutline]}
+          onPress={handleConfirm}
         >
-          <View style={[styles.optionRadio, selectedAnswer === option && styles.optionRadioSelected]} />
-          <Text style={[styles.optionText, selectedAnswer === option && styles.optionTextSelected]}>
-            {option}
+          <Text style={[styles.confirmBtnText, !address.trim() && styles.confirmBtnTextOutline]}>
+            {confirmed ? '✓  Localisation confirmée' : '✓  Confirmer la localisation'}
           </Text>
         </TouchableOpacity>
-      ))}
+      </View>
 
-      <TouchableOpacity
-        style={[styles.nextBtn, !selectedAnswer && styles.nextBtnDisabled]}
-        onPress={handleNext}
-        disabled={!selectedAnswer}
-      >
-        <Text style={styles.nextBtnText}>Suivant →</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      {/* Navigation */}
+      <View style={styles.navRow}>
+        <TouchableOpacity style={styles.prevBtn} onPress={() => router.back()}>
+          <Text style={styles.prevBtnText}>← Précédent</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.nextBtn, !canNext && styles.nextBtnDisabled]}
+          onPress={handleNext}
+          disabled={!canNext}
+        >
+          <Text style={styles.nextBtnText}>→ Suivant</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { padding: 16, paddingBottom: 32 },
-  errorText: { textAlign: 'center', marginTop: 40, color: '#6B7280', fontSize: 16 },
-  diagnosisCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16,
-    padding: 20, marginBottom: 24,
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
-  },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  robotIcon: { fontSize: 28, marginRight: 10 },
-  cardTitle: { fontSize: 20, fontWeight: 'bold', color: '#6B3FA0' },
-  summaryText: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 8 },
-  issueText: { fontSize: 15, color: '#374151', marginBottom: 16, lineHeight: 22 },
-  questionBox: {
-    borderWidth: 2, borderColor: '#6B3FA0',
-    borderRadius: 10, padding: 14, backgroundColor: '#F5F0FF',
-  },
-  questionLabel: { fontSize: 12, fontWeight: '600', color: '#6B3FA0', marginBottom: 4, textTransform: 'uppercase' },
-  questionText: { fontSize: 15, color: '#1F2937', lineHeight: 22 },
-  priceRange: { flexDirection: 'row', alignItems: 'center', marginTop: 16 },
-  priceLabel: { fontSize: 14, color: '#6B7280', marginRight: 8 },
-  priceValue: { fontSize: 15, fontWeight: '600', color: '#6B3FA0' },
-  optionsTitle: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 12 },
-  optionBtn: {
+  safe: { flex: 1, backgroundColor: '#fff' },
+  searchBar: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E5E7EB',
-    borderRadius: 12, padding: 14, marginBottom: 10,
+    margin: 12, borderWidth: 1.5, borderColor: '#6B3FA0',
+    borderRadius: 12, paddingHorizontal: 12, backgroundColor: '#fff',
   },
-  optionBtnSelected: { borderColor: '#6B3FA0', backgroundColor: '#F5F0FF' },
-  optionRadio: {
-    width: 20, height: 20, borderRadius: 10,
-    borderWidth: 2, borderColor: '#D1D5DB', marginRight: 12,
+  pinIcon: { fontSize: 18, marginRight: 6 },
+  searchInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: '#111' },
+  searchIcon: { fontSize: 20, padding: 4 },
+  mapContainer: { flex: 1, paddingHorizontal: 12 },
+  mapPlaceholder: {
+    flex: 1, backgroundColor: '#E8E8E8', borderRadius: 12,
+    overflow: 'hidden', position: 'relative',
+    minHeight: 280,
   },
-  optionRadioSelected: { borderColor: '#6B3FA0', backgroundColor: '#6B3FA0' },
-  optionText: { fontSize: 15, color: '#374151', flex: 1 },
-  optionTextSelected: { color: '#6B3FA0', fontWeight: '500' },
+  gridLineH: {
+    position: 'absolute', left: 0, right: 0,
+    height: 1, backgroundColor: '#D0D0D0',
+  },
+  gridLineV: {
+    position: 'absolute', top: 0, bottom: 0,
+    width: 1, backgroundColor: '#D0D0D0',
+  },
+  centerPin: {
+    position: 'absolute', top: '50%', left: '50%',
+    marginLeft: -14, marginTop: -28,
+  },
+  centerPinText: { fontSize: 28 },
+  gpsBtn: {
+    position: 'absolute', top: 12, right: 12,
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: '#6B3FA0',
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, elevation: 4,
+  },
+  gpsBtnText: { color: '#fff', fontSize: 22 },
+  googleLabel: {
+    position: 'absolute', bottom: 8, left: 12,
+    fontSize: 13, color: '#666', fontStyle: 'italic',
+  },
+  hint: { fontSize: 13, color: '#6B7280', marginTop: 10, marginBottom: 10 },
+  confirmBtn: {
+    backgroundColor: '#6B3FA0', borderRadius: 12,
+    paddingVertical: 14, alignItems: 'center', marginBottom: 4,
+  },
+  confirmBtnOutline: {
+    backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#6B3FA0',
+  },
+  confirmBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  confirmBtnTextOutline: { color: '#6B3FA0' },
+  navRow: {
+    flexDirection: 'row', padding: 12, gap: 10,
+    borderTopWidth: 1, borderTopColor: '#F0F0F0',
+  },
+  prevBtn: {
+    flex: 1, borderWidth: 1.5, borderColor: '#6B3FA0',
+    borderRadius: 12, paddingVertical: 14, alignItems: 'center',
+  },
+  prevBtnText: { color: '#6B3FA0', fontSize: 15, fontWeight: '600' },
   nextBtn: {
-    marginTop: 24, backgroundColor: '#6B3FA0',
-    paddingVertical: 14, borderRadius: 12, alignItems: 'center',
+    flex: 1, backgroundColor: '#6B3FA0',
+    borderRadius: 12, paddingVertical: 14, alignItems: 'center',
   },
   nextBtnDisabled: { backgroundColor: '#D1D5DB' },
-  nextBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  nextBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });
