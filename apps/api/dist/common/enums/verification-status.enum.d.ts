@@ -1,0 +1,10 @@
+export declare enum VerificationStatus {
+    REGISTERED = "REGISTERED",
+    DOCS_SUBMITTED = "DOCS_SUBMITTED",
+    PENDING_VERIFICATION = "PENDING_VERIFICATION",
+    IDENTITY_VERIFIED = "IDENTITY_VERIFIED",
+    AFFILIATION_REQUESTED = "AFFILIATION_REQUESTED",
+    ACTIVE = "ACTIVE",
+    REJECTED = "REJECTED"
+}
+//# sourceMappingURL=verification-status.enum.d.ts.map

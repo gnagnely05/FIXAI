@@ -1,0 +1,93 @@
+import { JwtService } from '@nestjs/jwt';
+import { Repository } from 'typeorm';
+import { UserEntity } from '../users/entities/user.entity';
+import { DocumentEntity } from '../documents/entities/document.entity';
+import { VerificationStatus } from '../../common/enums/verification-status.enum';
+import { UserRole } from '../../common/enums/user-role.enum';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { RegisterProviderDto } from './dto/register-provider.dto';
+export declare class AuthService {
+    private readonly usersRepo;
+    private readonly docsRepo;
+    private readonly jwtService;
+    constructor(usersRepo: Repository<UserEntity>, docsRepo: Repository<DocumentEntity>, jwtService: JwtService);
+    registerProvider(dto: RegisterProviderDto): Promise<{
+        accessToken: string;
+        refreshToken: string;
+        user: {
+            id: string;
+            email: string;
+            phone?: string;
+            firstName: string;
+            lastName: string;
+            role: UserRole;
+            verificationStatus: VerificationStatus;
+            btpMode?: import("../../common/enums/btp-mode.enum").BtpMode;
+            agencyId?: string;
+            agency?: UserEntity;
+            walletBalance: number;
+            city?: string;
+            radiusKm?: number;
+            avatarUrl?: string;
+            artisanProfile?: import("../artisans/entities/artisan.entity").ArtisanEntity;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+    }>;
+    register(dto: RegisterDto): Promise<{
+        accessToken: string;
+        refreshToken: string;
+        user: {
+            id: string;
+            email: string;
+            phone?: string;
+            firstName: string;
+            lastName: string;
+            role: UserRole;
+            verificationStatus: VerificationStatus;
+            btpMode?: import("../../common/enums/btp-mode.enum").BtpMode;
+            agencyId?: string;
+            agency?: UserEntity;
+            walletBalance: number;
+            city?: string;
+            radiusKm?: number;
+            avatarUrl?: string;
+            artisanProfile?: import("../artisans/entities/artisan.entity").ArtisanEntity;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+    }>;
+    login(dto: LoginDto): Promise<{
+        accessToken: string;
+        refreshToken: string;
+        user: {
+            id: string;
+            email: string;
+            phone?: string;
+            firstName: string;
+            lastName: string;
+            role: UserRole;
+            verificationStatus: VerificationStatus;
+            btpMode?: import("../../common/enums/btp-mode.enum").BtpMode;
+            agencyId?: string;
+            agency?: UserEntity;
+            walletBalance: number;
+            city?: string;
+            radiusKm?: number;
+            avatarUrl?: string;
+            artisanProfile?: import("../artisans/entities/artisan.entity").ArtisanEntity;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+    }>;
+    logout(userId: string): Promise<void>;
+    refreshTokens(userId: string, refreshToken: string): Promise<{
+        accessToken: string;
+        refreshToken: string;
+    }>;
+    private generateTokens;
+    private updateRefreshToken;
+    private sanitizeUser;
+}
+//# sourceMappingURL=auth.service.d.ts.map

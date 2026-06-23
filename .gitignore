@@ -4,6 +4,8 @@ dist/
 !packages/shared/dist/
 # Keep web PWA export for Hostinger deployment
 !apps/mobile/dist/
+# Keep compiled API so Hostinger doesn't need to run nest build
+!apps/api/dist/
 .expo/
 *.log
 .env
