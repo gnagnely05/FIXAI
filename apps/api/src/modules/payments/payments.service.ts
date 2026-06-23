@@ -6,11 +6,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { createHmac } from 'crypto';
 import { Payment, PaymentStatus, OrderType, AuditLogEntry } from './entities/payment.entity';
+import { CommissionConfigEntity } from '../admin/entities/commission-config.entity';
 
 // ⚠️ ZONE CRITIQUE — Toute modification de ce fichier doit être relue et validée par un humain
 //    avant déploiement en production. Chaque changement affecte de l'argent réel.
-
-const COMMISSION_RATE = 0.05; // 5% commission fixAI
 
 export interface InitiateEscrowDto {
   orderId: string;
@@ -60,19 +59,27 @@ export class PaymentsService {
   constructor(
     @InjectRepository(Payment)
     private readonly paymentRepo: Repository<Payment>,
+    @InjectRepository(CommissionConfigEntity)
+    private readonly commissionRepo: Repository<CommissionConfigEntity>,
     private readonly dataSource: DataSource,
   ) {}
 
+  private async getCommissionRate(): Promise<number> {
+    const config = await this.commissionRepo.findOne({ where: { isActive: true } });
+    return config?.fixaiRate ?? 0.03;
+  }
+
   /**
-   * Calculates escrow fees for a given amount.
+   * Calculates escrow fees for a given amount using DB-driven commission config.
    */
-  calculateFees(amount: number): EscrowFees {
-    const commission = Math.round(amount * COMMISSION_RATE);
+  async calculateFees(amount: number): Promise<EscrowFees> {
+    const rate = await this.getCommissionRate();
+    const commission = Math.round(amount * rate);
     return {
       totalAmount: amount,
       artisanAmount: amount - commission,
       commission,
-      commissionRate: COMMISSION_RATE,
+      commissionRate: rate,
     };
   }
 
@@ -221,7 +228,7 @@ export class PaymentsService {
         throw new BadRequestException('Fonds déjà libérés');
       }
 
-      const calculatedFees = this.calculateFees(payment.amount);
+      const calculatedFees = await this.calculateFees(payment.amount);
       payment.releasedAt = new Date();
       payment.releasedBy = releasedBy;
       payment.auditLog = [...payment.auditLog, this.buildAuditEntry('ESCROW_RELEASED', releasedBy, { artisanAmount: calculatedFees.artisanAmount, commission: calculatedFees.commission })];

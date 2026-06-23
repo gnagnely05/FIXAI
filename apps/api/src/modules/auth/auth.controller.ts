@@ -2,6 +2,7 @@ import { Controller, Post, Body, UseGuards, Request, HttpCode, HttpStatus } from
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { RegisterProviderDto } from './dto/register-provider.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @Controller('auth')
@@ -11,6 +12,11 @@ export class AuthController {
   @Post('register')
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
+  }
+
+  @Post('register-provider')
+  async registerProvider(@Body() dto: RegisterProviderDto) {
+    return this.authService.registerProvider(dto);
   }
 
   @Post('login')

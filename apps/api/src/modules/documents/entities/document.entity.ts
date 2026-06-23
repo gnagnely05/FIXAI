@@ -1,0 +1,48 @@
+import {
+  Entity, PrimaryGeneratedColumn, Column,
+  CreateDateColumn, ManyToOne, JoinColumn,
+} from 'typeorm';
+import { UserEntity } from '../../users/entities/user.entity';
+
+export enum DocumentType {
+  NATIONAL_ID      = 'NATIONAL_ID',
+  PASSPORT         = 'PASSPORT',
+  BUSINESS_LICENSE = 'BUSINESS_LICENSE',
+  INSURANCE        = 'INSURANCE',
+  DIPLOMA          = 'DIPLOMA',
+  OTHER            = 'OTHER',
+}
+
+export enum DocumentStatus {
+  PENDING  = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+@Entity('documents')
+export class DocumentEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user: UserEntity;
+
+  @Column({ type: 'enum', enum: DocumentType })
+  type: DocumentType;
+
+  @Column()
+  fileUrl: string;
+
+  @Column({ type: 'enum', enum: DocumentStatus, default: DocumentStatus.PENDING })
+  status: DocumentStatus;
+
+  @Column({ nullable: true })
+  rejectionReason?: string;
+
+  @CreateDateColumn()
+  uploadedAt: Date;
+}
