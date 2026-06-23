@@ -4,7 +4,7 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "build": "turbo run build",
+    "build": "yarn workspace @fixai/mobile expo export --platform web",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
