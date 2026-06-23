@@ -44,7 +44,7 @@ const SERVICES = [
     icon: 'build' as const,
     iconBg: '#2E7D32',
     cardBg: '#F0FBF0',
-    route: '/depannage/step1-description',
+    route: '/tunnel/step1-chat?serviceType=DEPANNAGE',
   },
   {
     key: 'decoration',
@@ -53,7 +53,7 @@ const SERVICES = [
     icon: 'color-palette' as const,
     iconBg: '#6B3FA0',
     cardBg: '#F5EEFF',
-    route: '/decoration',
+    route: '/tunnel/step1-chat?serviceType=DECORATION',
   },
   {
     key: 'renovation',
@@ -62,7 +62,7 @@ const SERVICES = [
     icon: 'home' as const,
     iconBg: '#1565C0',
     cardBg: '#EFF4FF',
-    route: '/renovation',
+    route: '/tunnel/step1-chat?serviceType=RENOVATION',
   },
   {
     key: 'devis-pro',

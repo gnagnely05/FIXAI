@@ -157,6 +157,61 @@ export class AiService {
     return parts.join(' ');
   }
 
+  async diagnose(
+    serviceType: string,
+    messages: string[],
+    imageUrls: string[],
+  ): Promise<{
+    summary: string;
+    detectedIssue: string;
+    question: string;
+    options: string[];
+    estimatedPriceMinXof: number;
+    estimatedPriceMaxXof: number;
+  }> {
+    const serviceLabels: Record<string, string> = {
+      DEPANNAGE: 'réparation / dépannage',
+      RENOVATION: 'rénovation',
+      DECORATION: "décoration d'intérieur",
+    };
+    const label = serviceLabels[serviceType] ?? serviceType;
+    const conversation = messages.join('\n');
+
+    const systemPrompt = `Tu es un expert en ${label} en Côte d'Ivoire.
+Analyse la description du client et réponds UNIQUEMENT en JSON valide avec exactement ces champs :
+{
+  "summary": "résumé clair du problème en 1-2 phrases",
+  "detectedIssue": "problème technique détecté",
+  "question": "une question de précision pour mieux qualifier le besoin",
+  "options": ["option A", "option B", "option C"],
+  "estimatedPriceMinXof": <nombre entier en FCFA>,
+  "estimatedPriceMaxXof": <nombre entier en FCFA>
+}
+Description du client : ${conversation}`;
+
+    if (imageUrls.length > 0) {
+      try {
+        const raw = await this.replicate.analyzeWithVision(systemPrompt, imageUrls[0]);
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+      } catch (err) {
+        this.logger.warn(`[Diagnose] Vision analysis failed: ${err}`);
+      }
+    }
+
+    // Structured mock fallback when no image or vision fails
+    return {
+      summary: `J'ai bien compris votre demande concernant un problème de ${label}. Voici mon analyse préliminaire.`,
+      detectedIssue: `Problème identifié : ${messages[messages.length - 1] ?? label}`,
+      question: 'Depuis combien de temps observez-vous ce problème ?',
+      options: ["Moins de 24h", "2 à 7 jours", "Plus d'une semaine"],
+      estimatedPriceMinXof: 15000,
+      estimatedPriceMaxXof: 45000,
+    };
+  }
+
   async generateImage(userId: string, prompt: string, baseImageUrl?: string): Promise<string> {
     await this.subscriptions.assertAiAllowed(userId);
     const imageUrl = await this.replicate.generateImage(prompt, { baseImageUrl });

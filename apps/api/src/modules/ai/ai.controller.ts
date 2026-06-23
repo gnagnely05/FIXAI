@@ -32,4 +32,12 @@ export class AiController {
   ) {
     return this.service.analyzeImage(req.user.sub, dto.prompt, dto.imageUrl);
   }
+
+  @Post('diagnose')
+  diagnose(
+    @Body() body: { serviceType: string; messages: string[]; imageUrls?: string[] },
+    @Request() req: { user: { sub: string } },
+  ) {
+    return this.service.diagnose(body.serviceType, body.messages, body.imageUrls ?? []);
+  }
 }
