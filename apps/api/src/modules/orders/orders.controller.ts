@@ -17,7 +17,10 @@ export class OrdersController {
   }
 
   @Get('my')
-  async getMyOrders(@Request() req: { user: { sub: string } }) {
+  async getMyOrders(@Request() req: { user: UserEntity & { sub: string } }) {
+    const role = (req.user as any).role;
+    if (role === 'ARTISAN') return this.ordersService.findByArtisanUserId(req.user.sub);
+    if (role === 'AGENCE_HOTE' || role === 'ENTREPRISE_BTP') return this.ordersService.findByAgency(req.user.sub);
     return this.ordersService.findByClient(req.user.sub);
   }
 
@@ -48,5 +51,23 @@ export class OrdersController {
     @Request() req: { user: { sub: string } },
   ) {
     return this.ordersService.cancel(id, req.user.sub);
+  }
+
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { status: string },
+    @Request() req: { user: { sub: string } },
+  ) {
+    return this.ordersService.updateStatus(id, body.status, req.user.sub);
+  }
+
+  @Patch(':id/assign')
+  async assign(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { artisanId: string },
+    @Request() req: { user: { sub: string } },
+  ) {
+    return this.ordersService.assignArtisan(id, body.artisanId, req.user.sub);
   }
 }

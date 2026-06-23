@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ArtisanEntity, ArtisanSpecialty } from './entities/artisan.entity';
+import { UserEntity } from '../users/entities/user.entity';
 
 export interface ArtisanSearchQuery {
   specialty?: ArtisanSpecialty;
@@ -19,6 +20,8 @@ export class ArtisansService {
   constructor(
     @InjectRepository(ArtisanEntity)
     private readonly artisansRepo: Repository<ArtisanEntity>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepo: Repository<UserEntity>,
   ) {}
 
   async findAll(query: ArtisanSearchQuery) {
@@ -50,5 +53,37 @@ export class ArtisansService {
 
   async updateRating(artisanId: string, newRating: number, reviewCount: number) {
     await this.artisansRepo.update(artisanId, { rating: newRating, reviewCount });
+  }
+
+  async getAvailability(userId: string) {
+    const artisan = await this.artisansRepo.findOne({ where: { user: { id: userId } } });
+    if (!artisan) return { isAvailable: false, availableDays: [], availableSlots: [] };
+    return {
+      isAvailable: artisan.isAvailable,
+      availableDays: (artisan as any).availableDays ?? [],
+      availableSlots: (artisan as any).availableSlots ?? [],
+    };
+  }
+
+  async updateAvailabilityByUser(userId: string, data: { isAvailable: boolean; availableDays?: string[]; availableSlots?: string[] }) {
+    const artisan = await this.artisansRepo.findOne({ where: { user: { id: userId } } });
+    if (!artisan) throw new NotFoundException('Artisan profile not found');
+    await this.artisansRepo.update(artisan.id, {
+      isAvailable: data.isAvailable,
+      ...(data.availableDays !== undefined && { availableDays: data.availableDays } as any),
+      ...(data.availableSlots !== undefined && { availableSlots: data.availableSlots } as any),
+    });
+    return { message: 'Availability updated' };
+  }
+
+  async findByAgency(agencyUserId: string) {
+    const artisanUsers = await this.usersRepo.find({ where: { agencyId: agencyUserId }, select: ['id'] });
+    if (artisanUsers.length === 0) return [];
+    const userIds = artisanUsers.map(u => u.id);
+    return this.artisansRepo
+      .createQueryBuilder('artisan')
+      .leftJoinAndSelect('artisan.user', 'user')
+      .where('user.id IN (:...userIds)', { userIds })
+      .getMany();
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Query, Body, UseGuards, ParseUUIDPipe, Request } from '@nestjs/common';
 import { ArtisansService, ArtisanSearchQuery } from './artisans.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ArtisanSpecialty } from './entities/artisan.entity';
@@ -26,5 +26,23 @@ export class ArtisansController {
   @Get(':id')
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.artisansService.findById(id);
+  }
+
+  @Get('availability/me')
+  async getMyAvailability(@Request() req: { user: { sub: string } }) {
+    return this.artisansService.getAvailability(req.user.sub);
+  }
+
+  @Patch('availability/me')
+  async updateMyAvailability(
+    @Request() req: { user: { sub: string } },
+    @Body() body: { isAvailable: boolean; availableDays?: string[]; availableSlots?: string[] },
+  ) {
+    return this.artisansService.updateAvailabilityByUser(req.user.sub, body);
+  }
+
+  @Get('my-agency')
+  async getMyAgencyArtisans(@Request() req: { user: { sub: string } }) {
+    return this.artisansService.findByAgency(req.user.sub);
   }
 }

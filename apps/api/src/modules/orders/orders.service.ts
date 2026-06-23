@@ -59,6 +59,50 @@ export class OrdersService {
     });
   }
 
+  async findByArtisanUserId(userId: string) {
+    return this.ordersRepo.find({
+      where: { artisan: { user: { id: userId } } },
+      relations: ['client'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByAgency(agencyUserId: string) {
+    return this.ordersRepo
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.client', 'client')
+      .leftJoinAndSelect('order.artisan', 'artisan')
+      .leftJoinAndSelect('artisan.user', 'artisanUser')
+      .where('artisanUser.agencyId = :agencyUserId', { agencyUserId })
+      .orderBy('order.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async updateStatus(orderId: string, status: string, userId: string): Promise<OrderEntity> {
+    const order = await this.findById(orderId);
+    const isArtisan = order.artisan?.user?.id === userId;
+    if (!isArtisan) throw new ForbiddenException();
+    const validTransitions: Record<string, OrderStatus> = {
+      CONFIRMED: OrderStatus.CONFIRMED,
+      IN_PROGRESS: OrderStatus.IN_PROGRESS,
+      COMPLETED: OrderStatus.COMPLETED,
+    };
+    const newStatus = validTransitions[status];
+    if (!newStatus) throw new BadRequestException('Invalid status');
+    order.status = newStatus;
+    if (newStatus === OrderStatus.COMPLETED) order.completedAt = new Date();
+    return this.ordersRepo.save(order);
+  }
+
+  async assignArtisan(orderId: string, artisanId: string, agencyUserId: string): Promise<OrderEntity> {
+    const order = await this.findById(orderId);
+    const artisan = await this.artisansRepo.findOne({ where: { id: artisanId }, relations: ['user'] });
+    if (!artisan) throw new NotFoundException('Artisan not found');
+    order.artisan = artisan;
+    order.status = OrderStatus.CONFIRMED;
+    return this.ordersRepo.save(order);
+  }
+
   async findById(id: string): Promise<OrderEntity> {
     const order = await this.ordersRepo.findOne({
       where: { id },

@@ -72,6 +72,12 @@ export class ArtisanEntity {
   @Column({ type: 'simple-array', nullable: true })
   portfolioImages: string[];
 
+  @Column({ type: 'simple-array', nullable: true })
+  availableDays: string[];
+
+  @Column({ type: 'simple-array', nullable: true })
+  availableSlots: string[];
+
   @OneToMany(() => OrderEntity, (order) => order.artisan)
   orders: OrderEntity[];
 
