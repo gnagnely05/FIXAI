@@ -4,14 +4,14 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "build": "yarn workspace @fixai/mobile expo export --platform web",
+    "build": "npm --workspace=@fixai/mobile run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "mobile": "turbo run dev --filter=mobile",
     "api": "turbo run dev --filter=api",
     "web:build": "cd apps/mobile && npx expo export --platform web",
-    "hostinger-build": "yarn workspace @fixai/mobile expo export --platform web"
+    "hostinger-build": "npm --workspace=@fixai/mobile run build"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
