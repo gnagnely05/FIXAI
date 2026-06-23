@@ -1,12 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
-import * as express from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api/v1');
 
@@ -19,20 +16,10 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'],
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   });
-
-  // Serve Expo web build — process.cwd() = project root on Hostinger
-  const webDist = join(process.cwd(), 'apps', 'mobile', 'dist');
-  app.use(express.static(webDist));
-  // SPA fallback: routes non-API → index.html
-  const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.get(/^(?!\/api\/).*/, (_req: any, res: any) => {
-    res.sendFile(join(webDist, 'index.html'));
-  });
-  console.log(`[Static] Serving web from: ${webDist}`);
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
