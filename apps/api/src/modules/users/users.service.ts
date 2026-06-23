@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 
+import { VerificationStatus } from '../../common/enums/verification-status.enum';
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -26,6 +28,6 @@ export class UsersService {
   }
 
   async verifyUser(id: string): Promise<void> {
-    await this.usersRepo.update(id, { isVerified: true });
+    await this.usersRepo.update(id, { verificationStatus: VerificationStatus.ACTIVE });
   }
 }

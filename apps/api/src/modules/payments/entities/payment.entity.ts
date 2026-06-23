@@ -17,7 +17,7 @@ export enum OrderType {
 export interface AuditLogEntry {
   action: string;
   timestamp: string;
-  userId: string;
+  userId: string | null;
   details: Record<string, unknown>;
 }
 

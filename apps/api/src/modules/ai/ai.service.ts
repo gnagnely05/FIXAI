@@ -60,7 +60,7 @@ export class AiService {
 
     this.logger.log(`[Décoration] ${dto.roomType} / ${dto.style} — ${products.length} produits`);
 
-    const imageUrl = await this.replicate.generateImage(prompt, dto.roomPhotoUrl);
+    const imageUrl = await this.replicate.generateImage(prompt, { baseImageUrl: dto.roomPhotoUrl });
     await this.subscriptions.consumeAiRequest(userId);
 
     const totalEstimateXof = products.reduce((sum, p) => sum + Number(p.priceXof), 0);

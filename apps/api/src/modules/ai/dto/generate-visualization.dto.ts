@@ -1,2 +1,2 @@
-// Re-export from service so mobile/other modules can import from here
-export { RoomType, DecorationStyle, GenerateVisualizationDto } from '../ai.service';
+// Re-export decoration types for external consumers
+export { RoomType, DecoStyle as DecorationStyle, GenerateDecorationDto as GenerateVisualizationDto } from '../dto/decoration.dto';
