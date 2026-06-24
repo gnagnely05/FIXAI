@@ -5,6 +5,7 @@ import {
   ActivityIndicator, SafeAreaView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useServiceTunnel, ServiceType, Message } from '../../hooks/useServiceTunnel';
 import TunnelHeader, { getTunnelTitle } from '../../components/TunnelHeader';
@@ -122,6 +123,9 @@ export default function Step1Chat() {
 
         {/* Input bar */}
         <View style={styles.inputBar}>
+          <TouchableOpacity style={styles.iconBtn} onPress={handlePickImage}>
+            <Ionicons name="image-outline" size={22} color="#6B7280" />
+          </TouchableOpacity>
           <TextInput
             style={styles.textInput}
             value={inputText}
@@ -130,21 +134,20 @@ export default function Step1Chat() {
             placeholderTextColor="#9CA3AF"
             multiline
             maxLength={500}
-            onSubmitEditing={handleSend}
           />
-          <TouchableOpacity style={styles.iconBtn} onPress={handlePickImage}>
-            <Text style={styles.iconGreen}>🎤</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} onPress={handlePickImage}>
-            <Text style={styles.iconGreen}>🖼</Text>
+          <TouchableOpacity
+            style={[styles.sendBtn, !inputText.trim() && styles.sendBtnDisabled]}
+            onPress={handleSend}
+            disabled={!inputText.trim() || isLoading}
+          >
+            <Ionicons name="send" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        {/* Suivant — actif dès qu'au moins un message utilisateur a été envoyé */}
         <TouchableOpacity
-          style={[styles.nextBtn, (messages.length < 2 || isLoading) && styles.nextBtnDisabled]}
+          style={[styles.nextBtn, (!diagnosisResult || isLoading) && styles.nextBtnDisabled]}
           onPress={handleNext}
-          disabled={messages.length < 2 || isLoading}
+          disabled={!diagnosisResult || isLoading}
         >
           <Text style={styles.nextBtnText}>→  Suivant</Text>
         </TouchableOpacity>
@@ -184,6 +187,13 @@ const styles = StyleSheet.create({
   },
   iconBtn: { paddingHorizontal: 8, paddingVertical: 6 },
   iconGreen: { fontSize: 24, color: '#2E7D32' },
+  sendBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#6B3FA0',
+    alignItems: 'center', justifyContent: 'center',
+    marginLeft: 8,
+  },
+  sendBtnDisabled: { backgroundColor: '#D1D5DB' },
   nextBtn: {
     margin: 12, backgroundColor: '#6B3FA0',
     paddingVertical: 16, borderRadius: 14, alignItems: 'center',
