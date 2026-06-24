@@ -58,6 +58,17 @@ export class ProductEntity {
   @Column({ nullable: true })
   unit: string; // e.g. "sac 50kg", "m²", "pièce"
 
+  /**
+   * Produit promu : priorisé dans les suggestions IA et l'affichage catalogue.
+   * Activé par la boutique (option payante).
+   */
+  @Column({ default: false })
+  isPromoted: boolean;
+
+  /** Date d'expiration de la promotion (null = pas de limite) */
+  @Column({ type: 'timestamp', nullable: true })
+  promotedUntil?: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

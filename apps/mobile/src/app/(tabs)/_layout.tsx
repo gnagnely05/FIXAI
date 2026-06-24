@@ -60,6 +60,9 @@ export default function TabsLayout() {
         <Tabs.Screen name="agency-artisans" options={{ href: null }} />
         <Tabs.Screen name="agency-requests" options={{ href: null }} />
         <Tabs.Screen name="agency-disputes" options={{ href: null }} />
+        <Tabs.Screen name="shop-home" options={{ href: null }} />
+        <Tabs.Screen name="shop-catalog" options={{ href: null }} />
+        <Tabs.Screen name="shop-orders" options={{ href: null }} />
       </Tabs>
     );
   }
@@ -80,6 +83,32 @@ export default function TabsLayout() {
         <Tabs.Screen name="artisan-home" options={{ href: null }} />
         <Tabs.Screen name="artisan-missions" options={{ href: null }} />
         <Tabs.Screen name="artisan-availability" options={{ href: null }} />
+        <Tabs.Screen name="shop-home" options={{ href: null }} />
+        <Tabs.Screen name="shop-catalog" options={{ href: null }} />
+        <Tabs.Screen name="shop-orders" options={{ href: null }} />
+      </Tabs>
+    );
+  }
+
+  // ── BOUTIQUE / QUINCAILLERIE ─────────────────────────────────────────
+  if (role === 'BOUTIQUE' || role === 'QUINCAILLERIE') {
+    return (
+      <Tabs screenOptions={{ tabBarActiveTintColor: '#E65100', tabBarInactiveTintColor: '#9CA3AF', tabBarStyle: styles.tabBar, tabBarLabelStyle: styles.tabLabel, header: () => <FixAIHeader accentColor="#E65100" /> }}>
+        <Tabs.Screen name="shop-home" options={{ title: 'Tableau de bord', tabBarIcon: ({ focused }) => <TabIcon name="grid" focused={focused} color="#E65100" /> }} />
+        <Tabs.Screen name="shop-catalog" options={{ title: 'Catalogue', tabBarIcon: ({ focused }) => <TabIcon name="cube" focused={focused} color="#E65100" /> }} />
+        <Tabs.Screen name="shop-orders" options={{ title: 'Commandes', tabBarIcon: ({ focused }) => <TabIcon name="receipt" focused={focused} color="#E65100" /> }} />
+        <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: ({ focused }) => <TabIcon name="person" focused={focused} color="#E65100" /> }} />
+        <Tabs.Screen name="index" options={{ href: null }} />
+        <Tabs.Screen name="search" options={{ href: null }} />
+        <Tabs.Screen name="decouvrir" options={{ href: null }} />
+        <Tabs.Screen name="orders" options={{ href: null }} />
+        <Tabs.Screen name="artisan-home" options={{ href: null }} />
+        <Tabs.Screen name="artisan-missions" options={{ href: null }} />
+        <Tabs.Screen name="artisan-availability" options={{ href: null }} />
+        <Tabs.Screen name="agency-home" options={{ href: null }} />
+        <Tabs.Screen name="agency-artisans" options={{ href: null }} />
+        <Tabs.Screen name="agency-requests" options={{ href: null }} />
+        <Tabs.Screen name="agency-disputes" options={{ href: null }} />
       </Tabs>
     );
   }
@@ -99,6 +128,9 @@ export default function TabsLayout() {
       <Tabs.Screen name="agency-artisans" options={{ href: null }} />
       <Tabs.Screen name="agency-requests" options={{ href: null }} />
       <Tabs.Screen name="agency-disputes" options={{ href: null }} />
+      <Tabs.Screen name="shop-home" options={{ href: null }} />
+      <Tabs.Screen name="shop-catalog" options={{ href: null }} />
+      <Tabs.Screen name="shop-orders" options={{ href: null }} />
     </Tabs>
   );
 }

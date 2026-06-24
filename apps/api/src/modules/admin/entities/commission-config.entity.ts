@@ -20,6 +20,10 @@ export class CommissionConfigEntity {
   @Column({ type: 'float', default: 0.95 })
   artisanRate: number;
 
+  /** Commission FixAI prélevée sur chaque vente de produit en boutique/quincaillerie */
+  @Column({ type: 'float', default: 0.05 })
+  storeCommissionRate: number;
+
   @Column({ default: true })
   isActive: boolean;
 
