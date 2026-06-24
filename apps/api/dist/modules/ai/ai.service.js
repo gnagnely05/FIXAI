@@ -14,7 +14,6 @@ exports.AiService = void 0;
 const common_1 = require("@nestjs/common");
 const catalog_service_1 = require("../catalog/catalog.service");
 const replicate_service_1 = require("./replicate.service");
-const gemini_service_1 = require("./gemini.service");
 const subscriptions_service_1 = require("../subscriptions/subscriptions.service");
 const BUDGET_MAX = {
     MOINS_100K: 100_000,
@@ -37,10 +36,9 @@ const STYLE_DESC = {
     CLASSIQUE_ELEGANT: 'classic and elegant, rich fabrics, refined details, timeless décor',
 };
 let AiService = AiService_1 = class AiService {
-    constructor(catalogService, replicate, gemini, subscriptions) {
+    constructor(catalogService, replicate, subscriptions) {
         this.catalogService = catalogService;
         this.replicate = replicate;
-        this.gemini = gemini;
         this.subscriptions = subscriptions;
         this.logger = new common_1.Logger(AiService_1.name);
     }
@@ -152,19 +150,19 @@ Description du client : ${conversation}`;
         try {
             let raw;
             if (imageUrls.length > 0) {
-                // Avec image → Gemini Vision
-                raw = await this.gemini.analyzeImageFromUrl(systemPrompt, imageUrls[0]);
+                // Avec image → Replicate Vision (Llama Vision)
+                raw = await this.replicate.analyzeWithVision(systemPrompt, imageUrls[0]);
             }
             else {
-                // Sans image → Gemini texte
-                raw = await this.gemini.complete(systemPrompt);
+                // Sans image → Replicate texte (Llama 3.3)
+                raw = await this.replicate.complete(systemPrompt);
             }
             const jsonMatch = raw.match(/\{[\s\S]*\}/);
             if (jsonMatch)
                 return JSON.parse(jsonMatch[0]);
         }
         catch (err) {
-            this.logger.warn(`[Diagnose] Gemini failed: ${err}`);
+            this.logger.warn(`[Diagnose] Replicate failed: ${err}`);
         }
         // Fallback statique si Gemini échoue
         return {
@@ -194,7 +192,6 @@ exports.AiService = AiService = AiService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [catalog_service_1.CatalogService,
         replicate_service_1.ReplicateService,
-        gemini_service_1.GeminiService,
         subscriptions_service_1.SubscriptionsService])
 ], AiService);
 //# sourceMappingURL=ai.service.js.map

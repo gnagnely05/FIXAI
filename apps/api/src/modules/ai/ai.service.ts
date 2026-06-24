@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CatalogService } from '../catalog/catalog.service';
 import { ProductEntity } from '../catalog/entities/product.entity';
 import { ReplicateService } from './replicate.service';
-import { GeminiService } from './gemini.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import {
   GenerateDecorationDto,
@@ -50,7 +49,6 @@ export class AiService {
   constructor(
     private readonly catalogService: CatalogService,
     private readonly replicate: ReplicateService,
-    private readonly gemini: GeminiService,
     private readonly subscriptions: SubscriptionsService,
   ) {}
 
@@ -194,16 +192,16 @@ Description du client : ${conversation}`;
     try {
       let raw: string;
       if (imageUrls.length > 0) {
-        // Avec image → Gemini Vision
-        raw = await this.gemini.analyzeImageFromUrl(systemPrompt, imageUrls[0]);
+        // Avec image → Replicate Vision (Llama Vision)
+        raw = await this.replicate.analyzeWithVision(systemPrompt, imageUrls[0]);
       } else {
-        // Sans image → Gemini texte
-        raw = await this.gemini.complete(systemPrompt);
+        // Sans image → Replicate texte (Llama 3.3)
+        raw = await this.replicate.complete(systemPrompt);
       }
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) return JSON.parse(jsonMatch[0]);
     } catch (err) {
-      this.logger.warn(`[Diagnose] Gemini failed: ${err}`);
+      this.logger.warn(`[Diagnose] Replicate failed: ${err}`);
     }
 
     // Fallback statique si Gemini échoue

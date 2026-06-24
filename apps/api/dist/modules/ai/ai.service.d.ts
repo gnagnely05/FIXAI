@@ -1,7 +1,6 @@
 import { CatalogService } from '../catalog/catalog.service';
 import { ProductEntity } from '../catalog/entities/product.entity';
 import { ReplicateService } from './replicate.service';
-import { GeminiService } from './gemini.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { GenerateDecorationDto } from './dto/decoration.dto';
 export interface DecorationResult {
@@ -14,10 +13,9 @@ export interface DecorationResult {
 export declare class AiService {
     private readonly catalogService;
     private readonly replicate;
-    private readonly gemini;
     private readonly subscriptions;
     private readonly logger;
-    constructor(catalogService: CatalogService, replicate: ReplicateService, gemini: GeminiService, subscriptions: SubscriptionsService);
+    constructor(catalogService: CatalogService, replicate: ReplicateService, subscriptions: SubscriptionsService);
     generateDecorationVisualization(userId: string, dto: GenerateDecorationDto): Promise<DecorationResult>;
     private selectProducts;
     private buildPrompt;
