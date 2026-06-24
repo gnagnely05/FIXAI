@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CatalogService } from '../catalog/catalog.service';
 import { ProductEntity } from '../catalog/entities/product.entity';
 import { ReplicateService } from './replicate.service';
+import { GeminiService } from './gemini.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import {
   GenerateDecorationDto,
@@ -49,6 +50,7 @@ export class AiService {
   constructor(
     private readonly catalogService: CatalogService,
     private readonly replicate: ReplicateService,
+    private readonly gemini: GeminiService,
     private readonly subscriptions: SubscriptionsService,
   ) {}
 
@@ -189,19 +191,22 @@ Analyse la description du client et réponds UNIQUEMENT en JSON valide avec exac
 }
 Description du client : ${conversation}`;
 
-    if (imageUrls.length > 0) {
-      try {
-        const raw = await this.replicate.analyzeWithVision(systemPrompt, imageUrls[0]);
-        const jsonMatch = raw.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          return JSON.parse(jsonMatch[0]);
-        }
-      } catch (err) {
-        this.logger.warn(`[Diagnose] Vision analysis failed: ${err}`);
+    try {
+      let raw: string;
+      if (imageUrls.length > 0) {
+        // Avec image → Gemini Vision
+        raw = await this.gemini.analyzeImageFromUrl(systemPrompt, imageUrls[0]);
+      } else {
+        // Sans image → Gemini texte
+        raw = await this.gemini.complete(systemPrompt);
       }
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (jsonMatch) return JSON.parse(jsonMatch[0]);
+    } catch (err) {
+      this.logger.warn(`[Diagnose] Gemini failed: ${err}`);
     }
 
-    // Structured mock fallback when no image or vision fails
+    // Fallback statique si Gemini échoue
     return {
       summary: `J'ai bien compris votre demande concernant un problème de ${label}. Voici mon analyse préliminaire.`,
       detectedIssue: `Problème identifié : ${messages[messages.length - 1] ?? label}`,

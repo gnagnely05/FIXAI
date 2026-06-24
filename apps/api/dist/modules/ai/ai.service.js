@@ -14,6 +14,7 @@ exports.AiService = void 0;
 const common_1 = require("@nestjs/common");
 const catalog_service_1 = require("../catalog/catalog.service");
 const replicate_service_1 = require("./replicate.service");
+const gemini_service_1 = require("./gemini.service");
 const subscriptions_service_1 = require("../subscriptions/subscriptions.service");
 const BUDGET_MAX = {
     MOINS_100K: 100_000,
@@ -36,9 +37,10 @@ const STYLE_DESC = {
     CLASSIQUE_ELEGANT: 'classic and elegant, rich fabrics, refined details, timeless décor',
 };
 let AiService = AiService_1 = class AiService {
-    constructor(catalogService, replicate, subscriptions) {
+    constructor(catalogService, replicate, gemini, subscriptions) {
         this.catalogService = catalogService;
         this.replicate = replicate;
+        this.gemini = gemini;
         this.subscriptions = subscriptions;
         this.logger = new common_1.Logger(AiService_1.name);
     }
@@ -147,19 +149,24 @@ Analyse la description du client et réponds UNIQUEMENT en JSON valide avec exac
   "estimatedPriceMaxXof": <nombre entier en FCFA>
 }
 Description du client : ${conversation}`;
-        if (imageUrls.length > 0) {
-            try {
-                const raw = await this.replicate.analyzeWithVision(systemPrompt, imageUrls[0]);
-                const jsonMatch = raw.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    return JSON.parse(jsonMatch[0]);
-                }
+        try {
+            let raw;
+            if (imageUrls.length > 0) {
+                // Avec image → Gemini Vision
+                raw = await this.gemini.analyzeImageFromUrl(systemPrompt, imageUrls[0]);
             }
-            catch (err) {
-                this.logger.warn(`[Diagnose] Vision analysis failed: ${err}`);
+            else {
+                // Sans image → Gemini texte
+                raw = await this.gemini.complete(systemPrompt);
             }
+            const jsonMatch = raw.match(/\{[\s\S]*\}/);
+            if (jsonMatch)
+                return JSON.parse(jsonMatch[0]);
         }
-        // Structured mock fallback when no image or vision fails
+        catch (err) {
+            this.logger.warn(`[Diagnose] Gemini failed: ${err}`);
+        }
+        // Fallback statique si Gemini échoue
         return {
             summary: `J'ai bien compris votre demande concernant un problème de ${label}. Voici mon analyse préliminaire.`,
             detectedIssue: `Problème identifié : ${messages[messages.length - 1] ?? label}`,
@@ -187,6 +194,7 @@ exports.AiService = AiService = AiService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [catalog_service_1.CatalogService,
         replicate_service_1.ReplicateService,
+        gemini_service_1.GeminiService,
         subscriptions_service_1.SubscriptionsService])
 ], AiService);
 //# sourceMappingURL=ai.service.js.map

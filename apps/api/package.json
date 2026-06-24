@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@fixai/shared": "*",
+    "@google/generative-ai": "^0.24.1",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^10.0.0",
