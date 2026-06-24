@@ -48,7 +48,7 @@ export class AiController {
   @Post('image')
   generateByProvider(
     @Request() req: { user: { sub: string } },
-    @Body() body: { prompt: string; provider?: 'flux' | 'gpt' },
+    @Body() body: { prompt: string; provider?: 'flux' },
   ) {
     return this.service.generateImageByProvider(req.user.sub, body.prompt, body.provider ?? 'flux');
   }

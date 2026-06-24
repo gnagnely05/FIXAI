@@ -40,7 +40,7 @@ export declare class AiController {
         };
     }, body: {
         prompt: string;
-        provider?: 'flux' | 'gpt';
+        provider?: 'flux';
     }): Promise<string>;
 }
 //# sourceMappingURL=ai.controller.d.ts.map

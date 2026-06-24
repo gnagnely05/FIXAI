@@ -14,8 +14,6 @@ exports.AiService = void 0;
 const common_1 = require("@nestjs/common");
 const catalog_service_1 = require("../catalog/catalog.service");
 const replicate_service_1 = require("./replicate.service");
-const gemini_service_1 = require("./gemini.service");
-const openai_image_service_1 = require("./openai-image.service");
 const subscriptions_service_1 = require("../subscriptions/subscriptions.service");
 const BUDGET_MAX = {
     MOINS_100K: 100_000,
@@ -38,11 +36,9 @@ const STYLE_DESC = {
     CLASSIQUE_ELEGANT: 'classic and elegant, rich fabrics, refined details, timeless décor',
 };
 let AiService = AiService_1 = class AiService {
-    constructor(catalogService, replicate, gemini, openAiImage, subscriptions) {
+    constructor(catalogService, replicate, subscriptions) {
         this.catalogService = catalogService;
         this.replicate = replicate;
-        this.gemini = gemini;
-        this.openAiImage = openAiImage;
         this.subscriptions = subscriptions;
         this.logger = new common_1.Logger(AiService_1.name);
     }
@@ -154,12 +150,10 @@ Description du client : ${conversation}`;
         try {
             let raw;
             if (imageUrls.length > 0) {
-                // Avec image → Gemini Vision
-                raw = await this.gemini.chatWithImage(systemPrompt, imageUrls[0]);
+                raw = await this.replicate.analyzeWithVision(systemPrompt, imageUrls[0]);
             }
             else {
-                // Sans image → Gemini chat
-                raw = await this.gemini.chat(systemPrompt);
+                raw = await this.replicate.complete(systemPrompt);
             }
             const jsonMatch = raw.match(/\{[\s\S]*\}/);
             if (jsonMatch)
@@ -189,7 +183,6 @@ Description du client : ${conversation}`;
         await this.subscriptions.assertAiAllowed(userId);
         const imageProviders = {
             flux: () => this.replicate.generateImage(prompt),
-            gpt: () => this.openAiImage.generate(prompt),
         };
         const fn = imageProviders[provider] ?? imageProviders['flux'];
         const url = await fn();
@@ -208,8 +201,6 @@ exports.AiService = AiService = AiService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [catalog_service_1.CatalogService,
         replicate_service_1.ReplicateService,
-        gemini_service_1.GeminiService,
-        openai_image_service_1.OpenAiImageService,
         subscriptions_service_1.SubscriptionsService])
 ], AiService);
 //# sourceMappingURL=ai.service.js.map

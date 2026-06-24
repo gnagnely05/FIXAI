@@ -2,8 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CatalogService } from '../catalog/catalog.service';
 import { ProductEntity } from '../catalog/entities/product.entity';
 import { ReplicateService } from './replicate.service';
-import { GeminiService } from './gemini.service';
-import { OpenAiImageService } from './openai-image.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import {
   GenerateDecorationDto,
@@ -51,8 +49,6 @@ export class AiService {
   constructor(
     private readonly catalogService: CatalogService,
     private readonly replicate: ReplicateService,
-    private readonly gemini: GeminiService,
-    private readonly openAiImage: OpenAiImageService,
     private readonly subscriptions: SubscriptionsService,
   ) {}
 
@@ -196,11 +192,9 @@ Description du client : ${conversation}`;
     try {
       let raw: string;
       if (imageUrls.length > 0) {
-        // Avec image → Gemini Vision
-        raw = await this.gemini.chatWithImage(systemPrompt, imageUrls[0]);
+        raw = await this.replicate.analyzeWithVision(systemPrompt, imageUrls[0]);
       } else {
-        // Sans image → Gemini chat
-        raw = await this.gemini.chat(systemPrompt);
+        raw = await this.replicate.complete(systemPrompt);
       }
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) return JSON.parse(jsonMatch[0]);
@@ -230,12 +224,11 @@ Description du client : ${conversation}`;
   async generateImageByProvider(
     userId: string,
     prompt: string,
-    provider: 'flux' | 'gpt' = 'flux',
+    provider: 'flux' = 'flux',
   ): Promise<string> {
     await this.subscriptions.assertAiAllowed(userId);
     const imageProviders: Record<string, () => Promise<string>> = {
       flux: () => this.replicate.generateImage(prompt),
-      gpt:  () => this.openAiImage.generate(prompt),
     };
     const fn = imageProviders[provider] ?? imageProviders['flux'];
     const url = await fn();
