@@ -46,7 +46,8 @@ const SERVICE_CONFIGS = {
   },
 };
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+import Constants from 'expo-constants';
+const API_BASE_URL = (Constants.expoConfig?.extra?.apiUrl as string) ?? 'http://localhost:3001/api/v1';
 
 export function useServiceTunnel(serviceType: ServiceType) {
   const serviceConfig = SERVICE_CONFIGS[serviceType];

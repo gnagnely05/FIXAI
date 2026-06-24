@@ -31,12 +31,14 @@ let AiController = class AiController {
     analyzeImage(req, dto) {
         return this.service.analyzeImage(req.user.sub, dto.prompt, dto.imageUrl);
     }
-    diagnose(body, req) {
+    // Pas de guard — accessible sans connexion pour le tunnel de devis
+    diagnose(body) {
         return this.service.diagnose(body.serviceType, body.messages, body.imageUrls ?? []);
     }
 };
 exports.AiController = AiController;
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)('decoration/visualize'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -45,6 +47,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "visualize", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)('generate'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -53,6 +56,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "generateImage", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)('analyze'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -63,13 +67,11 @@ __decorate([
 __decorate([
     (0, common_1.Post)('diagnose'),
     __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "diagnose", null);
 exports.AiController = AiController = __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('ai'),
     __metadata("design:paramtypes", [ai_service_1.AiService])
 ], AiController);

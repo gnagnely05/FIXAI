@@ -26,10 +26,6 @@ export declare class AiController {
         serviceType: string;
         messages: string[];
         imageUrls?: string[];
-    }, req: {
-        user: {
-            sub: string;
-        };
     }): Promise<{
         summary: string;
         detectedIssue: string;
