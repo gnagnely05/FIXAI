@@ -1,7 +1,9 @@
-import { Controller, Get, Patch, Param, Query, Body, UseGuards, ParseUUIDPipe, Request } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Param, Query, Body, UseGuards, ParseUUIDPipe, Request } from '@nestjs/common';
 import { ArtisansService, ArtisanSearchQuery } from './artisans.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ArtisanSpecialty } from './entities/artisan.entity';
+
+interface AuthUser { sub: string; role: string }
 
 @Controller('artisans')
 @UseGuards(JwtAuthGuard)
@@ -23,26 +25,57 @@ export class ArtisansController {
     return this.artisansService.findAll(query);
   }
 
-  @Get(':id')
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.artisansService.findById(id);
+  /** Artisans affiliés à l'agence/BTP connectée */
+  @Get('my-agency')
+  async getMyAgencyArtisans(@Request() req: { user: AuthUser }) {
+    return this.artisansService.findByAgency(req.user.sub);
   }
 
   @Get('availability/me')
-  async getMyAvailability(@Request() req: { user: { sub: string } }) {
+  async getMyAvailability(@Request() req: { user: AuthUser }) {
     return this.artisansService.getAvailability(req.user.sub);
   }
 
   @Patch('availability/me')
   async updateMyAvailability(
-    @Request() req: { user: { sub: string } },
+    @Request() req: { user: AuthUser },
     @Body() body: { isAvailable: boolean; availableDays?: string[]; availableSlots?: string[] },
   ) {
     return this.artisansService.updateAvailabilityByUser(req.user.sub, body);
   }
 
-  @Get('my-agency')
-  async getMyAgencyArtisans(@Request() req: { user: { sub: string } }) {
-    return this.artisansService.findByAgency(req.user.sub);
+  @Get(':id')
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.artisansService.findById(id);
+  }
+
+  // ─── Règle 1 : agence/BTP gère ses artisans affiliés ────────────────
+
+  /** Valide un artisan affilié (AGENCE_HOTE, ENTREPRISE_BTP ou ADMIN) */
+  @Patch(':id/validate')
+  async validateArtisan(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req: { user: AuthUser },
+  ) {
+    return this.artisansService.validateAffiliatedArtisan(id, req.user.sub, req.user.role);
+  }
+
+  /** Suspend un artisan affilié */
+  @Patch(':id/suspend')
+  async suspendArtisan(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { reason?: string },
+    @Request() req: { user: AuthUser },
+  ) {
+    return this.artisansService.suspendAffiliatedArtisan(id, req.user.sub, req.user.role, body.reason);
+  }
+
+  /** Désaffilie (retire) un artisan de l'organisation */
+  @Delete(':id/affiliate')
+  async removeFromAgency(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req: { user: AuthUser },
+  ) {
+    return this.artisansService.removeFromAgency(id, req.user.sub, req.user.role);
   }
 }

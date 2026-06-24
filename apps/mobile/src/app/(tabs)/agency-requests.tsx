@@ -88,9 +88,13 @@ export default function AgencyRequestsScreen() {
       await api.patch(`/orders/${requestId}/assign`, { artisanId });
       setAssignModal(null);
       load();
-      Alert.alert('Succès', 'Artisan assigné avec succès.');
-    } catch {
-      Alert.alert('Erreur', 'Impossible d\'assigner l\'artisan.');
+      // Règle 3 : l'agence hôte assigne mais ne confirme pas — c'est à l'artisan de confirmer
+      Alert.alert(
+        'Artisan proposé',
+        'L\'artisan a été assigné à cette demande. Il devra confirmer sa prise en charge pour valider la mission.',
+      );
+    } catch (e: any) {
+      Alert.alert('Erreur', e?.response?.data?.message ?? 'Impossible d\'assigner l\'artisan.');
     } finally {
       setAssigning(false);
     }
@@ -115,6 +119,14 @@ export default function AgencyRequestsScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#1565C0" />}
       >
+        {/* Règle 3 : rappel que l'agence hôte ne peut pas confirmer directement */}
+        <View style={styles.ruleBanner}>
+          <Ionicons name="information-circle-outline" size={15} color="#1565C0" />
+          <Text style={styles.ruleBannerText}>
+            En tant qu'agence hôte, vous proposez un artisan. C'est lui qui doit confirmer la mission.
+          </Text>
+        </View>
+
         {loading ? (
           <ActivityIndicator color="#1565C0" style={{ marginTop: 40 }} />
         ) : filtered.length === 0 ? (
@@ -146,10 +158,15 @@ export default function AgencyRequestsScreen() {
               </View>
 
               {req.artisan ? (
-                <View style={styles.assignedRow}>
-                  <Ionicons name="checkmark-circle" size={14} color="#2E7D32" />
-                  <Text style={styles.assignedText}>
-                    Assigné à : {req.artisan.firstName} {req.artisan.lastName}
+                <View style={[styles.assignedRow, req.status === 'PENDING' && styles.assignedRowPending]}>
+                  <Ionicons
+                    name={req.status === 'PENDING' ? 'time-outline' : 'checkmark-circle'}
+                    size={14}
+                    color={req.status === 'PENDING' ? '#F59E0B' : '#2E7D32'}
+                  />
+                  <Text style={[styles.assignedText, req.status === 'PENDING' && { color: '#B45309' }]}>
+                    {req.status === 'PENDING' ? 'En attente de confirmation de ' : 'Confirmé par '}
+                    {req.artisan.firstName} {req.artisan.lastName}
                     {req.artisan.specialty ? ` · ${req.artisan.specialty.replace(/_/g, ' ')}` : ''}
                   </Text>
                 </View>
@@ -236,7 +253,10 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 11, fontWeight: '700' },
   cardMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   metaText: { fontSize: 12, color: '#6B7280' },
+  ruleBanner: { flexDirection: 'row', gap: 8, backgroundColor: '#E3F2FD', borderRadius: 12, padding: 10, marginBottom: 12, alignItems: 'flex-start' },
+  ruleBannerText: { fontSize: 12, color: '#1565C0', flex: 1, lineHeight: 17 },
   assignedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F0FDF4', borderRadius: 10, padding: 8, marginBottom: 10 },
+  assignedRowPending: { backgroundColor: '#FFF8E1' },
   assignedText: { fontSize: 12, color: '#2E7D32', fontWeight: '600', flex: 1 },
   assignBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: '#1565C0', borderRadius: 10, padding: 8, marginBottom: 10, justifyContent: 'center' },
   assignBtnText: { fontSize: 13, color: '#1565C0', fontWeight: '700' },

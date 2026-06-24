@@ -21,6 +21,8 @@ export class OrdersService {
     private readonly ordersRepo: Repository<OrderEntity>,
     @InjectRepository(ArtisanEntity)
     private readonly artisansRepo: Repository<ArtisanEntity>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepo: Repository<UserEntity>,
   ) {}
 
   async create(client: UserEntity, data: CreateOrderData): Promise<OrderEntity> {
@@ -78,6 +80,83 @@ export class OrdersService {
       .getMany();
   }
 
+  /**
+   * Litiges dont l'agence/BTP est gestionnaire.
+   * Si disputeHandlerId est null → visible uniquement dans l'interface admin.
+   */
+  async findDisputesByHandler(handlerUserId: string) {
+    return this.ordersRepo.find({
+      where: { disputeHandlerId: handlerUserId, status: OrderStatus.DISPUTED },
+      relations: ['client', 'artisan', 'artisan.user'],
+      order: { updatedAt: 'DESC' },
+    });
+  }
+
+  async findById(id: string): Promise<OrderEntity> {
+    const order = await this.ordersRepo.findOne({
+      where: { id },
+      relations: ['client', 'artisan', 'artisan.user'],
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    return order;
+  }
+
+  /**
+   * Règle 3 : seuls ARTISAN et ENTREPRISE_BTP peuvent confirmer.
+   * AGENCE_HOTE est explicitement bloquée.
+   */
+  async confirm(orderId: string, requesterUserId: string, requesterRole: string): Promise<OrderEntity> {
+    if (requesterRole === 'AGENCE_HOTE') {
+      throw new ForbiddenException(
+        'Les agences hôtes ne peuvent pas confirmer directement une commande. Assignez un artisan pour que celui-ci confirme.',
+      );
+    }
+
+    const order = await this.findById(orderId);
+
+    const isArtisan = order.artisan?.user?.id === requesterUserId;
+    const isEntrepriseBtp = requesterRole === 'ENTREPRISE_BTP' && order.artisan?.user?.agencyId === requesterUserId;
+
+    if (!isArtisan && !isEntrepriseBtp) throw new ForbiddenException();
+    if (order.status !== OrderStatus.PENDING) throw new BadRequestException('Order cannot be confirmed');
+
+    order.status = OrderStatus.CONFIRMED;
+    return this.ordersRepo.save(order);
+  }
+
+  /**
+   * Règle 3 : AGENCE_HOTE assigne un artisan mais garde le statut PENDING
+   * (l'artisan doit lui-même confirmer).
+   * ENTREPRISE_BTP assigne ET confirme directement.
+   */
+  async assignArtisan(orderId: string, artisanId: string, requesterUserId: string, requesterRole: string): Promise<OrderEntity> {
+    const order = await this.findById(orderId);
+    if (order.status !== OrderStatus.PENDING) {
+      throw new BadRequestException('Only pending orders can be assigned');
+    }
+
+    const artisan = await this.artisansRepo.findOne({
+      where: { id: artisanId },
+      relations: ['user'],
+    });
+    if (!artisan) throw new NotFoundException('Artisan not found');
+
+    // Vérifier que l'artisan appartient à l'agence/BTP requérante
+    if (artisan.user?.agencyId !== requesterUserId) {
+      throw new ForbiddenException('Cet artisan n\'est pas affilié à votre organisation');
+    }
+
+    order.artisan = artisan;
+
+    if (requesterRole === 'ENTREPRISE_BTP') {
+      // BTP a le pouvoir de confirmation directe
+      order.status = OrderStatus.CONFIRMED;
+    }
+    // AGENCE_HOTE : statut reste PENDING, l'artisan doit confirmer
+
+    return this.ordersRepo.save(order);
+  }
+
   async updateStatus(orderId: string, status: string, userId: string): Promise<OrderEntity> {
     const order = await this.findById(orderId);
     const isArtisan = order.artisan?.user?.id === userId;
@@ -91,33 +170,6 @@ export class OrdersService {
     if (!newStatus) throw new BadRequestException('Invalid status');
     order.status = newStatus;
     if (newStatus === OrderStatus.COMPLETED) order.completedAt = new Date();
-    return this.ordersRepo.save(order);
-  }
-
-  async assignArtisan(orderId: string, artisanId: string, agencyUserId: string): Promise<OrderEntity> {
-    const order = await this.findById(orderId);
-    const artisan = await this.artisansRepo.findOne({ where: { id: artisanId }, relations: ['user'] });
-    if (!artisan) throw new NotFoundException('Artisan not found');
-    order.artisan = artisan;
-    order.status = OrderStatus.CONFIRMED;
-    return this.ordersRepo.save(order);
-  }
-
-  async findById(id: string): Promise<OrderEntity> {
-    const order = await this.ordersRepo.findOne({
-      where: { id },
-      relations: ['client', 'artisan', 'artisan.user'],
-    });
-    if (!order) throw new NotFoundException('Order not found');
-    return order;
-  }
-
-  async confirm(orderId: string, artisanUserId: string): Promise<OrderEntity> {
-    const order = await this.findById(orderId);
-    if (order.artisan.user.id !== artisanUserId) throw new ForbiddenException();
-    if (order.status !== OrderStatus.PENDING) throw new BadRequestException('Order cannot be confirmed');
-
-    order.status = OrderStatus.CONFIRMED;
     return this.ordersRepo.save(order);
   }
 
@@ -144,7 +196,7 @@ export class OrdersService {
   async cancel(orderId: string, userId: string): Promise<OrderEntity> {
     const order = await this.findById(orderId);
     const isClient = order.client.id === userId;
-    const isArtisan = order.artisan.user.id === userId;
+    const isArtisan = order.artisan?.user?.id === userId;
     if (!isClient && !isArtisan) throw new ForbiddenException();
 
     if ([OrderStatus.COMPLETED, OrderStatus.CANCELLED].includes(order.status)) {
@@ -155,6 +207,57 @@ export class OrdersService {
     if (order.escrowStatus === EscrowStatus.FUNDED) {
       order.escrowStatus = EscrowStatus.REFUNDED;
     }
+    return this.ordersRepo.save(order);
+  }
+
+  /**
+   * Règle 2 : passage en DISPUTED → auto-assignation du gestionnaire.
+   * Priority : agencyId de l'artisan → sinon null (géré par admin fixAI).
+   */
+  async openDispute(orderId: string, requesterId: string, reason?: string): Promise<OrderEntity> {
+    const order = await this.findById(orderId);
+
+    const isClient = order.client.id === requesterId;
+    const isArtisan = order.artisan?.user?.id === requesterId;
+    if (!isClient && !isArtisan) throw new ForbiddenException();
+
+    if ([OrderStatus.COMPLETED, OrderStatus.CANCELLED, OrderStatus.DISPUTED].includes(order.status)) {
+      throw new BadRequestException('Ce statut ne permet pas d\'ouvrir un litige');
+    }
+
+    order.status = OrderStatus.DISPUTED;
+    order.escrowStatus = EscrowStatus.DISPUTED;
+    order.disputeReason = reason ?? null;
+
+    // Auto-assignation au gestionnaire (agence/BTP de l'artisan)
+    const artisanUser = await this.usersRepo.findOne({ where: { id: order.artisan?.user?.id } });
+    order.disputeHandlerId = artisanUser?.agencyId ?? null; // null = admin fixAI
+
+    return this.ordersRepo.save(order);
+  }
+
+  /**
+   * Résolution d'un litige par l'agence/BTP ou l'admin.
+   * outcome : 'CLIENT' (remboursement) | 'ARTISAN' (libération escrow)
+   */
+  async resolveDispute(
+    orderId: string,
+    resolverId: string,
+    resolverRole: string,
+    outcome: 'CLIENT' | 'ARTISAN',
+    resolution: string,
+  ): Promise<OrderEntity> {
+    const order = await this.findById(orderId);
+    if (order.status !== OrderStatus.DISPUTED) throw new BadRequestException('Order is not disputed');
+
+    const isAdmin = resolverRole === 'ADMIN';
+    const isHandler = order.disputeHandlerId === resolverId;
+    if (!isAdmin && !isHandler) throw new ForbiddenException('Vous n\'êtes pas gestionnaire de ce litige');
+
+    order.disputeResolution = resolution;
+    order.status = OrderStatus.COMPLETED;
+    order.escrowStatus = outcome === 'ARTISAN' ? EscrowStatus.RELEASED : EscrowStatus.REFUNDED;
+    order.completedAt = new Date();
     return this.ordersRepo.save(order);
   }
 

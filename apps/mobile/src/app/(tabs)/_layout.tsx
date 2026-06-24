@@ -59,6 +59,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="agency-home" options={{ href: null }} />
         <Tabs.Screen name="agency-artisans" options={{ href: null }} />
         <Tabs.Screen name="agency-requests" options={{ href: null }} />
+        <Tabs.Screen name="agency-disputes" options={{ href: null }} />
       </Tabs>
     );
   }
@@ -68,8 +69,9 @@ export default function TabsLayout() {
     return (
       <Tabs screenOptions={{ tabBarActiveTintColor: '#1565C0', tabBarInactiveTintColor: '#9CA3AF', tabBarStyle: styles.tabBar, tabBarLabelStyle: styles.tabLabel, header: () => <FixAIHeader accentColor="#1565C0" /> }}>
         <Tabs.Screen name="agency-home" options={{ title: 'Tableau de bord', tabBarIcon: ({ focused }) => <TabIcon name="grid" focused={focused} color="#1565C0" /> }} />
-        <Tabs.Screen name="agency-artisans" options={{ title: 'Mes Artisans', tabBarIcon: ({ focused }) => <TabIcon name="people" focused={focused} color="#1565C0" /> }} />
+        <Tabs.Screen name="agency-artisans" options={{ title: 'Artisans', tabBarIcon: ({ focused }) => <TabIcon name="people" focused={focused} color="#1565C0" /> }} />
         <Tabs.Screen name="agency-requests" options={{ title: 'Demandes', tabBarIcon: ({ focused }) => <TabIcon name="document-text" focused={focused} color="#1565C0" /> }} />
+        <Tabs.Screen name="agency-disputes" options={{ title: 'Litiges', tabBarIcon: ({ focused }) => <TabIcon name="warning" focused={focused} color="#B71C1C" /> }} />
         <Tabs.Screen name="profile" options={{ title: 'Agence', tabBarIcon: ({ focused }) => <TabIcon name="business" focused={focused} color="#1565C0" /> }} />
         <Tabs.Screen name="index" options={{ href: null }} />
         <Tabs.Screen name="search" options={{ href: null }} />
@@ -96,6 +98,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="agency-home" options={{ href: null }} />
       <Tabs.Screen name="agency-artisans" options={{ href: null }} />
       <Tabs.Screen name="agency-requests" options={{ href: null }} />
+      <Tabs.Screen name="agency-disputes" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ArtisanEntity, ArtisanSpecialty } from './entities/artisan.entity';
 import { UserEntity } from '../users/entities/user.entity';
+import { VerificationStatus } from '../../common/enums/verification-status.enum';
 
 export interface ArtisanSearchQuery {
   specialty?: ArtisanSpecialty;
@@ -60,8 +61,8 @@ export class ArtisansService {
     if (!artisan) return { isAvailable: false, availableDays: [], availableSlots: [] };
     return {
       isAvailable: artisan.isAvailable,
-      availableDays: (artisan as any).availableDays ?? [],
-      availableSlots: (artisan as any).availableSlots ?? [],
+      availableDays: artisan.availableDays ?? [],
+      availableSlots: artisan.availableSlots ?? [],
     };
   }
 
@@ -70,8 +71,8 @@ export class ArtisansService {
     if (!artisan) throw new NotFoundException('Artisan profile not found');
     await this.artisansRepo.update(artisan.id, {
       isAvailable: data.isAvailable,
-      ...(data.availableDays !== undefined && { availableDays: data.availableDays } as any),
-      ...(data.availableSlots !== undefined && { availableSlots: data.availableSlots } as any),
+      ...(data.availableDays !== undefined && { availableDays: data.availableDays }),
+      ...(data.availableSlots !== undefined && { availableSlots: data.availableSlots }),
     });
     return { message: 'Availability updated' };
   }
@@ -85,5 +86,63 @@ export class ArtisansService {
       .leftJoinAndSelect('artisan.user', 'user')
       .where('user.id IN (:...userIds)', { userIds })
       .getMany();
+  }
+
+  // ─── Règle 1 : gestion des artisans affiliés par l'agence/BTP ──────────
+
+  private async ensureOwnership(artisanUserId: string, requesterUserId: string): Promise<UserEntity> {
+    const artisanUser = await this.usersRepo.findOne({ where: { id: artisanUserId } });
+    if (!artisanUser) throw new NotFoundException('Artisan user not found');
+    if (artisanUser.agencyId !== requesterUserId) {
+      throw new ForbiddenException('Cet artisan n\'est pas affilié à votre organisation');
+    }
+    return artisanUser;
+  }
+
+  /** Valide un artisan affilié (passe à ACTIVE) */
+  async validateAffiliatedArtisan(artisanId: string, requesterUserId: string, requesterRole: string): Promise<{ message: string }> {
+    const artisan = await this.artisansRepo.findOne({ where: { id: artisanId }, relations: ['user'] });
+    if (!artisan) throw new NotFoundException('Artisan not found');
+
+    if (requesterRole !== 'ADMIN') {
+      await this.ensureOwnership(artisan.user.id, requesterUserId);
+    }
+
+    await this.usersRepo.update(artisan.user.id, {
+      verificationStatus: VerificationStatus.ACTIVE,
+    });
+    await this.artisansRepo.update(artisanId, { isVerified: true });
+
+    return { message: 'Artisan validé avec succès' };
+  }
+
+  /** Suspend un artisan affilié */
+  async suspendAffiliatedArtisan(artisanId: string, requesterUserId: string, requesterRole: string, reason?: string): Promise<{ message: string }> {
+    const artisan = await this.artisansRepo.findOne({ where: { id: artisanId }, relations: ['user'] });
+    if (!artisan) throw new NotFoundException('Artisan not found');
+
+    if (requesterRole !== 'ADMIN') {
+      await this.ensureOwnership(artisan.user.id, requesterUserId);
+    }
+
+    await this.usersRepo.update(artisan.user.id, {
+      verificationStatus: VerificationStatus.SUSPENDED,
+    });
+    await this.artisansRepo.update(artisanId, { isAvailable: false, isVerified: false });
+
+    return { message: `Artisan suspendu${reason ? ` : ${reason}` : ''}` };
+  }
+
+  /** Désaffilie un artisan (retire le lien agencyId) */
+  async removeFromAgency(artisanId: string, requesterUserId: string, requesterRole: string): Promise<{ message: string }> {
+    const artisan = await this.artisansRepo.findOne({ where: { id: artisanId }, relations: ['user'] });
+    if (!artisan) throw new NotFoundException('Artisan not found');
+
+    if (requesterRole !== 'ADMIN') {
+      await this.ensureOwnership(artisan.user.id, requesterUserId);
+    }
+
+    await this.usersRepo.update(artisan.user.id, { agencyId: null as any });
+    return { message: 'Artisan désaffilié de l\'organisation' };
   }
 }
