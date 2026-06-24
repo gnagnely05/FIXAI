@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CatalogService } from '../catalog/catalog.service';
 import { ProductEntity } from '../catalog/entities/product.entity';
 import { ReplicateService } from './replicate.service';
+import { GeminiService } from './gemini.service';
+import { OpenAiImageService } from './openai-image.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import {
   GenerateDecorationDto,
@@ -49,6 +51,8 @@ export class AiService {
   constructor(
     private readonly catalogService: CatalogService,
     private readonly replicate: ReplicateService,
+    private readonly gemini: GeminiService,
+    private readonly openAiImage: OpenAiImageService,
     private readonly subscriptions: SubscriptionsService,
   ) {}
 
@@ -192,16 +196,16 @@ Description du client : ${conversation}`;
     try {
       let raw: string;
       if (imageUrls.length > 0) {
-        // Avec image → Replicate Vision (Llama Vision)
-        raw = await this.replicate.analyzeWithVision(systemPrompt, imageUrls[0]);
+        // Avec image → Gemini Vision
+        raw = await this.gemini.chatWithImage(systemPrompt, imageUrls[0]);
       } else {
-        // Sans image → Replicate texte (Llama 3.3)
-        raw = await this.replicate.complete(systemPrompt);
+        // Sans image → Gemini chat
+        raw = await this.gemini.chat(systemPrompt);
       }
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) return JSON.parse(jsonMatch[0]);
     } catch (err) {
-      this.logger.warn(`[Diagnose] Replicate failed: ${err}`);
+      this.logger.warn(`[Diagnose] Gemini failed: ${err}`);
     }
 
     // Fallback statique si Gemini échoue
@@ -220,6 +224,23 @@ Description du client : ${conversation}`;
     const imageUrl = await this.replicate.generateImage(prompt, { baseImageUrl });
     await this.subscriptions.consumeAiRequest(userId);
     return imageUrl;
+  }
+
+  // Registre de providers — le frontend choisit "flux" ou "gpt"
+  async generateImageByProvider(
+    userId: string,
+    prompt: string,
+    provider: 'flux' | 'gpt' = 'flux',
+  ): Promise<string> {
+    await this.subscriptions.assertAiAllowed(userId);
+    const imageProviders: Record<string, () => Promise<string>> = {
+      flux: () => this.replicate.generateImage(prompt),
+      gpt:  () => this.openAiImage.generate(prompt),
+    };
+    const fn = imageProviders[provider] ?? imageProviders['flux'];
+    const url = await fn();
+    await this.subscriptions.consumeAiRequest(userId);
+    return url;
   }
 
   async analyzeImage(userId: string, prompt: string, imageUrl?: string): Promise<string> {

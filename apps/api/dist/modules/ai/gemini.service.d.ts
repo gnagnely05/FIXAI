@@ -1,8 +1,8 @@
 export declare class GeminiService {
     private readonly logger;
-    private readonly client;
+    private readonly ai;
     constructor();
-    complete(prompt: string): Promise<string>;
-    analyzeImageFromUrl(prompt: string, imageUrl: string): Promise<string>;
+    chat(prompt: string): Promise<string>;
+    chatWithImage(prompt: string, imageUrl: string): Promise<string>;
 }
 //# sourceMappingURL=gemini.service.d.ts.map

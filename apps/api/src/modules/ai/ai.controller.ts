@@ -42,4 +42,14 @@ export class AiController {
   ) {
     return this.service.diagnose(body.serviceType, body.messages, body.imageUrls ?? []);
   }
+
+  // Route unifiée génération d'image — provider: "flux" | "gpt"
+  @UseGuards(JwtAuthGuard)
+  @Post('image')
+  generateByProvider(
+    @Request() req: { user: { sub: string } },
+    @Body() body: { prompt: string; provider?: 'flux' | 'gpt' },
+  ) {
+    return this.service.generateImageByProvider(req.user.sub, body.prompt, body.provider ?? 'flux');
+  }
 }

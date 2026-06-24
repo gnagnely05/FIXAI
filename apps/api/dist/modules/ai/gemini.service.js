@@ -12,50 +12,52 @@ var GeminiService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GeminiService = void 0;
 const common_1 = require("@nestjs/common");
-const generative_ai_1 = require("@google/generative-ai");
+const genai_1 = require("@google/genai");
 let GeminiService = GeminiService_1 = class GeminiService {
     constructor() {
         this.logger = new common_1.Logger(GeminiService_1.name);
-        this.client = null;
+        this.ai = null;
         const key = process.env.GEMINI_API_KEY;
         if (!key) {
-            this.logger.warn('GEMINI_API_KEY not configured — Gemini features unavailable');
+            this.logger.warn('GEMINI_API_KEY not set — Gemini unavailable');
             return;
         }
-        this.client = new generative_ai_1.GoogleGenerativeAI(key);
+        this.ai = new genai_1.GoogleGenAI({ apiKey: key });
     }
-    async complete(prompt) {
-        if (!this.client)
+    async chat(prompt) {
+        if (!this.ai)
             throw new common_1.ServiceUnavailableException('Gemini not configured');
         try {
-            const model = this.client.getGenerativeModel({ model: 'gemini-2.0-flash' });
-            const result = await model.generateContent(prompt);
-            return result.response.text();
+            const response = await this.ai.models.generateContent({
+                model: 'gemini-2.5-pro',
+                contents: prompt,
+            });
+            return response.text ?? '';
         }
         catch (e) {
-            const msg = e?.message ?? String(e);
-            this.logger.error(`Gemini error: ${msg}`);
+            this.logger.error(`Gemini chat error: ${e.message}`);
             throw new common_1.ServiceUnavailableException('Gemini request failed');
         }
     }
-    async analyzeImageFromUrl(prompt, imageUrl) {
-        if (!this.client)
+    async chatWithImage(prompt, imageUrl) {
+        if (!this.ai)
             throw new common_1.ServiceUnavailableException('Gemini not configured');
         try {
-            const model = this.client.getGenerativeModel({ model: 'gemini-2.0-flash' });
-            const imageResp = await fetch(imageUrl);
-            const buffer = await imageResp.arrayBuffer();
+            const imgResp = await fetch(imageUrl);
+            const buffer = await imgResp.arrayBuffer();
             const base64 = Buffer.from(buffer).toString('base64');
-            const mimeType = (imageResp.headers.get('content-type') ?? 'image/jpeg');
-            const result = await model.generateContent([
-                { inlineData: { data: base64, mimeType } },
-                prompt,
-            ]);
-            return result.response.text();
+            const mimeType = (imgResp.headers.get('content-type') ?? 'image/jpeg');
+            const response = await this.ai.models.generateContent({
+                model: 'gemini-2.5-pro',
+                contents: [
+                    { inlineData: { data: base64, mimeType } },
+                    prompt,
+                ],
+            });
+            return response.text ?? '';
         }
         catch (e) {
-            const msg = e?.message ?? String(e);
-            this.logger.error(`Gemini vision error: ${msg}`);
+            this.logger.error(`Gemini vision error: ${e.message}`);
             throw new common_1.ServiceUnavailableException('Gemini vision failed');
         }
     }

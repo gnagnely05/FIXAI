@@ -5,8 +5,8 @@
 export declare class ReplicateService {
     private readonly logger;
     private readonly client;
-    readonly FLUX_PRO = "black-forest-labs/flux-pro";
-    readonly FLUX_FILL = "black-forest-labs/flux-fill";
+    readonly FLUX_PRO = "black-forest-labs/flux-1.1-pro";
+    readonly FLUX_FILL = "black-forest-labs/flux-fill-pro";
     readonly VISION_MODEL = "meta/llama-3.2-90b-vision-instruct";
     readonly TEXT_MODEL = "meta/llama-3.3-70b-instruct";
     constructor();

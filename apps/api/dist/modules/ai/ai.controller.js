@@ -35,6 +35,10 @@ let AiController = class AiController {
     diagnose(body) {
         return this.service.diagnose(body.serviceType, body.messages, body.imageUrls ?? []);
     }
+    // Route unifiée génération d'image — provider: "flux" | "gpt"
+    generateByProvider(req, body) {
+        return this.service.generateImageByProvider(req.user.sub, body.prompt, body.provider ?? 'flux');
+    }
 };
 exports.AiController = AiController;
 __decorate([
@@ -71,6 +75,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "diagnose", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('image'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], AiController.prototype, "generateByProvider", null);
 exports.AiController = AiController = __decorate([
     (0, common_1.Controller)('ai'),
     __metadata("design:paramtypes", [ai_service_1.AiService])

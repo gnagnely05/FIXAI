@@ -24,8 +24,8 @@ let ReplicateService = ReplicateService_1 = class ReplicateService {
     constructor() {
         this.logger = new common_1.Logger(ReplicateService_1.name);
         // ─── Models ───────────────────────────────────────────────────────────────
-        this.FLUX_PRO = 'black-forest-labs/flux-pro';
-        this.FLUX_FILL = 'black-forest-labs/flux-fill';
+        this.FLUX_PRO = 'black-forest-labs/flux-1.1-pro';
+        this.FLUX_FILL = 'black-forest-labs/flux-fill-pro';
         this.VISION_MODEL = 'meta/llama-3.2-90b-vision-instruct';
         this.TEXT_MODEL = 'meta/llama-3.3-70b-instruct';
         const token = process.env.REPLICATE_API_TOKEN;

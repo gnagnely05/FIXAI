@@ -34,5 +34,13 @@ export declare class AiController {
         estimatedPriceMinXof: number;
         estimatedPriceMaxXof: number;
     }>;
+    generateByProvider(req: {
+        user: {
+            sub: string;
+        };
+    }, body: {
+        prompt: string;
+        provider?: 'flux' | 'gpt';
+    }): Promise<string>;
 }
 //# sourceMappingURL=ai.controller.d.ts.map
