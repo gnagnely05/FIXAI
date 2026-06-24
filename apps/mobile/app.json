@@ -40,6 +40,7 @@
       "typedRoutes": true
     },
     "extra": {
+      "apiUrl": "https://fixaici.net/api/v1",
       "eas": {
         "projectId": "0140d42b-544e-40c7-805d-8def107c795e"
       }
