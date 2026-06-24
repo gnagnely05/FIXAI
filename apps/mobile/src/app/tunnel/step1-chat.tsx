@@ -39,8 +39,14 @@ export default function Step1Chat() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
       quality: 0.8,
+      base64: true,
     });
-    if (!result.canceled) result.assets.forEach(a => addImage(a.uri));
+    if (!result.canceled) {
+      result.assets.forEach(a => {
+        // Sur web, uri est déjà un blob URL utilisable — on l'utilise directement
+        addImage(a.uri);
+      });
+    }
   };
 
   const handleRefresh = () => {
@@ -58,17 +64,23 @@ export default function Step1Chat() {
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.role === 'user';
+    const isLast = item === messages[messages.length - 1];
     return (
       <View style={[styles.row, isUser ? styles.rowUser : styles.rowAI]}>
         <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAI]}>
           <Text style={[styles.bubbleText, isUser ? styles.textUser : styles.textAI]}>
             {item.content}
           </Text>
-          {isUser && images.length > 0 && item === messages[messages.length - 1] && (
+          {/* Affiche les images sous le dernier message utilisateur */}
+          {isUser && isLast && images.length > 0 && (
             <View style={styles.imageGrid}>
-              {images.map(uri => (
-                <TouchableOpacity key={uri} onPress={() => removeImage(uri)}>
-                  <Image source={{ uri }} style={styles.thumbImg} />
+              {images.map((uri, idx) => (
+                <TouchableOpacity key={idx} onPress={() => removeImage(uri)}>
+                  <Image
+                    source={{ uri }}
+                    style={styles.thumbImg}
+                    onError={() => {}}
+                  />
                 </TouchableOpacity>
               ))}
             </View>
@@ -128,11 +140,11 @@ export default function Step1Chat() {
           </TouchableOpacity>
         </View>
 
-        {/* Suivant */}
+        {/* Suivant — actif dès qu'au moins un message utilisateur a été envoyé */}
         <TouchableOpacity
-          style={[styles.nextBtn, (!diagnosisResult || isLoading) && styles.nextBtnDisabled]}
+          style={[styles.nextBtn, (messages.length < 2 || isLoading) && styles.nextBtnDisabled]}
           onPress={handleNext}
-          disabled={!diagnosisResult || isLoading}
+          disabled={messages.length < 2 || isLoading}
         >
           <Text style={styles.nextBtnText}>→  Suivant</Text>
         </TouchableOpacity>
