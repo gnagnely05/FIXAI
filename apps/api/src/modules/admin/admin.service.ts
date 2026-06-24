@@ -11,6 +11,7 @@ import { DocumentEntity, DocumentStatus } from '../documents/entities/document.e
 import { CommissionConfigEntity } from './entities/commission-config.entity';
 import { ProductEntity } from '../catalog/entities/product.entity';
 import { VerificationStatus } from '../../common/enums/verification-status.enum';
+import { UserRole } from '../../common/enums/user-role.enum';
 import { VerifyStepDto, VerifyAction } from './dto/verify-step.dto';
 
 /** Automatic next status after APPROVE for each current status */

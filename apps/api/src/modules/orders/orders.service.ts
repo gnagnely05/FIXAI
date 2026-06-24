@@ -227,11 +227,11 @@ export class OrdersService {
 
     order.status = OrderStatus.DISPUTED;
     order.escrowStatus = EscrowStatus.DISPUTED;
-    order.disputeReason = reason ?? null;
+    order.disputeReason = reason ?? undefined;
 
     // Auto-assignation au gestionnaire (agence/BTP de l'artisan)
     const artisanUser = await this.usersRepo.findOne({ where: { id: order.artisan?.user?.id } });
-    order.disputeHandlerId = artisanUser?.agencyId ?? null; // null = admin fixAI
+    order.disputeHandlerId = artisanUser?.agencyId ?? undefined; // undefined = admin fixAI
 
     return this.ordersRepo.save(order);
   }

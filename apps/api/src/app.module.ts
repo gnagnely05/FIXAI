@@ -19,6 +19,7 @@ import { DepannageRequest } from './modules/depannage/entities/depannage-request
 import { RenovationProject } from './modules/renovation/entities/renovation-project.entity';
 import { Payment } from './modules/payments/entities/payment.entity';
 import { ProductEntity } from './modules/catalog/entities/product.entity';
+import { ProductOrderEntity } from './modules/catalog/entities/product-order.entity';
 import { SubscriptionPlanEntity } from './modules/subscriptions/entities/subscription-plan.entity';
 import { UserSubscriptionEntity } from './modules/subscriptions/entities/user-subscription.entity';
 import { DocumentEntity } from './modules/documents/entities/document.entity';
@@ -40,7 +41,7 @@ import { CommissionConfigEntity } from './modules/admin/entities/commission-conf
         username: config.get<string>('DB_USER', 'root'),
         password: config.get<string>('DB_PASSWORD', ''),
         database: config.get<string>('DB_NAME', 'fixai'),
-        entities: [User, Artisan, OrderEntity, DepannageRequest, RenovationProject, Payment, ProductEntity, SubscriptionPlanEntity, UserSubscriptionEntity, DocumentEntity, CommissionConfigEntity],
+        entities: [User, Artisan, OrderEntity, DepannageRequest, RenovationProject, Payment, ProductEntity, ProductOrderEntity, SubscriptionPlanEntity, UserSubscriptionEntity, DocumentEntity, CommissionConfigEntity],
         synchronize: config.get<string>('NODE_ENV') !== 'production',
         logging: config.get<string>('NODE_ENV') === 'development',
       }),
