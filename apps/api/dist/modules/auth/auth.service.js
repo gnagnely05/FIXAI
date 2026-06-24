@@ -69,6 +69,7 @@ let AuthService = class AuthService {
             throw new common_1.BadRequestException('btpMode is required for ENTREPRISE_BTP');
         }
         const passwordHash = await bcrypt.hash(dto.password, 12);
+        const initialStatus = this.getInitialStatus(dto.role, dto.documents);
         const user = this.usersRepo.create({
             email: dto.email,
             phone: dto.phone,
@@ -79,13 +80,15 @@ let AuthService = class AuthService {
             city: dto.city,
             radiusKm: dto.radiusKm,
             btpMode: dto.btpMode,
-            verificationStatus: dto.documentUrls?.length
-                ? verification_status_enum_1.VerificationStatus.DOCS_SUBMITTED
-                : verification_status_enum_1.VerificationStatus.REGISTERED,
+            verificationStatus: initialStatus,
         });
         await this.usersRepo.save(user);
-        if (dto.documentUrls?.length) {
-            const docs = dto.documentUrls.map((url) => this.docsRepo.create({ userId: user.id, type: document_entity_1.DocumentType.OTHER, fileUrl: url }));
+        if (dto.documents?.length) {
+            const docs = dto.documents.map(({ type, url }) => this.docsRepo.create({
+                userId: user.id,
+                type: (document_entity_1.DocumentType[type] ?? document_entity_1.DocumentType.OTHER),
+                fileUrl: url,
+            }));
             await this.docsRepo.save(docs);
         }
         const tokens = await this.generateTokens(user);
@@ -144,6 +147,22 @@ let AuthService = class AuthService {
     async updateRefreshToken(userId, refreshToken) {
         const hashed = await bcrypt.hash(refreshToken, 10);
         await this.usersRepo.update(userId, { refreshToken: hashed });
+    }
+    getInitialStatus(role, documents) {
+        const hasDocs = documents && documents.length > 0;
+        switch (role) {
+            case user_role_enum_1.UserRole.BOUTIQUE:
+                return verification_status_enum_1.VerificationStatus.SHOP_REGISTERED;
+            case user_role_enum_1.UserRole.QUINCAILLERIE:
+                return verification_status_enum_1.VerificationStatus.HARDWARE_REGISTERED;
+            case user_role_enum_1.UserRole.AGENCE_HOTE:
+            case user_role_enum_1.UserRole.ENTREPRISE_BTP:
+                return hasDocs ? verification_status_enum_1.VerificationStatus.DOCS_SUBMITTED : verification_status_enum_1.VerificationStatus.REGISTERED;
+            case user_role_enum_1.UserRole.ARTISAN:
+                return hasDocs ? verification_status_enum_1.VerificationStatus.DOCS_SUBMITTED : verification_status_enum_1.VerificationStatus.REGISTERED;
+            default:
+                return verification_status_enum_1.VerificationStatus.REGISTERED;
+        }
     }
     sanitizeUser(user) {
         const { passwordHash, refreshToken, ...safe } = user;

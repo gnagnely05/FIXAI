@@ -30,6 +30,19 @@ let CatalogController = class CatalogController {
     quincailleries() {
         return this.service.findQuincailleries();
     }
+    // Static shop routes MUST come before :id to avoid "shop" being parsed as a UUID
+    myProducts(req) {
+        return this.service.findAllByMerchant(req.user.sub);
+    }
+    promoteProduct(id, body, req) {
+        return this.service.setPromoted(id, req.user.sub, body.isPromoted, body.promotedUntil ? new Date(body.promotedUntil) : undefined);
+    }
+    updateProduct(id, data, req) {
+        return this.service.update(id, req.user.sub, data);
+    }
+    removeProduct(id, req) {
+        return this.service.remove(id, req.user.sub);
+    }
     findOne(id) {
         return this.service.findOne(id);
     }
@@ -57,6 +70,43 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], CatalogController.prototype, "quincailleries", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('shop/my-products'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CatalogController.prototype, "myProducts", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('shop/:id/promote'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], CatalogController.prototype, "promoteProduct", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('shop/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], CatalogController.prototype, "updateProduct", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Delete)('shop/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], CatalogController.prototype, "removeProduct", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

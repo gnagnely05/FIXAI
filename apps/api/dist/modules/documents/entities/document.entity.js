@@ -16,6 +16,13 @@ var DocumentType;
 (function (DocumentType) {
     DocumentType["NATIONAL_ID"] = "NATIONAL_ID";
     DocumentType["PASSPORT"] = "PASSPORT";
+    DocumentType["SELFIE"] = "SELFIE";
+    DocumentType["RCCM"] = "RCCM";
+    DocumentType["STATUTS_SOCIETE"] = "STATUTS_SOCIETE";
+    DocumentType["ATTESTATION_FISCALE"] = "ATTESTATION_FISCALE";
+    DocumentType["CNI_REPRESENTANT"] = "CNI_REPRESENTANT";
+    DocumentType["MOBILE_MONEY_PROOF"] = "MOBILE_MONEY_PROOF";
+    DocumentType["JUSTIFICATIF_COMPETENCE"] = "JUSTIFICATIF_COMPETENCE";
     DocumentType["BUSINESS_LICENSE"] = "BUSINESS_LICENSE";
     DocumentType["INSURANCE"] = "INSURANCE";
     DocumentType["DIPLOMA"] = "DIPLOMA";

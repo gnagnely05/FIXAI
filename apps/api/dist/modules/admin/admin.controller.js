@@ -41,11 +41,54 @@ let AdminController = class AdminController {
         return this.service.rejectUser(userId, reason);
     }
     // ── Commission ─────────────────────────────────────────────────────
+    // ── Seed admin (one-shot, protected by ADMIN_SETUP_SECRET env var) ────
+    // No JWT guard — callable before any admin exists
+    async seedAdmin(body) {
+        const secret = process.env.ADMIN_SETUP_SECRET;
+        if (!secret || body.setupSecret !== secret) {
+            throw new common_1.UnauthorizedException('Invalid setup secret');
+        }
+        return this.service.seedAdmin(body.email, body.password, body.firstName, body.lastName);
+    }
+    // ── Commission ─────────────────────────────────────────────────────
     getCommission() {
         return this.service.getActiveCommission();
     }
     updateCommission(body) {
         return this.service.updateCommission(body.fixaiRate, body.agencyRate);
+    }
+    // ── Escrow ─────────────────────────────────────────────────────────
+    // ── Actors CRUD ────────────────────────────────────────────────────
+    getActors(role, status, q) {
+        return this.service.getActors(role, status, q);
+    }
+    getActor(id) {
+        return this.service.getActorById(id);
+    }
+    updateActor(id, body) {
+        return this.service.updateActor(id, body);
+    }
+    deleteActor(id) {
+        return this.service.deleteActor(id);
+    }
+    suspendActor(id, reason) {
+        return this.service.suspendActor(id, reason);
+    }
+    activateActor(id) {
+        return this.service.activateActor(id);
+    }
+    // ── Products CRUD ───────────────────────────────────────────────────
+    getProducts(merchantId, merchantType, q) {
+        return this.service.getProducts(merchantId, merchantType, q);
+    }
+    createProduct(body) {
+        return this.service.createProduct(body);
+    }
+    updateProduct(id, body) {
+        return this.service.updateProduct(id, body);
+    }
+    deleteProduct(id) {
+        return this.service.deleteProduct(id);
     }
     // ── Escrow ─────────────────────────────────────────────────────────
     getEscrowOverview() {
@@ -91,6 +134,13 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "rejectUser", null);
 __decorate([
+    (0, common_1.Post)('seed-admin'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "seedAdmin", null);
+__decorate([
     (0, common_1.Get)('commission'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -103,6 +153,83 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "updateCommission", null);
+__decorate([
+    (0, common_1.Get)('actors'),
+    __param(0, (0, common_1.Query)('role')),
+    __param(1, (0, common_1.Query)('status')),
+    __param(2, (0, common_1.Query)('q')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getActors", null);
+__decorate([
+    (0, common_1.Get)('actors/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getActor", null);
+__decorate([
+    (0, common_1.Patch)('actors/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "updateActor", null);
+__decorate([
+    (0, common_1.Delete)('actors/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "deleteActor", null);
+__decorate([
+    (0, common_1.Patch)('actors/:id/suspend'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('reason')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "suspendActor", null);
+__decorate([
+    (0, common_1.Patch)('actors/:id/activate'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "activateActor", null);
+__decorate([
+    (0, common_1.Get)('products'),
+    __param(0, (0, common_1.Query)('merchantId')),
+    __param(1, (0, common_1.Query)('merchantType')),
+    __param(2, (0, common_1.Query)('q')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getProducts", null);
+__decorate([
+    (0, common_1.Post)('products'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "createProduct", null);
+__decorate([
+    (0, common_1.Put)('products/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "updateProduct", null);
+__decorate([
+    (0, common_1.Delete)('products/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "deleteProduct", null);
 __decorate([
     (0, common_1.Get)('escrow-overview'),
     __metadata("design:type", Function),

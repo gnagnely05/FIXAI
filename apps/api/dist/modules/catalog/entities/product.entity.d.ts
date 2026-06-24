@@ -29,6 +29,13 @@ export declare class ProductEntity {
     isAvailable: boolean;
     stock: number;
     unit: string;
+    /**
+     * Produit promu : priorisé dans les suggestions IA et l'affichage catalogue.
+     * Activé par la boutique (option payante).
+     */
+    isPromoted: boolean;
+    /** Date d'expiration de la promotion (null = pas de limite) */
+    promotedUntil?: Date;
     createdAt: Date;
     updatedAt: Date;
 }

@@ -29,6 +29,15 @@ export declare class OrderEntity {
     city: string;
     notes?: string;
     paymentTransactionId?: string;
+    /**
+     * ID de l'agence/BTP qui gère le litige.
+     * Alimenté automatiquement à la mise en DISPUTED depuis l'agencyId de l'artisan.
+     * Si null → litige géré par l'admin fixAI.
+     */
+    disputeHandlerId?: string;
+    disputeHandler?: UserEntity;
+    disputeReason?: string;
+    disputeResolution?: string;
     createdAt: Date;
     updatedAt: Date;
 }

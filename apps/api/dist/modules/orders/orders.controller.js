@@ -24,19 +24,50 @@ let OrdersController = class OrdersController {
         return this.ordersService.create(req.user, body);
     }
     async getMyOrders(req) {
-        return this.ordersService.findByClient(req.user.sub);
+        const { sub, role } = req.user;
+        if (role === 'ARTISAN')
+            return this.ordersService.findByArtisanUserId(sub);
+        if (role === 'AGENCE_HOTE' || role === 'ENTREPRISE_BTP')
+            return this.ordersService.findByAgency(sub);
+        return this.ordersService.findByClient(sub);
+    }
+    /** Litiges dont l'agence/BTP connectée est gestionnaire */
+    async getMyDisputes(req) {
+        return this.ordersService.findDisputesByHandler(req.user.sub);
     }
     async findOne(id) {
         return this.ordersService.findById(id);
     }
+    /**
+     * Règle 3 : AGENCE_HOTE bloquée — ForbiddenException renvoyée par le service.
+     * Seuls ARTISAN et ENTREPRISE_BTP peuvent confirmer.
+     */
     async confirm(id, req) {
-        return this.ordersService.confirm(id, req.user.sub);
+        return this.ordersService.confirm(id, req.user.sub, req.user.role);
     }
     async complete(id, req) {
         return this.ordersService.complete(id, req.user.sub);
     }
     async cancel(id, req) {
         return this.ordersService.cancel(id, req.user.sub);
+    }
+    async updateStatus(id, body, req) {
+        return this.ordersService.updateStatus(id, body.status, req.user.sub);
+    }
+    /**
+     * Règle 3 : AGENCE_HOTE → assigne sans confirmer (artisan doit confirmer ensuite).
+     * ENTREPRISE_BTP → assigne + confirme directement.
+     */
+    async assign(id, body, req) {
+        return this.ordersService.assignArtisan(id, body.artisanId, req.user.sub, req.user.role);
+    }
+    /** Règle 2 : ouverture d'un litige — auto-assignation du gestionnaire */
+    async openDispute(id, body, req) {
+        return this.ordersService.openDispute(id, req.user.sub, body.reason);
+    }
+    /** Règle 2 : résolution d'un litige par l'agence/BTP ou l'admin */
+    async resolveDispute(id, body, req) {
+        return this.ordersService.resolveDispute(id, req.user.sub, req.user.role, body.outcome, body.resolution);
     }
 };
 exports.OrdersController = OrdersController;
@@ -55,6 +86,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "getMyOrders", null);
+__decorate([
+    (0, common_1.Get)('disputes/mine'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getMyDisputes", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
@@ -86,6 +124,42 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "cancel", null);
+__decorate([
+    (0, common_1.Patch)(':id/status'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "updateStatus", null);
+__decorate([
+    (0, common_1.Patch)(':id/assign'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "assign", null);
+__decorate([
+    (0, common_1.Patch)(':id/dispute'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "openDispute", null);
+__decorate([
+    (0, common_1.Patch)(':id/resolve-dispute'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "resolveDispute", null);
 exports.OrdersController = OrdersController = __decorate([
     (0, common_1.Controller)('orders'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

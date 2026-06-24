@@ -6,6 +6,8 @@ export declare class CommissionConfigEntity {
     agencyRate: number;
     /** Net percentage going to the artisan = 1 - fixaiRate - agencyRate */
     artisanRate: number;
+    /** Commission FixAI prélevée sur chaque vente de produit en boutique/quincaillerie */
+    storeCommissionRate: number;
     isActive: boolean;
     description?: string;
     createdAt: Date;

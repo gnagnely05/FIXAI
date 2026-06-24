@@ -88,6 +88,23 @@ __decorate([
     __metadata("design:type", String)
 ], OrderEntity.prototype, "paymentTransactionId", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], OrderEntity.prototype, "disputeHandlerId", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.UserEntity, { nullable: true, onDelete: 'SET NULL' }),
+    (0, typeorm_1.JoinColumn)({ name: 'disputeHandlerId' }),
+    __metadata("design:type", user_entity_1.UserEntity)
+], OrderEntity.prototype, "disputeHandler", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], OrderEntity.prototype, "disputeReason", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], OrderEntity.prototype, "disputeResolution", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], OrderEntity.prototype, "createdAt", void 0);

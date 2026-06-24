@@ -83,6 +83,14 @@ __decorate([
     __metadata("design:type", String)
 ], ProductEntity.prototype, "unit", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], ProductEntity.prototype, "isPromoted", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", Date)
+], ProductEntity.prototype, "promotedUntil", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], ProductEntity.prototype, "createdAt", void 0);

@@ -16,13 +16,14 @@ const artisan_entity_1 = require("../artisans/entities/artisan.entity");
 const order_entity_1 = require("../orders/entities/order.entity");
 const document_entity_1 = require("../documents/entities/document.entity");
 const commission_config_entity_1 = require("./entities/commission-config.entity");
+const product_entity_1 = require("../catalog/entities/product.entity");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([user_entity_1.UserEntity, artisan_entity_1.ArtisanEntity, order_entity_1.OrderEntity, document_entity_1.DocumentEntity, commission_config_entity_1.CommissionConfigEntity]),
+            typeorm_1.TypeOrmModule.forFeature([user_entity_1.UserEntity, artisan_entity_1.ArtisanEntity, order_entity_1.OrderEntity, document_entity_1.DocumentEntity, commission_config_entity_1.CommissionConfigEntity, product_entity_1.ProductEntity]),
         ],
         providers: [admin_service_1.AdminService],
         controllers: [admin_controller_1.AdminController],

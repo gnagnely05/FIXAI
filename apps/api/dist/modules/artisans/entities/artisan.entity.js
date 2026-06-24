@@ -92,6 +92,14 @@ __decorate([
     __metadata("design:type", Array)
 ], ArtisanEntity.prototype, "portfolioImages", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'simple-array', nullable: true }),
+    __metadata("design:type", Array)
+], ArtisanEntity.prototype, "availableDays", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'simple-array', nullable: true }),
+    __metadata("design:type", Array)
+], ArtisanEntity.prototype, "availableSlots", void 0);
+__decorate([
     (0, typeorm_1.OneToMany)(() => order_entity_1.OrderEntity, (order) => order.artisan),
     __metadata("design:type", Array)
 ], ArtisanEntity.prototype, "orders", void 0);

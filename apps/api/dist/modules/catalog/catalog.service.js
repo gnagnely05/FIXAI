@@ -42,7 +42,7 @@ let CatalogService = class CatalogService {
             query = query.andWhere('p.priceXof >= :min', { min: dto.minPrice });
         if (dto.maxPrice != null)
             query = query.andWhere('p.priceXof <= :max', { max: dto.maxPrice });
-        return query.orderBy('p.name', 'ASC').getMany();
+        return query.orderBy('p.isPromoted', 'DESC').addOrderBy('p.name', 'ASC').getMany();
     }
     async findOne(id) {
         const p = await this.repo.findOne({ where: { id } });
@@ -62,6 +62,36 @@ let CatalogService = class CatalogService {
     }
     async findQuincailleries() {
         return this.repo.find({ where: { merchantType: product_entity_1.MerchantType.QUINCAILLERIE, isAvailable: true }, order: { name: 'ASC' } });
+    }
+    async findAllByMerchant(merchantId) {
+        return this.repo.find({ where: { merchantId }, order: { isPromoted: 'DESC', name: 'ASC' } });
+    }
+    async update(id, merchantId, data) {
+        const p = await this.repo.findOne({ where: { id } });
+        if (!p)
+            throw new common_1.NotFoundException('Product not found');
+        if (p.merchantId !== merchantId)
+            throw new common_1.ForbiddenException();
+        Object.assign(p, data);
+        return this.repo.save(p);
+    }
+    async setPromoted(id, merchantId, isPromoted, promotedUntil) {
+        const p = await this.repo.findOne({ where: { id } });
+        if (!p)
+            throw new common_1.NotFoundException('Product not found');
+        if (p.merchantId !== merchantId)
+            throw new common_1.ForbiddenException();
+        p.isPromoted = isPromoted;
+        p.promotedUntil = promotedUntil ?? undefined;
+        return this.repo.save(p);
+    }
+    async remove(id, merchantId) {
+        const p = await this.repo.findOne({ where: { id } });
+        if (!p)
+            throw new common_1.NotFoundException('Product not found');
+        if (p.merchantId !== merchantId)
+            throw new common_1.ForbiddenException();
+        await this.repo.remove(p);
     }
 };
 exports.CatalogService = CatalogService;

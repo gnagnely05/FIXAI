@@ -31,6 +31,10 @@ __decorate([
     __metadata("design:type", Number)
 ], CommissionConfigEntity.prototype, "artisanRate", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'float', default: 0.05 }),
+    __metadata("design:type", Number)
+], CommissionConfigEntity.prototype, "storeCommissionRate", void 0);
+__decorate([
     (0, typeorm_1.Column)({ default: true }),
     __metadata("design:type", Boolean)
 ], CommissionConfigEntity.prototype, "isActive", void 0);

@@ -28,6 +28,8 @@ export declare class ArtisanEntity {
     yearsOfExperience: number;
     hourlyRate: number;
     portfolioImages: string[];
+    availableDays: string[];
+    availableSlots: string[];
     orders: OrderEntity[];
     createdAt: Date;
     updatedAt: Date;

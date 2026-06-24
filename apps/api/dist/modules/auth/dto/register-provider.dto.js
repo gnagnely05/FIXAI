@@ -55,6 +55,7 @@ __decorate([
     __metadata("design:type", String)
 ], RegisterProviderDto.prototype, "city", void 0);
 __decorate([
+    (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], RegisterProviderDto.prototype, "radiusKm", void 0);
@@ -64,9 +65,59 @@ __decorate([
     __metadata("design:type", String)
 ], RegisterProviderDto.prototype, "btpMode", void 0);
 __decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], RegisterProviderDto.prototype, "specialty", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], RegisterProviderDto.prototype, "bio", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], RegisterProviderDto.prototype, "yearsOfExperience", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], RegisterProviderDto.prototype, "hourlyRate", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], RegisterProviderDto.prototype, "mobileMoneyNumber", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], RegisterProviderDto.prototype, "agencyName", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], RegisterProviderDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], RegisterProviderDto.prototype, "shopName", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], RegisterProviderDto.prototype, "address", void 0);
+__decorate([
     (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsUrl)({}, { each: true }),
+    (0, class_validator_1.IsString)({ each: true }),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
-], RegisterProviderDto.prototype, "documentUrls", void 0);
+], RegisterProviderDto.prototype, "catalogCategories", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], RegisterProviderDto.prototype, "documents", void 0);
 //# sourceMappingURL=register-provider.dto.js.map

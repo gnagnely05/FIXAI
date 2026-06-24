@@ -88,6 +88,7 @@ export declare class AuthService {
     }>;
     private generateTokens;
     private updateRefreshToken;
+    private getInitialStatus;
     private sanitizeUser;
 }
 //# sourceMappingURL=auth.service.d.ts.map

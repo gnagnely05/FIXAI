@@ -10,10 +10,21 @@ export declare class RegisterProviderDto {
     role: (typeof PROVIDER_ROLES)[number];
     city?: string;
     radiusKm?: number;
-    /** Required if role === ENTREPRISE_BTP */
     btpMode?: BtpMode;
-    /** Document URLs (KYC) uploaded by the provider */
-    documentUrls?: string[];
+    specialty?: string;
+    bio?: string;
+    yearsOfExperience?: number;
+    hourlyRate?: number;
+    mobileMoneyNumber?: string;
+    agencyName?: string;
+    description?: string;
+    shopName?: string;
+    address?: string;
+    catalogCategories?: string[];
+    documents?: {
+        type: string;
+        url: string;
+    }[];
 }
 export {};
 //# sourceMappingURL=register-provider.dto.d.ts.map

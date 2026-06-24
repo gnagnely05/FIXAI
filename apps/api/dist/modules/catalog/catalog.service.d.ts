@@ -10,5 +10,9 @@ export declare class CatalogService {
     create(dto: CreateProductDto): Promise<ProductEntity>;
     findBoutiques(): Promise<ProductEntity[]>;
     findQuincailleries(): Promise<ProductEntity[]>;
+    findAllByMerchant(merchantId: string): Promise<ProductEntity[]>;
+    update(id: string, merchantId: string, data: Partial<CreateProductDto>): Promise<ProductEntity>;
+    setPromoted(id: string, merchantId: string, isPromoted: boolean, promotedUntil?: Date): Promise<ProductEntity>;
+    remove(id: string, merchantId: string): Promise<void>;
 }
 //# sourceMappingURL=catalog.service.d.ts.map

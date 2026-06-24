@@ -13,15 +13,44 @@ export interface CreateOrderData {
 export declare class OrdersService {
     private readonly ordersRepo;
     private readonly artisansRepo;
-    constructor(ordersRepo: Repository<OrderEntity>, artisansRepo: Repository<ArtisanEntity>);
+    private readonly usersRepo;
+    constructor(ordersRepo: Repository<OrderEntity>, artisansRepo: Repository<ArtisanEntity>, usersRepo: Repository<UserEntity>);
     create(client: UserEntity, data: CreateOrderData): Promise<OrderEntity>;
     findByClient(clientId: string): Promise<OrderEntity[]>;
     findByArtisan(artisanId: string): Promise<OrderEntity[]>;
+    findByArtisanUserId(userId: string): Promise<OrderEntity[]>;
+    findByAgency(agencyUserId: string): Promise<OrderEntity[]>;
+    /**
+     * Litiges dont l'agence/BTP est gestionnaire.
+     * Si disputeHandlerId est null → visible uniquement dans l'interface admin.
+     */
+    findDisputesByHandler(handlerUserId: string): Promise<OrderEntity[]>;
     findById(id: string): Promise<OrderEntity>;
-    confirm(orderId: string, artisanUserId: string): Promise<OrderEntity>;
+    /**
+     * Règle 3 : seuls ARTISAN et ENTREPRISE_BTP peuvent confirmer.
+     * AGENCE_HOTE est explicitement bloquée.
+     */
+    confirm(orderId: string, requesterUserId: string, requesterRole: string): Promise<OrderEntity>;
+    /**
+     * Règle 3 : AGENCE_HOTE assigne un artisan mais garde le statut PENDING
+     * (l'artisan doit lui-même confirmer).
+     * ENTREPRISE_BTP assigne ET confirme directement.
+     */
+    assignArtisan(orderId: string, artisanId: string, requesterUserId: string, requesterRole: string): Promise<OrderEntity>;
+    updateStatus(orderId: string, status: string, userId: string): Promise<OrderEntity>;
     markInProgress(orderId: string): Promise<OrderEntity>;
     complete(orderId: string, clientId: string): Promise<OrderEntity>;
     cancel(orderId: string, userId: string): Promise<OrderEntity>;
+    /**
+     * Règle 2 : passage en DISPUTED → auto-assignation du gestionnaire.
+     * Priority : agencyId de l'artisan → sinon null (géré par admin fixAI).
+     */
+    openDispute(orderId: string, requesterId: string, reason?: string): Promise<OrderEntity>;
+    /**
+     * Résolution d'un litige par l'agence/BTP ou l'admin.
+     * outcome : 'CLIENT' (remboursement) | 'ARTISAN' (libération escrow)
+     */
+    resolveDispute(orderId: string, resolverId: string, resolverRole: string, outcome: 'CLIENT' | 'ARTISAN', resolution: string): Promise<OrderEntity>;
     updateEscrow(orderId: string, amount: number, status: EscrowStatus, transactionId: string): Promise<void>;
 }
 //# sourceMappingURL=orders.service.d.ts.map

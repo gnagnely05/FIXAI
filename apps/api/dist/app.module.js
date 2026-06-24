@@ -28,6 +28,7 @@ const depannage_request_entity_1 = require("./modules/depannage/entities/depanna
 const renovation_project_entity_1 = require("./modules/renovation/entities/renovation-project.entity");
 const payment_entity_1 = require("./modules/payments/entities/payment.entity");
 const product_entity_1 = require("./modules/catalog/entities/product.entity");
+const product_order_entity_1 = require("./modules/catalog/entities/product-order.entity");
 const subscription_plan_entity_1 = require("./modules/subscriptions/entities/subscription-plan.entity");
 const user_subscription_entity_1 = require("./modules/subscriptions/entities/user-subscription.entity");
 const document_entity_1 = require("./modules/documents/entities/document.entity");
@@ -52,7 +53,7 @@ exports.AppModule = AppModule = __decorate([
                     username: config.get('DB_USER', 'root'),
                     password: config.get('DB_PASSWORD', ''),
                     database: config.get('DB_NAME', 'fixai'),
-                    entities: [user_entity_1.User, artisan_entity_1.Artisan, order_entity_1.OrderEntity, depannage_request_entity_1.DepannageRequest, renovation_project_entity_1.RenovationProject, payment_entity_1.Payment, product_entity_1.ProductEntity, subscription_plan_entity_1.SubscriptionPlanEntity, user_subscription_entity_1.UserSubscriptionEntity, document_entity_1.DocumentEntity, commission_config_entity_1.CommissionConfigEntity],
+                    entities: [user_entity_1.User, artisan_entity_1.Artisan, order_entity_1.OrderEntity, depannage_request_entity_1.DepannageRequest, renovation_project_entity_1.RenovationProject, payment_entity_1.Payment, product_entity_1.ProductEntity, product_order_entity_1.ProductOrderEntity, subscription_plan_entity_1.SubscriptionPlanEntity, user_subscription_entity_1.UserSubscriptionEntity, document_entity_1.DocumentEntity, commission_config_entity_1.CommissionConfigEntity],
                     synchronize: config.get('NODE_ENV') !== 'production',
                     logging: config.get('NODE_ENV') === 'development',
                 }),
