@@ -10,6 +10,8 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const config_1 = require("@nestjs/config");
+const serve_static_1 = require("@nestjs/serve-static");
+const path_1 = require("path");
 const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const artisans_module_1 = require("./modules/artisans/artisans.module");
@@ -39,9 +41,12 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            config_1.ConfigModule.forRoot({
-                isGlobal: true,
-                envFilePath: '.env',
+            config_1.ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+            // Sert l'app Expo web sur / — les routes /api/* restent NestJS
+            serve_static_1.ServeStaticModule.forRoot({
+                rootPath: (0, path_1.join)(__dirname, '..', '..', '..', 'apps', 'mobile', 'dist'),
+                exclude: ['/api/(.*)'],
+                serveStaticOptions: { index: false },
             }),
             typeorm_1.TypeOrmModule.forRootAsync({
                 imports: [config_1.ConfigModule],
@@ -53,7 +58,11 @@ exports.AppModule = AppModule = __decorate([
                     username: config.get('DB_USER', 'root'),
                     password: config.get('DB_PASSWORD', ''),
                     database: config.get('DB_NAME', 'fixai'),
-                    entities: [user_entity_1.User, artisan_entity_1.Artisan, order_entity_1.OrderEntity, depannage_request_entity_1.DepannageRequest, renovation_project_entity_1.RenovationProject, payment_entity_1.Payment, product_entity_1.ProductEntity, product_order_entity_1.ProductOrderEntity, subscription_plan_entity_1.SubscriptionPlanEntity, user_subscription_entity_1.UserSubscriptionEntity, document_entity_1.DocumentEntity, commission_config_entity_1.CommissionConfigEntity],
+                    entities: [
+                        user_entity_1.User, artisan_entity_1.Artisan, order_entity_1.OrderEntity, depannage_request_entity_1.DepannageRequest, renovation_project_entity_1.RenovationProject,
+                        payment_entity_1.Payment, product_entity_1.ProductEntity, product_order_entity_1.ProductOrderEntity, subscription_plan_entity_1.SubscriptionPlanEntity,
+                        user_subscription_entity_1.UserSubscriptionEntity, document_entity_1.DocumentEntity, commission_config_entity_1.CommissionConfigEntity,
+                    ],
                     synchronize: config.get('NODE_ENV') !== 'production',
                     logging: config.get('NODE_ENV') === 'development',
                 }),

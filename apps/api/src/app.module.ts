@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ArtisansModule } from './modules/artisans/artisans.module';
@@ -27,10 +29,15 @@ import { CommissionConfigEntity } from './modules/admin/entities/commission-conf
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+
+    // Sert l'app Expo web sur / — les routes /api/* restent NestJS
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', '..', 'apps', 'mobile', 'dist'),
+      exclude: ['/api/(.*)'],
+      serveStaticOptions: { index: false },
     }),
+
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -41,11 +48,16 @@ import { CommissionConfigEntity } from './modules/admin/entities/commission-conf
         username: config.get<string>('DB_USER', 'root'),
         password: config.get<string>('DB_PASSWORD', ''),
         database: config.get<string>('DB_NAME', 'fixai'),
-        entities: [User, Artisan, OrderEntity, DepannageRequest, RenovationProject, Payment, ProductEntity, ProductOrderEntity, SubscriptionPlanEntity, UserSubscriptionEntity, DocumentEntity, CommissionConfigEntity],
+        entities: [
+          User, Artisan, OrderEntity, DepannageRequest, RenovationProject,
+          Payment, ProductEntity, ProductOrderEntity, SubscriptionPlanEntity,
+          UserSubscriptionEntity, DocumentEntity, CommissionConfigEntity,
+        ],
         synchronize: config.get<string>('NODE_ENV') !== 'production',
         logging: config.get<string>('NODE_ENV') === 'development',
       }),
     }),
+
     AuthModule,
     UsersModule,
     ArtisansModule,
