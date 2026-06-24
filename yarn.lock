@@ -1543,6 +1543,7 @@
     "@nestjs/jwt" "^10.2.0"
     "@nestjs/passport" "^10.0.3"
     "@nestjs/platform-express" "^10.0.0"
+    "@nestjs/serve-static" "^4.0.2"
     "@nestjs/typeorm" "^10.0.1"
     bcryptjs "^2.4.3"
     class-transformer "^0.5.1"
@@ -1589,6 +1590,11 @@
 "@fixai/shared@*", "@fixai/shared@file:/home/user/FIXAI/packages/shared":
   version "1.0.0"
   resolved "file:packages/shared"
+
+"@google/generative-ai@^0.24.1":
+  version "0.24.1"
+  resolved "https://registry.npmjs.org/@google/generative-ai/-/generative-ai-0.24.1.tgz"
+  integrity sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==
 
 "@isaacs/cliui@^8.0.2":
   version "8.0.2"
