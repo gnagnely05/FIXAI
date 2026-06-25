@@ -80,11 +80,51 @@ const HOW_STEPS = [
   { num: '3', label: 'Validez & payez' },
 ];
 
-const ARTISAN_AVATARS = [
-  { initials: 'KD', color: '#2E7D32' },
-  { initials: 'AA', color: '#1565C0' },
-  { initials: 'MB', color: '#6B3FA0' },
-  { initials: 'TC', color: '#E65100' },
+const REALISATIONS = [
+  {
+    key: 'r1',
+    type: 'DECORATION' as const,
+    label: 'Décoration',
+    title: 'Salon moderne épuré',
+    artisan: 'Koné Design',
+    city: 'Abidjan',
+    colors: ['#3B1F6E', '#6B3FA0'],
+    icon: 'color-palette' as const,
+    route: '/tunnel/step1-chat?serviceType=DECORATION',
+  },
+  {
+    key: 'r2',
+    type: 'RENOVATION' as const,
+    label: 'Rénovation',
+    title: 'Cuisine ouverte contemporaine',
+    artisan: 'Atelier Assié',
+    city: 'Bouaké',
+    colors: ['#0D3B66', '#1565C0'],
+    icon: 'home' as const,
+    route: '/tunnel/step1-chat?serviceType=RENOVATION',
+  },
+  {
+    key: 'r3',
+    type: 'DECORATION' as const,
+    label: 'Décoration',
+    title: 'Chambre chaleureuse naturelle',
+    artisan: 'M. Bamba Déco',
+    city: 'Abidjan',
+    colors: ['#4A2C0A', '#795548'],
+    icon: 'color-palette' as const,
+    route: '/tunnel/step1-chat?serviceType=DECORATION',
+  },
+  {
+    key: 'r4',
+    type: 'RENOVATION' as const,
+    label: 'Rénovation',
+    title: 'Bureau home-office aménagé',
+    artisan: 'TC Bâtiment',
+    city: 'San-Pédro',
+    colors: ['#1B3A2F', '#2E7D32'],
+    icon: 'home' as const,
+    route: '/tunnel/step1-chat?serviceType=RENOVATION',
+  },
 ];
 
 function HeroCarousel() {
@@ -177,21 +217,47 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Artisans disponibles teaser */}
+      {/* Réalisations récentes */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Artisans disponibles</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAll}>Voir plus →</Text>
-          </TouchableOpacity>
+          <View>
+            <Text style={styles.sectionTitle}>Réalisations récentes</Text>
+            <Text style={styles.sectionSub}>Inspirez-vous et lancez un projet similaire</Text>
+          </View>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarRow}>
-          {ARTISAN_AVATARS.map((a, i) => (
-            <View key={i} style={styles.avatarWrap}>
-              <View style={[styles.avatarCircle, { backgroundColor: a.color }]}>
-                <Text style={styles.avatarInitials}>{a.initials}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.realizRow}>
+          {REALISATIONS.map(r => (
+            <View key={r.key} style={styles.realizCard}>
+              {/* Visual banner */}
+              <View style={[styles.realizBanner, { backgroundColor: r.colors[0] }]}>
+                <View style={styles.realizGradientLayer} />
+                <View style={[styles.realizIconCircle, { backgroundColor: r.colors[1] + 'AA' }]}>
+                  <Ionicons name={r.icon} size={26} color="#fff" />
+                </View>
+                <View style={[styles.realizTypeBadge, { backgroundColor: r.colors[1] }]}>
+                  <Text style={styles.realizTypeBadgeText}>{r.label}</Text>
+                </View>
               </View>
-              <View style={styles.avatarDot} />
+
+              {/* Info */}
+              <View style={styles.realizBody}>
+                <Text style={styles.realizTitle} numberOfLines={2}>{r.title}</Text>
+                <View style={styles.realizMeta}>
+                  <Ionicons name="person-circle-outline" size={13} color="#888" />
+                  <Text style={styles.realizMetaText}>{r.artisan}</Text>
+                  <Text style={styles.realizDot}>·</Text>
+                  <Ionicons name="location-outline" size={13} color="#888" />
+                  <Text style={styles.realizMetaText}>{r.city}</Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.realizBtn, { backgroundColor: r.colors[1] }]}
+                  activeOpacity={0.82}
+                  onPress={() => router.push(r.route as Parameters<typeof router.push>[0])}
+                >
+                  <Text style={styles.realizBtnText}>Faire pareil</Text>
+                  <Ionicons name="arrow-forward" size={14} color="#fff" />
+                </TouchableOpacity>
+              </View>
             </View>
           ))}
         </ScrollView>
@@ -295,25 +361,54 @@ const styles = StyleSheet.create({
   stepNumText: { color: '#fff', fontSize: 13, fontWeight: '800' },
   stepLabel: { fontSize: 11, color: COLORS.textSecondary, textAlign: 'center', fontWeight: '600', lineHeight: 15 },
 
-  avatarRow: { marginTop: 4 },
-  avatarWrap: { marginRight: 16, alignItems: 'center' },
-  avatarCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  realizRow: { paddingVertical: 4, gap: 14, paddingRight: 20 },
+  realizCard: {
+    width: 200,
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    ...SHADOW.md,
+  },
+  realizBanner: {
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  realizGradientLayer: {
+    position: 'absolute',
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+  realizIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarInitials: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  avatarDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#22C55E',
-    borderWidth: 2,
-    borderColor: COLORS.bg,
+  realizTypeBadge: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
+    top: 10,
+    left: 10,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 20,
   },
+  realizTypeBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
+  realizBody: { padding: 12, gap: 6 },
+  realizTitle: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary, lineHeight: 18 },
+  realizMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  realizMetaText: { fontSize: 11, color: COLORS.textSecondary },
+  realizDot: { fontSize: 11, color: COLORS.textSecondary },
+  realizBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: RADIUS.sm,
+    marginTop: 4,
+  },
+  realizBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 });
