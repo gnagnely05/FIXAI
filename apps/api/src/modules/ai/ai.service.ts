@@ -202,14 +202,21 @@ Description du client : ${conversation}`;
       this.logger.warn(`[Diagnose] Gemini failed: ${err}`);
     }
 
-    // Fallback statique si Gemini échoue
+    // Fallback contextuel si Gemini échoue
+    const lastMsg = messages[messages.length - 1] ?? '';
+    const priceMap: Record<string, [number, number]> = {
+      DEPANNAGE:  [15000,  60000],
+      RENOVATION: [150000, 800000],
+      DECORATION: [80000,  400000],
+    };
+    const [minPrice, maxPrice] = priceMap[serviceType] ?? [15000, 60000];
     return {
-      summary: `J'ai bien compris votre demande concernant un problème de ${label}. Voici mon analyse préliminaire.`,
-      detectedIssue: `Problème identifié : ${messages[messages.length - 1] ?? label}`,
-      question: 'Depuis combien de temps observez-vous ce problème ?',
-      options: ["Moins de 24h", "2 à 7 jours", "Plus d'une semaine"],
-      estimatedPriceMinXof: 15000,
-      estimatedPriceMaxXof: 45000,
+      summary: `J'ai bien reçu votre demande : "${lastMsg.slice(0, 80)}". Je prépare une analyse pour votre projet de ${label}.`,
+      detectedIssue: `Demande de ${label} — analyse en cours`,
+      question: 'Pour affiner le devis, pouvez-vous préciser l\'urgence de votre besoin ?',
+      options: ['C\'est urgent (< 24h)', 'Dans la semaine', 'Pas pressé — je planifie'],
+      estimatedPriceMinXof: minPrice,
+      estimatedPriceMaxXof: maxPrice,
     };
   }
 

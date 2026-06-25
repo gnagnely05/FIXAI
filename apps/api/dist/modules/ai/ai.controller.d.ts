@@ -1,6 +1,7 @@
 import { AiService } from './ai.service';
 import { GenerateDecorationDto } from './dto/decoration.dto';
 import { GenerateImageDto } from './dto/generate-image.dto';
+import { DiagnoseDto } from './dto/diagnose.dto';
 export declare class AiController {
     private readonly service;
     constructor(service: AiService);
@@ -22,11 +23,11 @@ export declare class AiController {
         prompt: string;
         imageUrl?: string;
     }): Promise<string>;
-    diagnose(body: {
-        serviceType: string;
-        messages: string[];
-        imageUrls?: string[];
-    }): Promise<{
+    health(): {
+        status: string;
+        timestamp: string;
+    };
+    diagnose(dto: DiagnoseDto): Promise<{
         summary: string;
         detectedIssue: string;
         question: string;

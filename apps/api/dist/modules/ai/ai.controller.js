@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const ai_service_1 = require("./ai.service");
 const decoration_dto_1 = require("./dto/decoration.dto");
 const generate_image_dto_1 = require("./dto/generate-image.dto");
+const diagnose_dto_1 = require("./dto/diagnose.dto");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 let AiController = class AiController {
     constructor(service) {
@@ -31,9 +32,12 @@ let AiController = class AiController {
     analyzeImage(req, dto) {
         return this.service.analyzeImage(req.user.sub, dto.prompt, dto.imageUrl);
     }
+    health() {
+        return { status: 'ok', timestamp: new Date().toISOString() };
+    }
     // Pas de guard — accessible sans connexion pour le tunnel de devis
-    diagnose(body) {
-        return this.service.diagnose(body.serviceType, body.messages, body.imageUrls ?? []);
+    diagnose(dto) {
+        return this.service.diagnose(dto.serviceType, dto.messages, dto.imageUrls ?? []);
     }
     // Route unifiée génération d'image — provider: "flux" | "gpt"
     generateByProvider(req, body) {
@@ -69,10 +73,16 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "analyzeImage", null);
 __decorate([
+    (0, common_1.Get)('health'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AiController.prototype, "health", null);
+__decorate([
     (0, common_1.Post)('diagnose'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [diagnose_dto_1.DiagnoseDto]),
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "diagnose", null);
 __decorate([
