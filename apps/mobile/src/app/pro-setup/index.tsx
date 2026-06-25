@@ -38,6 +38,10 @@ export default function ProSetupScreen() {
   const [form, setForm] = useState({
     specialty: '', city: '', agencyName: '', shopName: '', address: '', btpMode: 'AGENCE',
   });
+  const [customSpecialty, setCustomSpecialty] = useState('');
+  const [showCustomSpecialty, setShowCustomSpecialty] = useState(false);
+  const [customCity, setCustomCity] = useState('');
+  const [showCustomCity, setShowCustomCity] = useState(false);
   const set = (k: keyof typeof form, v: string) => setForm(p => ({ ...p, [k]: v }));
 
   const proType = PRO_TYPES.find(p => p.role === selected);
@@ -144,14 +148,30 @@ export default function ProSetupScreen() {
                 <TouchableOpacity
                   key={s}
                   style={[styles.chip, form.specialty === s && styles.chipActive]}
-                  onPress={() => set('specialty', s)}
+                  onPress={() => { set('specialty', s); setShowCustomSpecialty(false); setCustomSpecialty(''); }}
                 >
                   <Text style={[styles.chipText, form.specialty === s && styles.chipTextActive]}>
                     {s.replace(/_/g, ' ')}
                   </Text>
                 </TouchableOpacity>
               ))}
+              <TouchableOpacity
+                style={[styles.chip, showCustomSpecialty && styles.chipActive]}
+                onPress={() => { setShowCustomSpecialty(true); set('specialty', customSpecialty); }}
+              >
+                <Text style={[styles.chipText, showCustomSpecialty && styles.chipTextActive]}>Autre...</Text>
+              </TouchableOpacity>
             </View>
+            {showCustomSpecialty && (
+              <TextInput
+                style={[styles.fieldInput, { marginBottom: 16 }]}
+                placeholder="Saisir votre spécialité"
+                placeholderTextColor="#9CA3AF"
+                value={customSpecialty}
+                onChangeText={v => { setCustomSpecialty(v); set('specialty', v); }}
+                autoFocus
+              />
+            )}
           </>
         )}
 
@@ -196,12 +216,28 @@ export default function ProSetupScreen() {
                 <TouchableOpacity
                   key={c}
                   style={[styles.chip, form.city === c && styles.chipActive]}
-                  onPress={() => set('city', c)}
+                  onPress={() => { set('city', c); setShowCustomCity(false); setCustomCity(''); }}
                 >
                   <Text style={[styles.chipText, form.city === c && styles.chipTextActive]}>{c}</Text>
                 </TouchableOpacity>
               ))}
+              <TouchableOpacity
+                style={[styles.chip, showCustomCity && styles.chipActive]}
+                onPress={() => { setShowCustomCity(true); set('city', customCity); }}
+              >
+                <Text style={[styles.chipText, showCustomCity && styles.chipTextActive]}>Autre...</Text>
+              </TouchableOpacity>
             </ScrollView>
+            {showCustomCity && (
+              <TextInput
+                style={[styles.fieldInput, { marginBottom: 16 }]}
+                placeholder="Saisir votre ville"
+                placeholderTextColor="#9CA3AF"
+                value={customCity}
+                onChangeText={v => { setCustomCity(v); set('city', v); }}
+                autoFocus
+              />
+            )}
           </>
         )}
 
