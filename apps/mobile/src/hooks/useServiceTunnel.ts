@@ -47,7 +47,10 @@ const SERVICE_CONFIGS = {
 };
 
 import Constants from 'expo-constants';
-const API_BASE_URL = (Constants.expoConfig?.extra?.apiUrl as string) ?? 'http://localhost:3001/api/v1';
+import { Platform } from 'react-native';
+const _configured = Constants.expoConfig?.extra?.apiUrl as string | undefined;
+const API_BASE_URL = _configured
+  ?? (Platform.OS === 'web' ? '/api/v1' : 'http://localhost:3001/api/v1');
 
 export function useServiceTunnel(serviceType: ServiceType) {
   const serviceConfig = SERVICE_CONFIGS[serviceType];

@@ -1,8 +1,11 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import { storage } from './storage';
 
-const BASE_URL = Constants.expoConfig?.extra?.apiUrl ?? 'http://localhost:3001/api/v1';
+const _configured = Constants.expoConfig?.extra?.apiUrl as string | undefined;
+const BASE_URL = _configured
+  ?? (Platform.OS === 'web' ? '/api/v1' : 'http://localhost:3001/api/v1');
 
 export const api = axios.create({
   baseURL: BASE_URL,
