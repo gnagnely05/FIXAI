@@ -1,13 +1,11 @@
 import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Dimensions, FlatList, NativeSyntheticEvent, NativeScrollEvent,
+  FlatList, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW, RADIUS } from '../../theme';
-
-const { width: SCREEN_W } = Dimensions.get('window');
 
 const SLIDES = [
   {
@@ -128,11 +126,12 @@ const REALISATIONS = [
 ];
 
 function HeroCarousel() {
+  const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
   const ref = useRef<FlatList>(null);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
+    const idx = Math.round(e.nativeEvent.contentOffset.x / width);
     setActiveIndex(idx);
   };
 
@@ -148,7 +147,7 @@ function HeroCarousel() {
         onScroll={onScroll}
         scrollEventThrottle={16}
         renderItem={({ item }) => (
-          <View style={[hero.slide, { width: SCREEN_W, backgroundColor: item.bg }]}>
+          <View style={[hero.slide, { width, backgroundColor: item.bg }]}>
             {/* diagonal texture layer */}
             <View style={[hero.texture, { borderColor: item.accent }]} />
             <View style={hero.textBox}>
@@ -172,6 +171,9 @@ function HeroCarousel() {
 }
 
 export default function HomeScreen() {
+  const { width } = useWindowDimensions();
+  const cardW = (width - 40 - 12) / 2;
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <HeroCarousel />
@@ -185,7 +187,7 @@ export default function HomeScreen() {
           {SERVICES.map(s => (
             <TouchableOpacity
               key={s.key}
-              style={styles.serviceCard}
+              style={[styles.serviceCard, { width: cardW }]}
               activeOpacity={0.82}
               onPress={() => router.push(s.route as Parameters<typeof router.push>[0])}
             >
@@ -324,7 +326,6 @@ const styles = StyleSheet.create({
   serviceCard: {
     backgroundColor: COLORS.card,
     borderRadius: RADIUS.lg,
-    width: (SCREEN_W - 40 - 12) / 2,
     overflow: 'hidden',
     ...SHADOW.md,
   },
