@@ -22,7 +22,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(identifier.trim(), password);
-      const stored = await import('expo-secure-store').then(m => m.getItemAsync('fixai_user'));
+      const stored = await import('../../services/storage').then(m => m.storage.getItem('fixai_user'));
       const user = stored ? JSON.parse(stored) : null;
       if (user?.role === 'ADMIN') {
         router.replace('/admin' as any);

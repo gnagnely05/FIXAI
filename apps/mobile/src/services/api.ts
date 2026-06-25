@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
+import { storage } from './storage';
 
 const BASE_URL = Constants.expoConfig?.extra?.apiUrl ?? 'http://localhost:3001/api/v1';
 
@@ -32,7 +32,7 @@ const processQueue = (error: unknown, token: string | null = null) => {
 
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    const token = await SecureStore.getItemAsync('fixai_access_token');
+    const token = await storage.getItem('fixai_access_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -62,8 +62,8 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = await SecureStore.getItemAsync('fixai_refresh_token');
-        const userId = await SecureStore.getItemAsync('fixai_user').then((u) => {
+        const refreshToken = await storage.getItem('fixai_refresh_token');
+        const userId = await storage.getItem('fixai_user').then((u) => {
           if (!u) return null;
           return (JSON.parse(u) as { id: string }).id;
         });
@@ -80,8 +80,8 @@ api.interceptors.response.use(
         const { accessToken, refreshToken: newRefreshToken } = response.data;
 
         await Promise.all([
-          SecureStore.setItemAsync('fixai_access_token', accessToken),
-          SecureStore.setItemAsync('fixai_refresh_token', newRefreshToken),
+          storage.setItem('fixai_access_token', accessToken),
+          storage.setItem('fixai_refresh_token', newRefreshToken),
         ]);
 
         api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
@@ -95,9 +95,9 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         await Promise.all([
-          SecureStore.deleteItemAsync('fixai_access_token'),
-          SecureStore.deleteItemAsync('fixai_refresh_token'),
-          SecureStore.deleteItemAsync('fixai_user'),
+          storage.removeItem('fixai_access_token'),
+          storage.removeItem('fixai_refresh_token'),
+          storage.removeItem('fixai_user'),
         ]);
         return Promise.reject(refreshError);
       } finally {

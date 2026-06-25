@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import * as SecureStore from 'expo-secure-store';
 import { api } from '../services/api';
+import { storage } from '../services/storage';
 import type { User, RegisterData } from '@fixai/shared';
 
 const ACCESS_TOKEN_KEY = 'fixai_access_token';
@@ -33,8 +33,8 @@ export function useAuth() {
   const loadStoredAuth = async () => {
     try {
       const [token, userData] = await Promise.all([
-        SecureStore.getItemAsync(ACCESS_TOKEN_KEY),
-        SecureStore.getItemAsync(USER_KEY),
+        storage.getItem(ACCESS_TOKEN_KEY),
+        storage.getItem(USER_KEY),
       ]);
 
       if (token && userData) {
@@ -54,9 +54,9 @@ export function useAuth() {
     const { user, accessToken, refreshToken } = response.data;
 
     await Promise.all([
-      SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken),
-      SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken),
-      SecureStore.setItemAsync(USER_KEY, JSON.stringify(user)),
+      storage.setItem(ACCESS_TOKEN_KEY, accessToken),
+      storage.setItem(REFRESH_TOKEN_KEY, refreshToken),
+      storage.setItem(USER_KEY, JSON.stringify(user)),
     ]);
 
     api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
@@ -68,9 +68,9 @@ export function useAuth() {
     const { user, accessToken, refreshToken } = response.data;
 
     await Promise.all([
-      SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken),
-      SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken),
-      SecureStore.setItemAsync(USER_KEY, JSON.stringify(user)),
+      storage.setItem(ACCESS_TOKEN_KEY, accessToken),
+      storage.setItem(REFRESH_TOKEN_KEY, refreshToken),
+      storage.setItem(USER_KEY, JSON.stringify(user)),
     ]);
 
     api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
@@ -85,9 +85,9 @@ export function useAuth() {
     }
 
     await Promise.all([
-      SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY),
-      SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
-      SecureStore.deleteItemAsync(USER_KEY),
+      storage.removeItem(ACCESS_TOKEN_KEY),
+      storage.removeItem(REFRESH_TOKEN_KEY),
+      storage.removeItem(USER_KEY),
     ]);
 
     delete api.defaults.headers.common['Authorization'];
@@ -98,9 +98,9 @@ export function useAuth() {
     const response = await api.post<LoginResponse>('/auth/register-provider', data);
     const { user, accessToken, refreshToken } = response.data;
     await Promise.all([
-      SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken),
-      SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken),
-      SecureStore.setItemAsync(USER_KEY, JSON.stringify(user)),
+      storage.setItem(ACCESS_TOKEN_KEY, accessToken),
+      storage.setItem(REFRESH_TOKEN_KEY, refreshToken),
+      storage.setItem(USER_KEY, JSON.stringify(user)),
     ]);
     api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
     setState({ user, accessToken, isLoading: false });
@@ -109,7 +109,7 @@ export function useAuth() {
   const upgradeToPro = useCallback(async (data: Record<string, any>) => {
     const response = await api.patch<{ user: User }>('/users/me/upgrade-pro', data);
     const user = response.data as unknown as User;
-    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
+    await storage.setItem(USER_KEY, JSON.stringify(user));
     setState(prev => ({ ...prev, user }));
     return user;
   }, []);
