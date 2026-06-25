@@ -97,12 +97,14 @@ export function useServiceTunnel(serviceType: ServiceType) {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiMessage]);
-    } catch (error) {
-      console.error('Diagnosis error:', error);
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const detail = error?.response?.data?.message ?? error?.message ?? 'Erreur inconnue';
+      console.error('Diagnosis error:', status, detail, error?.response?.data);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "Désolé, une erreur s'est produite. Veuillez réessayer.",
+        content: `Désolé, une erreur s'est produite (${status ?? 'réseau'}: ${detail}). Veuillez réessayer.`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Logger } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { GenerateDecorationDto } from './dto/decoration.dto';
 import { GenerateImageDto } from './dto/generate-image.dto';
@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @Controller('ai')
 export class AiController {
+  private readonly logger = new Logger(AiController.name);
   constructor(private readonly service: AiService) {}
 
   @UseGuards(JwtAuthGuard)
@@ -43,8 +44,27 @@ export class AiController {
 
   // Pas de guard — accessible sans connexion pour le tunnel de devis
   @Post('diagnose')
-  diagnose(@Body() dto: DiagnoseDto) {
-    return this.service.diagnose(dto.serviceType, dto.messages, dto.imageUrls ?? []);
+  async diagnose(@Body() dto: DiagnoseDto) {
+    try {
+      return await this.service.diagnose(dto.serviceType, dto.messages, dto.imageUrls ?? []);
+    } catch (err) {
+      this.logger.error('[diagnose] Unexpected error:', err);
+      const serviceType = dto.serviceType ?? 'DEPANNAGE';
+      const priceMap: Record<string, [number, number]> = {
+        DEPANNAGE:  [15000,  60000],
+        RENOVATION: [150000, 800000],
+        DECORATION: [80000,  400000],
+      };
+      const [min, max] = priceMap[serviceType] ?? [15000, 60000];
+      return {
+        summary: "J'ai bien reçu votre demande. Je prépare une analyse.",
+        detectedIssue: `Demande de ${serviceType.toLowerCase()} — analyse en cours`,
+        question: "Pour affiner le devis, pouvez-vous préciser l'urgence de votre besoin ?",
+        options: ["C'est urgent (< 24h)", "Dans la semaine", "Pas pressé — je planifie"],
+        estimatedPriceMinXof: min,
+        estimatedPriceMaxXof: max,
+      };
+    }
   }
 
   // Route unifiée génération d'image — provider: "flux" | "gpt"

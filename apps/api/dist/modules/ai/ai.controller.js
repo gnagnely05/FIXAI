@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var AiController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AiController = void 0;
 const common_1 = require("@nestjs/common");
@@ -19,9 +20,10 @@ const decoration_dto_1 = require("./dto/decoration.dto");
 const generate_image_dto_1 = require("./dto/generate-image.dto");
 const diagnose_dto_1 = require("./dto/diagnose.dto");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
-let AiController = class AiController {
+let AiController = AiController_1 = class AiController {
     constructor(service) {
         this.service = service;
+        this.logger = new common_1.Logger(AiController_1.name);
     }
     visualize(req, dto) {
         return this.service.generateDecorationVisualization(req.user.sub, dto);
@@ -36,8 +38,28 @@ let AiController = class AiController {
         return { status: 'ok', timestamp: new Date().toISOString() };
     }
     // Pas de guard — accessible sans connexion pour le tunnel de devis
-    diagnose(dto) {
-        return this.service.diagnose(dto.serviceType, dto.messages, dto.imageUrls ?? []);
+    async diagnose(dto) {
+        try {
+            return await this.service.diagnose(dto.serviceType, dto.messages, dto.imageUrls ?? []);
+        }
+        catch (err) {
+            this.logger.error('[diagnose] Unexpected error:', err);
+            const serviceType = dto.serviceType ?? 'DEPANNAGE';
+            const priceMap = {
+                DEPANNAGE: [15000, 60000],
+                RENOVATION: [150000, 800000],
+                DECORATION: [80000, 400000],
+            };
+            const [min, max] = priceMap[serviceType] ?? [15000, 60000];
+            return {
+                summary: "J'ai bien reçu votre demande. Je prépare une analyse.",
+                detectedIssue: `Demande de ${serviceType.toLowerCase()} — analyse en cours`,
+                question: "Pour affiner le devis, pouvez-vous préciser l'urgence de votre besoin ?",
+                options: ["C'est urgent (< 24h)", "Dans la semaine", "Pas pressé — je planifie"],
+                estimatedPriceMinXof: min,
+                estimatedPriceMaxXof: max,
+            };
+        }
     }
     // Route unifiée génération d'image — provider: "flux" | "gpt"
     generateByProvider(req, body) {
@@ -83,7 +105,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [diagnose_dto_1.DiagnoseDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], AiController.prototype, "diagnose", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
@@ -94,7 +116,7 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "generateByProvider", null);
-exports.AiController = AiController = __decorate([
+exports.AiController = AiController = AiController_1 = __decorate([
     (0, common_1.Controller)('ai'),
     __metadata("design:paramtypes", [ai_service_1.AiService])
 ], AiController);

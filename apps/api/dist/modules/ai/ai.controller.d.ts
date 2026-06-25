@@ -4,6 +4,7 @@ import { GenerateImageDto } from './dto/generate-image.dto';
 import { DiagnoseDto } from './dto/diagnose.dto';
 export declare class AiController {
     private readonly service;
+    private readonly logger;
     constructor(service: AiService);
     visualize(req: {
         user: {
