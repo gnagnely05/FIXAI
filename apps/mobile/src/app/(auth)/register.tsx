@@ -1,25 +1,35 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  SafeAreaView, TextInput, Alert, ActivityIndicator,
+  SafeAreaView, TextInput, ActivityIndicator, Platform, Alert,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../services/api';
 
+function showAlert(title: string, message: string) {
+  if (Platform.OS === 'web') {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+}
+
 export default function RegisterScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({ firstName: '', phone: '', password: '', confirm: '' });
-  const set = (k: keyof typeof form, v: string) => setForm(p => ({ ...p, [k]: v }));
+  const set = (k: keyof typeof form, v: string) => { setError(''); setForm(p => ({ ...p, [k]: v })); };
 
   const handleSubmit = async () => {
-    if (!form.firstName.trim()) return Alert.alert('Champs manquants', 'Veuillez entrer votre prénom.');
-    if (!form.phone.trim()) return Alert.alert('Champs manquants', 'Veuillez entrer votre numéro de téléphone.');
-    if (!form.password) return Alert.alert('Champs manquants', 'Veuillez choisir un mot de passe.');
-    if (form.password.length < 8) return Alert.alert('Mot de passe trop court', 'Minimum 8 caractères.');
-    if (form.password !== form.confirm) return Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
+    setError('');
+    if (!form.firstName.trim()) { setError('Veuillez entrer votre prénom.'); return; }
+    if (!form.phone.trim()) { setError('Veuillez entrer votre numéro de téléphone.'); return; }
+    if (!form.password) { setError('Veuillez choisir un mot de passe.'); return; }
+    if (form.password.length < 8) { setError('Le mot de passe doit faire au moins 8 caractères.'); return; }
+    if (form.password !== form.confirm) { setError('Les mots de passe ne correspondent pas.'); return; }
 
     setLoading(true);
     try {
@@ -34,7 +44,7 @@ export default function RegisterScreen() {
       });
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? e?.message ?? 'Impossible d\'envoyer le code. Vérifiez votre numéro.';
-      Alert.alert('Erreur', Array.isArray(msg) ? msg.join('\n') : msg);
+      setError(Array.isArray(msg) ? msg.join('\n') : msg);
     } finally {
       setLoading(false);
     }
@@ -88,6 +98,13 @@ export default function RegisterScreen() {
             onChangeText={v => set('confirm', v)}
             secureTextEntry={!showPassword}
           />
+
+          {error ? (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle-outline" size={16} color="#DC2626" />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.otpInfo}>
             <Ionicons name="shield-checkmark-outline" size={18} color="#1565C0" />
@@ -177,9 +194,16 @@ const styles = StyleSheet.create({
   heroTitle: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 6 },
   heroSub: { fontSize: 14, color: 'rgba(255,255,255,0.55)' },
   formBox: { padding: 24 },
+  errorBox: {
+    flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+    backgroundColor: '#FEF2F2', borderRadius: 12, padding: 14, marginBottom: 16,
+    borderWidth: 1, borderColor: '#FECACA',
+  },
+  errorText: { flex: 1, fontSize: 13, color: '#DC2626', lineHeight: 19 },
   otpInfo: {
     flexDirection: 'row', gap: 10, alignItems: 'flex-start',
-    backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, marginBottom: 20,
+    borderWidth: 1, borderColor: '#BFDBFE',
   },
   otpInfoText: { flex: 1, fontSize: 13, color: '#1E40AF', lineHeight: 19 },
   btn: {

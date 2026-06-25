@@ -1,12 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Alert,
+  View, Text, StyleSheet, TouchableOpacity, Alert, Platform,
   ActivityIndicator, SafeAreaView, TextInput,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { api } from '../../services/api';
+
+function showAlert(title: string, message: string) {
+  if (Platform.OS === 'web') {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+}
 
 export default function VerifyOtpScreen() {
   const { phone, firstName, password } = useLocalSearchParams<{
@@ -18,6 +26,7 @@ export default function VerifyOtpScreen() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [countdown, setCountdown] = useState(60);
+  const [error, setError] = useState('');
   const inputs = useRef<Array<TextInput | null>>([]);
 
   useEffect(() => {
@@ -44,13 +53,11 @@ export default function VerifyOtpScreen() {
   const fullCode = code.join('');
 
   const handleVerify = async () => {
-    if (fullCode.length < 6) return Alert.alert('Code incomplet', 'Entrez les 6 chiffres du code.');
+    if (fullCode.length < 6) { setError('Entrez les 6 chiffres du code.'); return; }
+    setError('');
     setLoading(true);
     try {
-      // 1. Verify OTP
       await api.post('/auth/verify-otp', { phone, code: fullCode });
-
-      // 2. Create account
       await register({
         firstName: firstName ?? '',
         lastName: '',
@@ -58,11 +65,10 @@ export default function VerifyOtpScreen() {
         password: password ?? '',
         role: 'CLIENT' as any,
       });
-
       router.replace('/(tabs)');
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? e?.message ?? 'Une erreur est survenue.';
-      Alert.alert('Erreur', Array.isArray(msg) ? msg.join('\n') : msg);
+      setError(Array.isArray(msg) ? msg.join('\n') : msg);
       setCode(['', '', '', '', '', '']);
       inputs.current[0]?.focus();
     } finally {
@@ -73,14 +79,15 @@ export default function VerifyOtpScreen() {
   const handleResend = async () => {
     if (countdown > 0) return;
     setResending(true);
+    setError('');
     try {
       await api.post('/auth/send-otp', { phone });
       setCountdown(60);
       setCode(['', '', '', '', '', '']);
       inputs.current[0]?.focus();
-      Alert.alert('Code renvoyé', 'Un nouveau code a été envoyé par SMS.');
+      showAlert('Code renvoyé', 'Un nouveau code a été envoyé par SMS.');
     } catch {
-      Alert.alert('Erreur', 'Impossible de renvoyer le code.');
+      setError('Impossible de renvoyer le code. Réessayez.');
     } finally {
       setResending(false);
     }
@@ -139,6 +146,14 @@ export default function VerifyOtpScreen() {
           }
         </View>
 
+        {/* Inline error */}
+        {error ? (
+          <View style={styles.errorBox}>
+            <Ionicons name="alert-circle-outline" size={16} color="#DC2626" />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
         {/* Verify button */}
         <TouchableOpacity
           style={[styles.btn, (loading || fullCode.length < 6) && styles.btnDisabled]}
@@ -196,4 +211,10 @@ const styles = StyleSheet.create({
   btnDisabled: { backgroundColor: '#C4B5E8' },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   helpText: { textAlign: 'center', fontSize: 13, color: '#9CA3AF', lineHeight: 19 },
+  errorBox: {
+    flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+    backgroundColor: '#FEF2F2', borderRadius: 12, padding: 14, marginBottom: 16,
+    borderWidth: 1, borderColor: '#FECACA',
+  },
+  errorText: { flex: 1, fontSize: 13, color: '#DC2626', lineHeight: 19 },
 });
