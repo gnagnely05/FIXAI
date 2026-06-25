@@ -1,5 +1,6 @@
-import { Controller, Post, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { OtpService } from './otp.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RegisterProviderDto } from './dto/register-provider.dto';
@@ -7,7 +8,27 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly otpService: OtpService,
+  ) {}
+
+  @Post('send-otp')
+  @HttpCode(HttpStatus.OK)
+  async sendOtp(@Body() body: { phone: string }) {
+    if (!body.phone) throw new BadRequestException('Numéro de téléphone requis');
+    const code = this.otpService.generate(body.phone);
+    await this.otpService.sendSms(body.phone, code);
+    return { message: 'Code OTP envoyé' };
+  }
+
+  @Post('verify-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(@Body() body: { phone: string; code: string }) {
+    const valid = this.otpService.verify(body.phone, body.code);
+    if (!valid) throw new BadRequestException('Code invalide ou expiré');
+    return { verified: true };
+  }
 
   @Post('register')
   async register(@Body() dto: RegisterDto) {

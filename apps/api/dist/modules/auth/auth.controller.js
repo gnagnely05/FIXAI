@@ -15,13 +15,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
+const otp_service_1 = require("./otp.service");
 const login_dto_1 = require("./dto/login.dto");
 const register_dto_1 = require("./dto/register.dto");
 const register_provider_dto_1 = require("./dto/register-provider.dto");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 let AuthController = class AuthController {
-    constructor(authService) {
+    constructor(authService, otpService) {
         this.authService = authService;
+        this.otpService = otpService;
+    }
+    async sendOtp(body) {
+        if (!body.phone)
+            throw new common_1.BadRequestException('Numéro de téléphone requis');
+        const code = this.otpService.generate(body.phone);
+        await this.otpService.sendSms(body.phone, code);
+        return { message: 'Code OTP envoyé' };
+    }
+    async verifyOtp(body) {
+        const valid = this.otpService.verify(body.phone, body.code);
+        if (!valid)
+            throw new common_1.BadRequestException('Code invalide ou expiré');
+        return { verified: true };
     }
     async register(dto) {
         return this.authService.register(dto);
@@ -40,6 +55,22 @@ let AuthController = class AuthController {
     }
 };
 exports.AuthController = AuthController;
+__decorate([
+    (0, common_1.Post)('send-otp'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "sendOtp", null);
+__decorate([
+    (0, common_1.Post)('verify-otp'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyOtp", null);
 __decorate([
     (0, common_1.Post)('register'),
     __param(0, (0, common_1.Body)()),
@@ -81,6 +112,7 @@ __decorate([
 ], AuthController.prototype, "refresh", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
-    __metadata("design:paramtypes", [auth_service_1.AuthService])
+    __metadata("design:paramtypes", [auth_service_1.AuthService,
+        otp_service_1.OtpService])
 ], AuthController);
 //# sourceMappingURL=auth.controller.js.map

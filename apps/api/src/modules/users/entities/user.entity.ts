@@ -30,7 +30,7 @@ export class UserEntity {
   @Column()
   firstName: string;
 
-  @Column()
+  @Column({ nullable: true, default: '' })
   lastName: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.CLIENT })

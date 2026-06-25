@@ -13,6 +13,7 @@ const passport_1 = require("@nestjs/passport");
 const typeorm_1 = require("@nestjs/typeorm");
 const config_1 = require("@nestjs/config");
 const auth_service_1 = require("./auth.service");
+const otp_service_1 = require("./otp.service");
 const auth_controller_1 = require("./auth.controller");
 const user_entity_1 = require("../users/entities/user.entity");
 const document_entity_1 = require("../documents/entities/document.entity");
@@ -33,9 +34,9 @@ exports.AuthModule = AuthModule = __decorate([
                 }),
             }),
         ],
-        providers: [auth_service_1.AuthService],
+        providers: [auth_service_1.AuthService, otp_service_1.OtpService],
         controllers: [auth_controller_1.AuthController],
-        exports: [auth_service_1.AuthService, jwt_1.JwtModule],
+        exports: [auth_service_1.AuthService, otp_service_1.OtpService, jwt_1.JwtModule],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

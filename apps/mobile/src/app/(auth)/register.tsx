@@ -5,38 +5,36 @@ import {
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../hooks/useAuth';
+import { api } from '../../services/api';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { register } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ firstName: '', phone: '', password: '', confirm: '' });
   const set = (k: keyof typeof form, v: string) => setForm(p => ({ ...p, [k]: v }));
 
   const handleSubmit = async () => {
-    if (!form.firstName.trim() || !form.phone.trim() || !form.password) {
-      return Alert.alert('Champs manquants', 'Veuillez remplir tous les champs.');
-    }
-    if (form.password !== form.confirm) {
-      return Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
-    }
-    if (form.password.length < 8) {
-      return Alert.alert('Erreur', 'Le mot de passe doit contenir au moins 8 caractères.');
-    }
+    if (!form.firstName.trim()) return Alert.alert('Champs manquants', 'Veuillez entrer votre prénom.');
+    if (!form.phone.trim()) return Alert.alert('Champs manquants', 'Veuillez entrer votre numéro de téléphone.');
+    if (!form.password) return Alert.alert('Champs manquants', 'Veuillez choisir un mot de passe.');
+    if (form.password.length < 8) return Alert.alert('Mot de passe trop court', 'Minimum 8 caractères.');
+    if (form.password !== form.confirm) return Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
+
     setLoading(true);
     try {
-      await register({
-        firstName: form.firstName.trim(),
-        lastName: '',
-        phone: form.phone.trim(),
-        password: form.password,
-        role: 'CLIENT' as any,
+      await api.post('/auth/send-otp', { phone: form.phone.trim() });
+      router.push({
+        pathname: '/(auth)/verify-otp' as any,
+        params: {
+          phone: form.phone.trim(),
+          firstName: form.firstName.trim(),
+          password: form.password,
+        },
       });
-      router.replace('/(tabs)');
     } catch (e: any) {
-      Alert.alert('Erreur', e?.response?.data?.message ?? 'Inscription impossible. Réessayez.');
+      const msg = e?.response?.data?.message ?? e?.message ?? 'Impossible d\'envoyer le code. Vérifiez votre numéro.';
+      Alert.alert('Erreur', Array.isArray(msg) ? msg.join('\n') : msg);
     } finally {
       setLoading(false);
     }
@@ -46,7 +44,6 @@ export default function RegisterScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
-        {/* Header */}
         <View style={styles.hero}>
           <View style={styles.heroBg} />
           <View style={styles.logoWrap}>
@@ -56,7 +53,6 @@ export default function RegisterScreen() {
           <Text style={styles.heroSub}>Rapide, gratuit, sans engagement</Text>
         </View>
 
-        {/* Form */}
         <View style={styles.formBox}>
           <Field
             label="Prénom"
@@ -93,10 +89,10 @@ export default function RegisterScreen() {
             secureTextEntry={!showPassword}
           />
 
-          <View style={styles.infoBanner}>
-            <Ionicons name="information-circle-outline" size={18} color="#6B3FA0" />
-            <Text style={styles.infoText}>
-              Après inscription, configurez votre espace pro depuis votre profil (artisan, boutique, etc.)
+          <View style={styles.otpInfo}>
+            <Ionicons name="shield-checkmark-outline" size={18} color="#1565C0" />
+            <Text style={styles.otpInfoText}>
+              Un code de vérification sera envoyé par SMS pour confirmer votre numéro.
             </Text>
           </View>
 
@@ -109,7 +105,7 @@ export default function RegisterScreen() {
             {loading
               ? <ActivityIndicator color="#fff" />
               : <>
-                  <Text style={styles.btnText}>Créer mon compte</Text>
+                  <Text style={styles.btnText}>Recevoir le code SMS</Text>
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </>
             }
@@ -175,18 +171,17 @@ const styles = StyleSheet.create({
   },
   logoWrap: {
     width: 64, height: 64, borderRadius: 18,
-    backgroundColor: '#6B3FA0', alignItems: 'center', justifyContent: 'center',
-    marginBottom: 16,
+    backgroundColor: '#6B3FA0', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
   logoText: { color: '#fff', fontSize: 26, fontWeight: '900' },
   heroTitle: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 6 },
   heroSub: { fontSize: 14, color: 'rgba(255,255,255,0.55)' },
   formBox: { padding: 24 },
-  infoBanner: {
+  otpInfo: {
     flexDirection: 'row', gap: 10, alignItems: 'flex-start',
-    backgroundColor: '#EDE9F8', borderRadius: 12, padding: 14, marginBottom: 20,
+    backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#BFDBFE',
   },
-  infoText: { flex: 1, fontSize: 13, color: '#4A2880', lineHeight: 19 },
+  otpInfoText: { flex: 1, fontSize: 13, color: '#1E40AF', lineHeight: 19 },
   btn: {
     backgroundColor: '#6B3FA0', borderRadius: 14, paddingVertical: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,

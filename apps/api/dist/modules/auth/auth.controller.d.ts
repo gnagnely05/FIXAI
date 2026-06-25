@@ -1,10 +1,23 @@
 import { AuthService } from './auth.service';
+import { OtpService } from './otp.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RegisterProviderDto } from './dto/register-provider.dto';
 export declare class AuthController {
     private readonly authService;
-    constructor(authService: AuthService);
+    private readonly otpService;
+    constructor(authService: AuthService, otpService: OtpService);
+    sendOtp(body: {
+        phone: string;
+    }): Promise<{
+        message: string;
+    }>;
+    verifyOtp(body: {
+        phone: string;
+        code: string;
+    }): Promise<{
+        verified: boolean;
+    }>;
     register(dto: RegisterDto): Promise<{
         accessToken: string;
         refreshToken: string;
