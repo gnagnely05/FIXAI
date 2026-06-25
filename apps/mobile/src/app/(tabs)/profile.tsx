@@ -88,7 +88,16 @@ export default function ProfileScreen() {
   const roleLabel = ROLE_LABEL[role] ?? role;
   const initials = `${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`.toUpperCase();
 
-  const menuSections: Array<{ title: string; items: Array<{ icon: IoniconName; label: string; danger?: boolean; onPress?: () => void }> }> = [
+  const menuSections: Array<{ title: string; items: Array<{ icon: IoniconName; label: string; danger?: boolean; badge?: string; onPress?: () => void }> }> = [
+    ...(role === 'CLIENT' ? [{
+      title: 'Espace Pro',
+      items: [{
+        icon: 'briefcase-outline' as IoniconName,
+        label: 'Activer un profil professionnel',
+        badge: 'Nouveau',
+        onPress: () => router.push('/pro-setup' as any),
+      }],
+    }] : []),
     {
       title: 'Mon compte',
       items: [
@@ -215,6 +224,11 @@ export default function ProfileScreen() {
                   <Ionicons name={item.icon} size={19} color={item.danger ? '#EF4444' : accent} />
                 </View>
                 <Text style={[styles.menuLabel, item.danger && styles.menuLabelDanger]}>{item.label}</Text>
+                {(item as any).badge && (
+                  <View style={styles.menuBadge}>
+                    <Text style={styles.menuBadgeText}>{(item as any).badge}</Text>
+                  </View>
+                )}
                 {!item.danger && <Ionicons name="chevron-forward" size={16} color="#C4CAD4" />}
               </TouchableOpacity>
             ))}
@@ -321,4 +335,6 @@ const styles = StyleSheet.create({
   menuLabel: { flex: 1, fontSize: 15, color: '#0D1117', fontWeight: '500' },
   menuLabelDanger: { color: '#EF4444' },
   version: { textAlign: 'center', color: '#C4CAD4', fontSize: 12, marginTop: 24, marginBottom: 32 },
+  menuBadge: { backgroundColor: '#6B3FA0', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, marginRight: 4 },
+  menuBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
 });

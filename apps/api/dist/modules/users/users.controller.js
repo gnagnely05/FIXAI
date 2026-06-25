@@ -26,6 +26,9 @@ let UsersController = class UsersController {
     async updateProfile(req, body) {
         return this.usersService.updateProfile(req.user.sub, body);
     }
+    async upgradeToPro(req, body) {
+        return this.usersService.upgradeToPro(req.user.sub, body);
+    }
 };
 exports.UsersController = UsersController;
 __decorate([
@@ -43,6 +46,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateProfile", null);
+__decorate([
+    (0, common_1.Patch)('me/upgrade-pro'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "upgradeToPro", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

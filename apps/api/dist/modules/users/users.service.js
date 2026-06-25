@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("./entities/user.entity");
+const user_role_enum_1 = require("../../common/enums/user-role.enum");
 const verification_status_enum_1 = require("../../common/enums/verification-status.enum");
 let UsersService = class UsersService {
     constructor(usersRepo) {
@@ -37,6 +38,28 @@ let UsersService = class UsersService {
     }
     async verifyUser(id) {
         await this.usersRepo.update(id, { verificationStatus: verification_status_enum_1.VerificationStatus.ACTIVE });
+    }
+    async upgradeToPro(id, data) {
+        const user = await this.findById(id);
+        if (user.role !== user_role_enum_1.UserRole.CLIENT) {
+            throw new common_1.ConflictException('Seul un compte client peut activer un espace pro');
+        }
+        const allowed = [user_role_enum_1.UserRole.ARTISAN, user_role_enum_1.UserRole.AGENCE_HOTE, user_role_enum_1.UserRole.ENTREPRISE_BTP, user_role_enum_1.UserRole.BOUTIQUE, user_role_enum_1.UserRole.QUINCAILLERIE];
+        if (!allowed.includes(data.role)) {
+            throw new common_1.ConflictException('Type de profil pro invalide');
+        }
+        const updates = {
+            role: data.role,
+            verificationStatus: verification_status_enum_1.VerificationStatus.DOCS_SUBMITTED,
+        };
+        if (data.city)
+            updates.city = data.city;
+        if (data.btpMode)
+            updates.btpMode = data.btpMode;
+        if (data.radiusKm)
+            updates.radiusKm = data.radiusKm;
+        await this.usersRepo.update(id, updates);
+        return this.findById(id);
     }
 };
 exports.UsersService = UsersService;

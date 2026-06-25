@@ -1,5 +1,5 @@
 export declare class LoginDto {
-    email: string;
+    identifier: string;
     password: string;
 }
 //# sourceMappingURL=login.dto.d.ts.map

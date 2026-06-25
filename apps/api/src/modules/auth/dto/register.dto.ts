@@ -1,9 +1,10 @@
-import { IsEmail, IsEnum, IsString, MinLength, Matches } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, MinLength, Matches } from 'class-validator';
 import { UserRole } from '../../../common/enums/user-role.enum';
 
 export class RegisterDto {
+  @IsOptional()
   @IsEmail()
-  email: string;
+  email?: string;
 
   @IsString()
   @Matches(/^(\+225)?[0-9]{10}$/, { message: 'Invalid Ivory Coast phone number' })
@@ -16,9 +17,11 @@ export class RegisterDto {
   @IsString()
   firstName: string;
 
+  @IsOptional()
   @IsString()
-  lastName: string;
+  lastName?: string;
 
+  @IsOptional()
   @IsEnum(UserRole)
-  role: UserRole;
+  role?: UserRole;
 }

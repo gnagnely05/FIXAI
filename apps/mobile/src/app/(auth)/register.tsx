@@ -1,129 +1,198 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, SafeAreaView,
+  View, Text, TouchableOpacity, ScrollView, StyleSheet,
+  SafeAreaView, TextInput, Alert, ActivityIndicator,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
-
-const ROLES = [
-  {
-    id: 'client',
-    label: 'Client',
-    icon: '👤',
-    desc: 'Je cherche des services de réparation, rénovation ou décoration',
-    route: '/(auth)/register-client',
-    color: '#6B3FA0',
-    params: {},
-  },
-  {
-    id: 'artisan',
-    label: 'Artisan',
-    icon: '🔧',
-    desc: 'Je propose mes services de réparation ou de construction',
-    route: '/(auth)/register-artisan',
-    color: '#2E7D32',
-    params: {},
-  },
-  {
-    id: 'agence',
-    label: 'Agence',
-    icon: '🏢',
-    desc: 'Je gère une agence avec plusieurs artisans',
-    route: '/(auth)/register-agence',
-    color: '#1565C0',
-    params: {},
-  },
-  {
-    id: 'boutique',
-    label: 'Boutique',
-    icon: '🛍️',
-    desc: 'Je vends des produits de décoration et d\'ameublement',
-    route: '/(auth)/register-commerce',
-    color: '#E65100',
-    params: { type: 'BOUTIQUE' },
-  },
-  {
-    id: 'quincaillerie',
-    label: 'Quincaillerie',
-    icon: '🏗️',
-    desc: 'Je vends des matériaux et fournitures de construction',
-    route: '/(auth)/register-commerce',
-    color: '#4E342E',
-    params: { type: 'QUINCAILLERIE' },
-  },
-  {
-    id: 'entreprise',
-    label: 'Entreprise BTP',
-    icon: '🏗️',
-    desc: 'Je dirige une entreprise de BTP (Mode Agence, Artisan ou Mixte)',
-    route: '/(auth)/register-entreprise',
-    color: '#5D4037',
-    params: {},
-  },
-];
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { register } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [form, setForm] = useState({ firstName: '', phone: '', password: '', confirm: '' });
+  const set = (k: keyof typeof form, v: string) => setForm(p => ({ ...p, [k]: v }));
+
+  const handleSubmit = async () => {
+    if (!form.firstName.trim() || !form.phone.trim() || !form.password) {
+      return Alert.alert('Champs manquants', 'Veuillez remplir tous les champs.');
+    }
+    if (form.password !== form.confirm) {
+      return Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
+    }
+    if (form.password.length < 8) {
+      return Alert.alert('Erreur', 'Le mot de passe doit contenir au moins 8 caractères.');
+    }
+    setLoading(true);
+    try {
+      await register({
+        firstName: form.firstName.trim(),
+        lastName: '',
+        phone: form.phone.trim(),
+        password: form.password,
+        role: 'CLIENT' as any,
+      });
+      router.replace('/(tabs)');
+    } catch (e: any) {
+      Alert.alert('Erreur', e?.response?.data?.message ?? 'Inscription impossible. Réessayez.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.logo}>fixAI</Text>
-          <Text style={styles.title}>Créer un compte</Text>
-          <Text style={styles.subtitle}>Choisissez votre profil pour commencer</Text>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+
+        {/* Header */}
+        <View style={styles.hero}>
+          <View style={styles.heroBg} />
+          <View style={styles.logoWrap}>
+            <Text style={styles.logoText}>fx</Text>
+          </View>
+          <Text style={styles.heroTitle}>Créer un compte</Text>
+          <Text style={styles.heroSub}>Rapide, gratuit, sans engagement</Text>
         </View>
 
-        {ROLES.map(role => (
+        {/* Form */}
+        <View style={styles.formBox}>
+          <Field
+            label="Prénom"
+            icon="person-outline"
+            placeholder="Ex: Kouamé"
+            value={form.firstName}
+            onChangeText={v => set('firstName', v)}
+            autoCapitalize="words"
+          />
+          <Field
+            label="Numéro de téléphone"
+            icon="call-outline"
+            placeholder="0701234567"
+            value={form.phone}
+            onChangeText={v => set('phone', v)}
+            keyboardType="phone-pad"
+          />
+          <Field
+            label="Mot de passe"
+            icon="lock-closed-outline"
+            placeholder="Minimum 8 caractères"
+            value={form.password}
+            onChangeText={v => set('password', v)}
+            secureTextEntry={!showPassword}
+            rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+            onRightIconPress={() => setShowPassword(p => !p)}
+          />
+          <Field
+            label="Confirmer le mot de passe"
+            icon="lock-closed-outline"
+            placeholder="Répétez le mot de passe"
+            value={form.confirm}
+            onChangeText={v => set('confirm', v)}
+            secureTextEntry={!showPassword}
+          />
+
+          <View style={styles.infoBanner}>
+            <Ionicons name="information-circle-outline" size={18} color="#6B3FA0" />
+            <Text style={styles.infoText}>
+              Après inscription, configurez votre espace pro depuis votre profil (artisan, boutique, etc.)
+            </Text>
+          </View>
+
           <TouchableOpacity
-            key={role.id}
-            style={styles.card}
-            onPress={() => router.push({ pathname: role.route as any, params: role.params })}
+            style={[styles.btn, loading && styles.btnDisabled]}
+            onPress={handleSubmit}
+            disabled={loading}
             activeOpacity={0.85}
           >
-            <View style={[styles.iconBox, { backgroundColor: role.color + '18' }]}>
-              <Text style={styles.icon}>{role.icon}</Text>
-            </View>
-            <View style={styles.cardText}>
-              <Text style={[styles.cardLabel, { color: role.color }]}>{role.label}</Text>
-              <Text style={styles.cardDesc}>{role.desc}</Text>
-            </View>
-            <Text style={[styles.arrow, { color: role.color }]}>›</Text>
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <>
+                  <Text style={styles.btnText}>Créer mon compte</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                </>
+            }
           </TouchableOpacity>
-        ))}
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Déjà un compte ? </Text>
-          <Link href="/(auth)/login" style={styles.link}>Se connecter</Link>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Déjà un compte ? </Text>
+            <Link href="/(auth)/login" style={styles.link}>Se connecter</Link>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { padding: 20, paddingBottom: 40 },
-  header: { alignItems: 'center', marginBottom: 28, paddingTop: 12 },
-  logo: { fontSize: 28, fontWeight: '900', color: '#6B3FA0', marginBottom: 8 },
-  title: { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center' },
-  card: {
+function Field({
+  label, icon, rightIcon, onRightIconPress, ...props
+}: {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  rightIcon?: keyof typeof Ionicons.glyphMap;
+  onRightIconPress?: () => void;
+} & React.ComponentProps<typeof TextInput>) {
+  return (
+    <View style={f.wrap}>
+      <Text style={f.label}>{label}</Text>
+      <View style={f.row}>
+        <Ionicons name={icon} size={18} color="#9CA3AF" style={f.iconLeft} />
+        <TextInput style={f.input} placeholderTextColor="#9CA3AF" {...props} />
+        {rightIcon && (
+          <TouchableOpacity onPress={onRightIconPress} style={f.iconRight}>
+            <Ionicons name={rightIcon} size={18} color="#9CA3AF" />
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const f = StyleSheet.create({
+  wrap: { marginBottom: 16 },
+  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
+  row: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 16,
-    padding: 16, marginBottom: 12,
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
-    borderWidth: 1, borderColor: '#F0F0F0',
+    backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E5E7EB',
+    borderRadius: 14, paddingHorizontal: 12,
   },
-  iconBox: {
-    width: 52, height: 52, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center', marginRight: 14,
+  iconLeft: { marginRight: 8 },
+  iconRight: { padding: 4 },
+  input: { flex: 1, paddingVertical: 13, fontSize: 15, color: '#111827' },
+});
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#F4F5F7' },
+  content: { paddingBottom: 40 },
+  hero: {
+    backgroundColor: '#1A0A3E', paddingTop: 56, paddingBottom: 36,
+    alignItems: 'center', overflow: 'hidden', position: 'relative',
   },
-  icon: { fontSize: 26 },
-  cardText: { flex: 1 },
-  cardLabel: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
-  cardDesc: { fontSize: 12, color: '#6B7280', lineHeight: 17 },
-  arrow: { fontSize: 28, fontWeight: '300' },
+  heroBg: {
+    position: 'absolute', width: 280, height: 280, borderRadius: 140,
+    backgroundColor: '#6B3FA020', top: -100, right: -60,
+  },
+  logoWrap: {
+    width: 64, height: 64, borderRadius: 18,
+    backgroundColor: '#6B3FA0', alignItems: 'center', justifyContent: 'center',
+    marginBottom: 16,
+  },
+  logoText: { color: '#fff', fontSize: 26, fontWeight: '900' },
+  heroTitle: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 6 },
+  heroSub: { fontSize: 14, color: 'rgba(255,255,255,0.55)' },
+  formBox: { padding: 24 },
+  infoBanner: {
+    flexDirection: 'row', gap: 10, alignItems: 'flex-start',
+    backgroundColor: '#EDE9F8', borderRadius: 12, padding: 14, marginBottom: 20,
+  },
+  infoText: { flex: 1, fontSize: 13, color: '#4A2880', lineHeight: 19 },
+  btn: {
+    backgroundColor: '#6B3FA0', borderRadius: 14, paddingVertical: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+  },
+  btnDisabled: { backgroundColor: '#C4B5E8' },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
   footerText: { color: '#6B7280', fontSize: 15 },
   link: { color: '#6B3FA0', fontWeight: '700', fontSize: 15 },

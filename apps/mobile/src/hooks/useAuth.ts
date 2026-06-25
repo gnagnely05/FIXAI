@@ -49,8 +49,8 @@ export function useAuth() {
     }
   };
 
-  const login = useCallback(async (email: string, password: string) => {
-    const response = await api.post<LoginResponse>('/auth/login', { email, password });
+  const login = useCallback(async (identifier: string, password: string) => {
+    const response = await api.post<LoginResponse>('/auth/login', { identifier, password });
     const { user, accessToken, refreshToken } = response.data;
 
     await Promise.all([
@@ -106,6 +106,14 @@ export function useAuth() {
     setState({ user, accessToken, isLoading: false });
   }, []);
 
+  const upgradeToPro = useCallback(async (data: Record<string, any>) => {
+    const response = await api.patch<{ user: User }>('/users/me/upgrade-pro', data);
+    const user = response.data as unknown as User;
+    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
+    setState(prev => ({ ...prev, user }));
+    return user;
+  }, []);
+
   return {
     user: state.user,
     accessToken: state.accessToken,
@@ -114,6 +122,7 @@ export function useAuth() {
     login,
     register,
     registerProvider,
+    upgradeToPro,
     logout,
   };
 }

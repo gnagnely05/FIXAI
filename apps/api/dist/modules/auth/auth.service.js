@@ -96,19 +96,31 @@ let AuthService = class AuthService {
         return { user: this.sanitizeUser(user), ...tokens };
     }
     async register(dto) {
-        const existing = await this.usersRepo.findOne({ where: { email: dto.email } });
+        // Generate placeholder email from phone if not provided
+        const email = dto.email ?? `${dto.phone.replace(/\D/g, '')}@fixai.ci`;
+        const existing = await this.usersRepo.findOne({ where: [{ email }, { phone: dto.phone }] });
         if (existing) {
-            throw new common_1.ConflictException('Email already registered');
+            throw new common_1.ConflictException('Ce numéro est déjà enregistré');
         }
         const passwordHash = await bcrypt.hash(dto.password, 12);
-        const user = this.usersRepo.create({ ...dto, passwordHash });
+        const user = this.usersRepo.create({
+            ...dto,
+            email,
+            lastName: dto.lastName ?? '',
+            role: dto.role ?? user_role_enum_1.UserRole.CLIENT,
+            passwordHash,
+        });
         await this.usersRepo.save(user);
         const tokens = await this.generateTokens(user);
         await this.updateRefreshToken(user.id, tokens.refreshToken);
         return { user: this.sanitizeUser(user), ...tokens };
     }
     async login(dto) {
-        const user = await this.usersRepo.findOne({ where: { email: dto.email } });
+        const identifier = dto.identifier;
+        const isPhone = /^(\+225)?[0-9]{10}$/.test(identifier);
+        const user = await this.usersRepo.findOne({
+            where: isPhone ? [{ phone: identifier }, { phone: identifier.replace(/^\+225/, '') }] : { email: identifier },
+        });
         if (!user) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }

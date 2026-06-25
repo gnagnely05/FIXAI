@@ -62,13 +62,21 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-    const existing = await this.usersRepo.findOne({ where: { email: dto.email } });
+    // Generate placeholder email from phone if not provided
+    const email = dto.email ?? `${dto.phone.replace(/\D/g, '')}@fixai.ci`;
+    const existing = await this.usersRepo.findOne({ where: [{ email }, { phone: dto.phone }] });
     if (existing) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException('Ce numéro est déjà enregistré');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
-    const user = this.usersRepo.create({ ...dto, passwordHash });
+    const user = this.usersRepo.create({
+      ...dto,
+      email,
+      lastName: dto.lastName ?? '',
+      role: dto.role ?? UserRole.CLIENT,
+      passwordHash,
+    });
     await this.usersRepo.save(user);
 
     const tokens = await this.generateTokens(user);
@@ -78,7 +86,11 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.usersRepo.findOne({ where: { email: dto.email } });
+    const identifier = dto.identifier;
+    const isPhone = /^(\+225)?[0-9]{10}$/.test(identifier);
+    const user = await this.usersRepo.findOne({
+      where: isPhone ? [{ phone: identifier }, { phone: identifier.replace(/^\+225/, '') }] : { email: identifier },
+    });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
