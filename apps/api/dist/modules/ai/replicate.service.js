@@ -27,7 +27,7 @@ let ReplicateService = ReplicateService_1 = class ReplicateService {
         this.FLUX_PRO = 'black-forest-labs/flux-1.1-pro';
         this.FLUX_FILL = 'black-forest-labs/flux-fill-pro';
         this.VISION_MODEL = 'meta/llama-3.2-90b-vision-instruct';
-        this.TEXT_MODEL = 'meta/llama-3.3-70b-instruct';
+        this.GEMINI_MODEL = 'google/gemini-3.1-pro';
         const token = process.env.REPLICATE_API_TOKEN;
         if (!token) {
             this.logger.warn('REPLICATE_API_TOKEN not configured — AI features will be unavailable');
@@ -123,27 +123,25 @@ let ReplicateService = ReplicateService_1 = class ReplicateService {
             throw new common_1.ServiceUnavailableException('Image analysis failed. Please try again.');
         }
     }
-    // ─── Text completion (Llama) ──────────────────────────────────────────────
+    // ─── Text completion (Gemini 3.1 Pro via Replicate streaming) ───────────────
     /**
-     * Generate text completions using Llama 3.3.
+     * Generate text completions using Gemini 3.1 Pro.
+     * Uses Replicate's streaming API and collects all chunks.
      */
     async complete(prompt, systemPrompt) {
         try {
-            const fullPrompt = systemPrompt
-                ? `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n${prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>`
-                : prompt;
-            const input = {
-                prompt: fullPrompt,
-                max_tokens: 2048,
-                temperature: 0.1,
-            };
-            this.logger.log(`[Text] Completing prompt: "${prompt.slice(0, 50)}..."`);
-            const output = await this.client.run(this.TEXT_MODEL, { input });
-            return Array.isArray(output) ? output.join('') : String(output ?? '');
+            const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
+            const input = { prompt: fullPrompt };
+            this.logger.log(`[Gemini] Prompt: "${prompt.slice(0, 50)}..." | Model: ${this.GEMINI_MODEL}`);
+            let result = '';
+            for await (const event of this.client.stream(this.GEMINI_MODEL, { input })) {
+                result += `${event}`;
+            }
+            return result;
         }
         catch (e) {
             const msg = e?.message ?? String(e);
-            this.logger.error(`Replicate text error: ${msg}`);
+            this.logger.error(`Gemini error: ${msg}`);
             throw new common_1.ServiceUnavailableException('Text generation failed. Please try again.');
         }
     }

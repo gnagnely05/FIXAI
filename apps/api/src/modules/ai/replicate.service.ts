@@ -14,7 +14,7 @@ export class ReplicateService {
   readonly FLUX_PRO          = 'black-forest-labs/flux-1.1-pro';
   readonly FLUX_FILL         = 'black-forest-labs/flux-fill-pro';
   readonly VISION_MODEL      = 'meta/llama-3.2-90b-vision-instruct';
-  readonly TEXT_MODEL        = 'meta/llama-3.3-70b-instruct';
+  readonly GEMINI_MODEL      = 'google/gemini-3.1-pro';
 
   constructor() {
     const token = process.env.REPLICATE_API_TOKEN;
@@ -137,30 +137,29 @@ export class ReplicateService {
     }
   }
 
-  // ─── Text completion (Llama) ──────────────────────────────────────────────
+  // ─── Text completion (Gemini 3.1 Pro via Replicate streaming) ───────────────
 
   /**
-   * Generate text completions using Llama 3.3.
+   * Generate text completions using Gemini 3.1 Pro.
+   * Uses Replicate's streaming API and collects all chunks.
    */
   async complete(prompt: string, systemPrompt?: string): Promise<string> {
     try {
-      const fullPrompt = systemPrompt
-        ? `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n${systemPrompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n${prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>`
-        : prompt;
+      const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
 
-      const input: Record<string, unknown> = {
-        prompt: fullPrompt,
-        max_tokens: 2048,
-        temperature: 0.1,
-      };
+      const input: Record<string, unknown> = { prompt: fullPrompt };
 
-      this.logger.log(`[Text] Completing prompt: "${prompt.slice(0, 50)}..."`);
+      this.logger.log(`[Gemini] Prompt: "${prompt.slice(0, 50)}..." | Model: ${this.GEMINI_MODEL}`);
 
-      const output = await this.client.run(this.TEXT_MODEL, { input });
-      return Array.isArray(output) ? (output as string[]).join('') : String(output ?? '');
+      let result = '';
+      for await (const event of this.client.stream(this.GEMINI_MODEL, { input })) {
+        result += `${event}`;
+      }
+
+      return result;
     } catch (e) {
       const msg = (e as { message?: string })?.message ?? String(e);
-      this.logger.error(`Replicate text error: ${msg}`);
+      this.logger.error(`Gemini error: ${msg}`);
       throw new ServiceUnavailableException('Text generation failed. Please try again.');
     }
   }

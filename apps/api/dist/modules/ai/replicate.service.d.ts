@@ -8,7 +8,7 @@ export declare class ReplicateService {
     readonly FLUX_PRO = "black-forest-labs/flux-1.1-pro";
     readonly FLUX_FILL = "black-forest-labs/flux-fill-pro";
     readonly VISION_MODEL = "meta/llama-3.2-90b-vision-instruct";
-    readonly TEXT_MODEL = "meta/llama-3.3-70b-instruct";
+    readonly GEMINI_MODEL = "google/gemini-3.1-pro";
     constructor();
     /**
      * Generate a new image from a text prompt.
@@ -30,7 +30,8 @@ export declare class ReplicateService {
      */
     analyzeWithVision(prompt: string, imageUrl?: string): Promise<string>;
     /**
-     * Generate text completions using Llama 3.3.
+     * Generate text completions using Gemini 3.1 Pro.
+     * Uses Replicate's streaming API and collects all chunks.
      */
     complete(prompt: string, systemPrompt?: string): Promise<string>;
 }
