@@ -13,7 +13,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AiService = void 0;
 const common_1 = require("@nestjs/common");
 const catalog_service_1 = require("../catalog/catalog.service");
-const replicate_service_1 = require("./replicate.service");
 const openrouter_service_1 = require("./openrouter.service");
 const subscriptions_service_1 = require("../subscriptions/subscriptions.service");
 const BUDGET_MAX = {
@@ -37,9 +36,8 @@ const STYLE_DESC = {
     CLASSIQUE_ELEGANT: 'classic and elegant, rich fabrics, refined details, timeless décor',
 };
 let AiService = AiService_1 = class AiService {
-    constructor(catalogService, replicate, openRouter, subscriptions) {
+    constructor(catalogService, openRouter, subscriptions) {
         this.catalogService = catalogService;
-        this.replicate = replicate;
         this.openRouter = openRouter;
         this.subscriptions = subscriptions;
         this.logger = new common_1.Logger(AiService_1.name);
@@ -49,7 +47,7 @@ let AiService = AiService_1 = class AiService {
         const { products, excluded } = await this.selectProducts(dto);
         const prompt = this.buildPrompt(dto, products);
         this.logger.log(`[Décoration] ${dto.roomType} / ${dto.style} — ${products.length} produits`);
-        const imageUrl = await this.replicate.generateImage(prompt, { baseImageUrl: dto.roomPhotoUrl });
+        const imageUrl = await this.openRouter.generateImage(prompt);
         await this.subscriptions.consumeAiRequest(userId);
         const totalEstimateXof = products.reduce((sum, p) => sum + Number(p.priceXof), 0);
         return {
@@ -152,7 +150,7 @@ Ne fournis aucun texte en dehors du JSON.`;
         try {
             let raw;
             if (imageUrls.length > 0) {
-                raw = await this.replicate.analyzeWithVision(`${systemInstruction}\n\nDescription du client : ${conversation}`, imageUrls[0]);
+                raw = await this.openRouter.analyzeWithVision(`${systemInstruction}\n\nDescription du client : ${conversation}`, imageUrls[0]);
             }
             else {
                 raw = await this.openRouter.chat(conversation, systemInstruction);
@@ -181,26 +179,18 @@ Ne fournis aucun texte en dehors du JSON.`;
             estimatedPriceMaxXof: maxPrice,
         };
     }
-    async generateImage(userId, prompt, baseImageUrl) {
+    async generateImage(userId, prompt) {
         await this.subscriptions.assertAiAllowed(userId);
-        const imageUrl = await this.replicate.generateImage(prompt, { baseImageUrl });
+        const imageUrl = await this.openRouter.generateImage(prompt);
         await this.subscriptions.consumeAiRequest(userId);
         return imageUrl;
     }
-    // Registre de providers — le frontend choisit "flux" ou "gpt"
-    async generateImageByProvider(userId, prompt, provider = 'flux') {
-        await this.subscriptions.assertAiAllowed(userId);
-        const imageProviders = {
-            flux: () => this.replicate.generateImage(prompt),
-        };
-        const fn = imageProviders[provider] ?? imageProviders['flux'];
-        const url = await fn();
-        await this.subscriptions.consumeAiRequest(userId);
-        return url;
+    async generateImageByProvider(userId, prompt) {
+        return this.generateImage(userId, prompt);
     }
     async analyzeImage(userId, prompt, imageUrl) {
         await this.subscriptions.assertAiAllowed(userId);
-        const analysis = await this.replicate.analyzeWithVision(prompt, imageUrl);
+        const analysis = await this.openRouter.analyzeWithVision(prompt, imageUrl);
         await this.subscriptions.consumeAiRequest(userId);
         return analysis;
     }
@@ -209,7 +199,6 @@ exports.AiService = AiService;
 exports.AiService = AiService = AiService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [catalog_service_1.CatalogService,
-        replicate_service_1.ReplicateService,
         openrouter_service_1.OpenRouterService,
         subscriptions_service_1.SubscriptionsService])
 ], AiService);

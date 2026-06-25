@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CatalogService } from '../catalog/catalog.service';
 import { ProductEntity } from '../catalog/entities/product.entity';
-import { ReplicateService } from './replicate.service';
 import { OpenRouterService } from './openrouter.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import {
@@ -49,7 +48,6 @@ export class AiService {
 
   constructor(
     private readonly catalogService: CatalogService,
-    private readonly replicate: ReplicateService,
     private readonly openRouter: OpenRouterService,
     private readonly subscriptions: SubscriptionsService,
   ) {}
@@ -62,7 +60,7 @@ export class AiService {
 
     this.logger.log(`[Décoration] ${dto.roomType} / ${dto.style} — ${products.length} produits`);
 
-    const imageUrl = await this.replicate.generateImage(prompt, { baseImageUrl: dto.roomPhotoUrl });
+    const imageUrl = await this.openRouter.generateImage(prompt);
     await this.subscriptions.consumeAiRequest(userId);
 
     const totalEstimateXof = products.reduce((sum, p) => sum + Number(p.priceXof), 0);
@@ -194,7 +192,7 @@ Ne fournis aucun texte en dehors du JSON.`;
     try {
       let raw: string;
       if (imageUrls.length > 0) {
-        raw = await this.replicate.analyzeWithVision(
+        raw = await this.openRouter.analyzeWithVision(
           `${systemInstruction}\n\nDescription du client : ${conversation}`,
           imageUrls[0],
         );
@@ -225,32 +223,20 @@ Ne fournis aucun texte en dehors du JSON.`;
     };
   }
 
-  async generateImage(userId: string, prompt: string, baseImageUrl?: string): Promise<string> {
+  async generateImage(userId: string, prompt: string): Promise<string> {
     await this.subscriptions.assertAiAllowed(userId);
-    const imageUrl = await this.replicate.generateImage(prompt, { baseImageUrl });
+    const imageUrl = await this.openRouter.generateImage(prompt);
     await this.subscriptions.consumeAiRequest(userId);
     return imageUrl;
   }
 
-  // Registre de providers — le frontend choisit "flux" ou "gpt"
-  async generateImageByProvider(
-    userId: string,
-    prompt: string,
-    provider: 'flux' = 'flux',
-  ): Promise<string> {
-    await this.subscriptions.assertAiAllowed(userId);
-    const imageProviders: Record<string, () => Promise<string>> = {
-      flux: () => this.replicate.generateImage(prompt),
-    };
-    const fn = imageProviders[provider] ?? imageProviders['flux'];
-    const url = await fn();
-    await this.subscriptions.consumeAiRequest(userId);
-    return url;
+  async generateImageByProvider(userId: string, prompt: string): Promise<string> {
+    return this.generateImage(userId, prompt);
   }
 
   async analyzeImage(userId: string, prompt: string, imageUrl?: string): Promise<string> {
     await this.subscriptions.assertAiAllowed(userId);
-    const analysis = await this.replicate.analyzeWithVision(prompt, imageUrl);
+    const analysis = await this.openRouter.analyzeWithVision(prompt, imageUrl);
     await this.subscriptions.consumeAiRequest(userId);
     return analysis;
   }

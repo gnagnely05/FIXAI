@@ -1,6 +1,6 @@
 import { CatalogService } from '../catalog/catalog.service';
 import { ProductEntity } from '../catalog/entities/product.entity';
-import { ReplicateService } from './replicate.service';
+import { OpenRouterService } from './openrouter.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 export type SupportedMimeType = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif';
 export interface QuoteFile {
@@ -24,10 +24,10 @@ export interface DevisProResult {
 }
 export declare class DevisProService {
     private readonly catalogService;
-    private readonly replicate;
+    private readonly openRouter;
     private readonly subscriptions;
     private readonly logger;
-    constructor(catalogService: CatalogService, replicate: ReplicateService, subscriptions: SubscriptionsService);
+    constructor(catalogService: CatalogService, openRouter: OpenRouterService, subscriptions: SubscriptionsService);
     analyzeQuoteFiles(userId: string, files: QuoteFile[]): Promise<DevisProResult>;
     /**
      * Anti-hallucination: only MATCHED when a real catalog product is found.

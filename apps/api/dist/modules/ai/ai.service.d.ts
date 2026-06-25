@@ -1,6 +1,5 @@
 import { CatalogService } from '../catalog/catalog.service';
 import { ProductEntity } from '../catalog/entities/product.entity';
-import { ReplicateService } from './replicate.service';
 import { OpenRouterService } from './openrouter.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { GenerateDecorationDto } from './dto/decoration.dto';
@@ -13,11 +12,10 @@ export interface DecorationResult {
 }
 export declare class AiService {
     private readonly catalogService;
-    private readonly replicate;
     private readonly openRouter;
     private readonly subscriptions;
     private readonly logger;
-    constructor(catalogService: CatalogService, replicate: ReplicateService, openRouter: OpenRouterService, subscriptions: SubscriptionsService);
+    constructor(catalogService: CatalogService, openRouter: OpenRouterService, subscriptions: SubscriptionsService);
     generateDecorationVisualization(userId: string, dto: GenerateDecorationDto): Promise<DecorationResult>;
     private selectProducts;
     private buildPrompt;
@@ -29,8 +27,8 @@ export declare class AiService {
         estimatedPriceMinXof: number;
         estimatedPriceMaxXof: number;
     }>;
-    generateImage(userId: string, prompt: string, baseImageUrl?: string): Promise<string>;
-    generateImageByProvider(userId: string, prompt: string, provider?: 'flux'): Promise<string>;
+    generateImage(userId: string, prompt: string): Promise<string>;
+    generateImageByProvider(userId: string, prompt: string): Promise<string>;
     analyzeImage(userId: string, prompt: string, imageUrl?: string): Promise<string>;
 }
 //# sourceMappingURL=ai.service.d.ts.map

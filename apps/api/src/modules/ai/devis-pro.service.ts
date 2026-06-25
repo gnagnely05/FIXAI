@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { CatalogService } from '../catalog/catalog.service';
 import { ProductEntity } from '../catalog/entities/product.entity';
-import { ReplicateService } from './replicate.service';
+import { OpenRouterService } from './openrouter.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 export type SupportedMimeType =
@@ -40,7 +40,7 @@ export class DevisProService {
 
   constructor(
     private readonly catalogService: CatalogService,
-    private readonly replicate: ReplicateService,
+    private readonly openRouter: OpenRouterService,
     private readonly subscriptions: SubscriptionsService,
   ) {}
 
@@ -74,7 +74,7 @@ Ne retourne QUE le JSON array brut, sans markdown ni explication.
 Exemple: [{"originalText":"Ciment CPA 50 kg","quantity":20},{"originalText":"Sable de rivière","quantity":null}]`;
 
       try {
-        const response = await this.replicate.analyzeWithVision(prompt, dataUri);
+        const response = await this.openRouter.analyzeWithVision(prompt, dataUri);
         const jsonMatch = response.match(/\[[\s\S]*\]/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]) as Array<{ originalText: string; quantity: number | null }>;

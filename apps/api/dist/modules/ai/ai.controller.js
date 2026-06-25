@@ -27,7 +27,7 @@ let AiController = class AiController {
         return this.service.generateDecorationVisualization(req.user.sub, dto);
     }
     generateImage(req, dto) {
-        return this.service.generateImage(req.user.sub, dto.prompt, dto.imageUrl);
+        return this.service.generateImage(req.user.sub, dto.prompt);
     }
     analyzeImage(req, dto) {
         return this.service.analyzeImage(req.user.sub, dto.prompt, dto.imageUrl);
@@ -41,7 +41,7 @@ let AiController = class AiController {
     }
     // Route unifiée génération d'image — provider: "flux" | "gpt"
     generateByProvider(req, body) {
-        return this.service.generateImageByProvider(req.user.sub, body.prompt, body.provider ?? 'flux');
+        return this.service.generateImageByProvider(req.user.sub, body.prompt);
     }
 };
 exports.AiController = AiController;

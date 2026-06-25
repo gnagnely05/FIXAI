@@ -24,7 +24,7 @@ export class AiController {
     @Request() req: { user: { sub: string } },
     @Body() dto: GenerateImageDto,
   ) {
-    return this.service.generateImage(req.user.sub, dto.prompt, dto.imageUrl);
+    return this.service.generateImage(req.user.sub, dto.prompt);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -54,6 +54,6 @@ export class AiController {
     @Request() req: { user: { sub: string } },
     @Body() body: { prompt: string; provider?: 'flux' },
   ) {
-    return this.service.generateImageByProvider(req.user.sub, body.prompt, body.provider ?? 'flux');
+    return this.service.generateImageByProvider(req.user.sub, body.prompt);
   }
 }
