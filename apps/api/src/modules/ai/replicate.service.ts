@@ -11,10 +11,9 @@ export class ReplicateService {
   private readonly client: Replicate;
 
   // ─── Models ───────────────────────────────────────────────────────────────
-  readonly FLUX_PRO          = 'black-forest-labs/flux-1.1-pro';
-  readonly FLUX_FILL         = 'black-forest-labs/flux-fill-pro';
-  readonly VISION_MODEL      = 'meta/llama-3.2-90b-vision-instruct';
-  readonly GEMINI_MODEL      = 'google/gemini-3.1-pro';
+  readonly FLUX_PRO     = 'black-forest-labs/flux-1.1-pro';
+  readonly FLUX_FILL    = 'black-forest-labs/flux-fill-pro';
+  readonly VISION_MODEL = 'meta/llama-3.2-90b-vision-instruct';
 
   constructor() {
     const token = process.env.REPLICATE_API_TOKEN;
@@ -137,30 +136,4 @@ export class ReplicateService {
     }
   }
 
-  // ─── Text completion (Gemini 3.1 Pro via Replicate streaming) ───────────────
-
-  /**
-   * Generate text completions using Gemini 3.1 Pro.
-   * Uses Replicate's streaming API and collects all chunks.
-   */
-  async complete(prompt: string, systemPrompt?: string): Promise<string> {
-    try {
-      const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
-
-      const input: Record<string, unknown> = { prompt: fullPrompt };
-
-      this.logger.log(`[Gemini] Prompt: "${prompt.slice(0, 50)}..." | Model: ${this.GEMINI_MODEL}`);
-
-      let result = '';
-      for await (const event of this.client.stream(this.GEMINI_MODEL, { input })) {
-        result += `${event}`;
-      }
-
-      return result;
-    } catch (e) {
-      const msg = (e as { message?: string })?.message ?? String(e);
-      this.logger.error(`Gemini error: ${msg}`);
-      throw new ServiceUnavailableException('Text generation failed. Please try again.');
-    }
-  }
 }

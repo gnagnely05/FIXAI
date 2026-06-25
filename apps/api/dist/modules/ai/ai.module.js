@@ -13,6 +13,7 @@ const ai_controller_1 = require("./ai.controller");
 const devis_pro_service_1 = require("./devis-pro.service");
 const devis_pro_controller_1 = require("./devis-pro.controller");
 const replicate_service_1 = require("./replicate.service");
+const openrouter_service_1 = require("./openrouter.service");
 const catalog_module_1 = require("../catalog/catalog.module");
 const subscriptions_module_1 = require("../subscriptions/subscriptions.module");
 let AiModule = class AiModule {
@@ -22,8 +23,8 @@ exports.AiModule = AiModule = __decorate([
     (0, common_1.Module)({
         imports: [catalog_module_1.CatalogModule, subscriptions_module_1.SubscriptionsModule],
         controllers: [ai_controller_1.AiController, devis_pro_controller_1.DevisProController],
-        providers: [ai_service_1.AiService, devis_pro_service_1.DevisProService, replicate_service_1.ReplicateService],
-        exports: [ai_service_1.AiService, devis_pro_service_1.DevisProService, replicate_service_1.ReplicateService],
+        providers: [ai_service_1.AiService, devis_pro_service_1.DevisProService, replicate_service_1.ReplicateService, openrouter_service_1.OpenRouterService],
+        exports: [ai_service_1.AiService, devis_pro_service_1.DevisProService, replicate_service_1.ReplicateService, openrouter_service_1.OpenRouterService],
     })
 ], AiModule);
 //# sourceMappingURL=ai.module.js.map

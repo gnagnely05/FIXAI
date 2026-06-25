@@ -14,6 +14,7 @@ exports.AiService = void 0;
 const common_1 = require("@nestjs/common");
 const catalog_service_1 = require("../catalog/catalog.service");
 const replicate_service_1 = require("./replicate.service");
+const openrouter_service_1 = require("./openrouter.service");
 const subscriptions_service_1 = require("../subscriptions/subscriptions.service");
 const BUDGET_MAX = {
     MOINS_100K: 100_000,
@@ -36,9 +37,10 @@ const STYLE_DESC = {
     CLASSIQUE_ELEGANT: 'classic and elegant, rich fabrics, refined details, timeless décor',
 };
 let AiService = AiService_1 = class AiService {
-    constructor(catalogService, replicate, subscriptions) {
+    constructor(catalogService, replicate, openRouter, subscriptions) {
         this.catalogService = catalogService;
         this.replicate = replicate;
+        this.openRouter = openRouter;
         this.subscriptions = subscriptions;
         this.logger = new common_1.Logger(AiService_1.name);
     }
@@ -136,7 +138,7 @@ let AiService = AiService_1 = class AiService {
         };
         const label = serviceLabels[serviceType] ?? serviceType;
         const conversation = messages.join('\n');
-        const systemPrompt = `Tu es un expert en ${label} en Côte d'Ivoire.
+        const systemInstruction = `Tu es un expert en ${label} en Côte d'Ivoire.
 Analyse la description du client et réponds UNIQUEMENT en JSON valide avec exactement ces champs :
 {
   "summary": "résumé clair du problème en 1-2 phrases",
@@ -146,21 +148,21 @@ Analyse la description du client et réponds UNIQUEMENT en JSON valide avec exac
   "estimatedPriceMinXof": <nombre entier en FCFA>,
   "estimatedPriceMaxXof": <nombre entier en FCFA>
 }
-Description du client : ${conversation}`;
+Ne fournis aucun texte en dehors du JSON.`;
         try {
             let raw;
             if (imageUrls.length > 0) {
-                raw = await this.replicate.analyzeWithVision(systemPrompt, imageUrls[0]);
+                raw = await this.replicate.analyzeWithVision(`${systemInstruction}\n\nDescription du client : ${conversation}`, imageUrls[0]);
             }
             else {
-                raw = await this.replicate.complete(systemPrompt);
+                raw = await this.openRouter.chat(conversation, systemInstruction);
             }
             const jsonMatch = raw.match(/\{[\s\S]*\}/);
             if (jsonMatch)
                 return JSON.parse(jsonMatch[0]);
         }
         catch (err) {
-            this.logger.warn(`[Diagnose] Gemini failed: ${err}`);
+            this.logger.warn(`[Diagnose] OpenRouter failed: ${err}`);
         }
         // Fallback contextuel si Gemini échoue
         const lastMsg = messages[messages.length - 1] ?? '';
@@ -208,6 +210,7 @@ exports.AiService = AiService = AiService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [catalog_service_1.CatalogService,
         replicate_service_1.ReplicateService,
+        openrouter_service_1.OpenRouterService,
         subscriptions_service_1.SubscriptionsService])
 ], AiService);
 //# sourceMappingURL=ai.service.js.map

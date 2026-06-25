@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CatalogService } from '../catalog/catalog.service';
 import { ProductEntity } from '../catalog/entities/product.entity';
 import { ReplicateService } from './replicate.service';
+import { OpenRouterService } from './openrouter.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import {
   GenerateDecorationDto,
@@ -49,6 +50,7 @@ export class AiService {
   constructor(
     private readonly catalogService: CatalogService,
     private readonly replicate: ReplicateService,
+    private readonly openRouter: OpenRouterService,
     private readonly subscriptions: SubscriptionsService,
   ) {}
 
@@ -177,7 +179,7 @@ export class AiService {
     const label = serviceLabels[serviceType] ?? serviceType;
     const conversation = messages.join('\n');
 
-    const systemPrompt = `Tu es un expert en ${label} en Côte d'Ivoire.
+    const systemInstruction = `Tu es un expert en ${label} en Côte d'Ivoire.
 Analyse la description du client et réponds UNIQUEMENT en JSON valide avec exactement ces champs :
 {
   "summary": "résumé clair du problème en 1-2 phrases",
@@ -187,19 +189,22 @@ Analyse la description du client et réponds UNIQUEMENT en JSON valide avec exac
   "estimatedPriceMinXof": <nombre entier en FCFA>,
   "estimatedPriceMaxXof": <nombre entier en FCFA>
 }
-Description du client : ${conversation}`;
+Ne fournis aucun texte en dehors du JSON.`;
 
     try {
       let raw: string;
       if (imageUrls.length > 0) {
-        raw = await this.replicate.analyzeWithVision(systemPrompt, imageUrls[0]);
+        raw = await this.replicate.analyzeWithVision(
+          `${systemInstruction}\n\nDescription du client : ${conversation}`,
+          imageUrls[0],
+        );
       } else {
-        raw = await this.replicate.complete(systemPrompt);
+        raw = await this.openRouter.chat(conversation, systemInstruction);
       }
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) return JSON.parse(jsonMatch[0]);
     } catch (err) {
-      this.logger.warn(`[Diagnose] Gemini failed: ${err}`);
+      this.logger.warn(`[Diagnose] OpenRouter failed: ${err}`);
     }
 
     // Fallback contextuel si Gemini échoue
