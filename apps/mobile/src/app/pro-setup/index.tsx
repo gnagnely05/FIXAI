@@ -179,6 +179,16 @@ export default function ProSetupScreen() {
                 autoFocus
               />
             )}
+            <Field label="Adresse / zone de travail" placeholder="Ex: Yopougon, Abidjan" value={form.address} onChangeText={v => set('address', v)} />
+            <Field
+              label="Décrivez votre expérience"
+              placeholder="Ex: 8 ans d'expérience en installation électrique et dépannage..."
+              value={form.description}
+              onChangeText={v => set('description', v)}
+              multiline
+              numberOfLines={3}
+              style={[styles.fieldInput, { minHeight: 80, textAlignVertical: 'top' }]}
+            />
           </>
         )}
 
