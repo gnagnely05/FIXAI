@@ -1,22 +1,15 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  SafeAreaView, TextInput, ActivityIndicator, Platform, Alert,
+  SafeAreaView, TextInput, ActivityIndicator,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { api } from '../../services/api';
-
-function showAlert(title: string, message: string) {
-  if (Platform.OS === 'web') {
-    window.alert(`${title}\n\n${message}`);
-  } else {
-    Alert.alert(title, message);
-  }
-}
+import { useAuth } from '../../hooks/useAuth';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { register } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -33,17 +26,16 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
-      await api.post('/auth/send-otp', { phone: form.phone.trim() });
-      router.push({
-        pathname: '/(auth)/verify-otp' as any,
-        params: {
-          phone: form.phone.trim(),
-          firstName: form.firstName.trim(),
-          password: form.password,
-        },
-      });
+      await register({
+        firstName: form.firstName.trim(),
+        lastName: '',
+        phone: form.phone.trim(),
+        password: form.password,
+        role: 'CLIENT',
+      } as any);
+      router.replace('/(tabs)');
     } catch (e: any) {
-      const msg = e?.response?.data?.message ?? e?.message ?? 'Impossible d\'envoyer le code. Vérifiez votre numéro.';
+      const msg = e?.response?.data?.message ?? e?.message ?? 'Impossible de créer le compte. Vérifiez vos informations.';
       setError(Array.isArray(msg) ? msg.join('\n') : msg);
     } finally {
       setLoading(false);
@@ -106,13 +98,6 @@ export default function RegisterScreen() {
             </View>
           ) : null}
 
-          <View style={styles.otpInfo}>
-            <Ionicons name="shield-checkmark-outline" size={18} color="#1565C0" />
-            <Text style={styles.otpInfoText}>
-              Un code de vérification sera envoyé par SMS pour confirmer votre numéro.
-            </Text>
-          </View>
-
           <TouchableOpacity
             style={[styles.btn, loading && styles.btnDisabled]}
             onPress={handleSubmit}
@@ -122,7 +107,7 @@ export default function RegisterScreen() {
             {loading
               ? <ActivityIndicator color="#fff" />
               : <>
-                  <Text style={styles.btnText}>Recevoir le code SMS</Text>
+                  <Text style={styles.btnText}>Créer mon compte</Text>
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </>
             }
@@ -200,12 +185,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#FECACA',
   },
   errorText: { flex: 1, fontSize: 13, color: '#DC2626', lineHeight: 19 },
-  otpInfo: {
-    flexDirection: 'row', gap: 10, alignItems: 'flex-start',
-    backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, marginBottom: 20,
-    borderWidth: 1, borderColor: '#BFDBFE',
-  },
-  otpInfoText: { flex: 1, fontSize: 13, color: '#1E40AF', lineHeight: 19 },
   btn: {
     backgroundColor: '#6B3FA0', borderRadius: 14, paddingVertical: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
