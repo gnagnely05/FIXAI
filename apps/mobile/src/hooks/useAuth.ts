@@ -106,6 +106,14 @@ export function useAuth() {
     setState({ user, accessToken, isLoading: false });
   }, []);
 
+  const updateMe = useCallback(async (data: Record<string, any>) => {
+    const response = await api.patch<User>('/users/me', data);
+    const user = response.data as unknown as User;
+    await storage.setItem(USER_KEY, JSON.stringify(user));
+    setState(prev => ({ ...prev, user }));
+    return user;
+  }, []);
+
   const upgradeToPro = useCallback(async (data: Record<string, any>) => {
     const response = await api.patch<{ user: User }>('/users/me/upgrade-pro', data);
     const user = response.data as unknown as User;
@@ -122,6 +130,7 @@ export function useAuth() {
     login,
     register,
     registerProvider,
+    updateMe,
     upgradeToPro,
     logout,
   };

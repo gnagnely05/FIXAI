@@ -36,7 +36,7 @@ export default function ProSetupScreen() {
   const [selected, setSelected] = useState<ProRole | null>(null);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    specialty: '', city: '', agencyName: '', shopName: '', address: '', btpMode: 'AGENCE',
+    specialty: '', city: '', agencyName: '', shopName: '', address: '', description: '', btpMode: 'AGENCE',
   });
   const [customSpecialty, setCustomSpecialty] = useState('');
   const [showCustomSpecialty, setShowCustomSpecialty] = useState(false);
@@ -45,6 +45,7 @@ export default function ProSetupScreen() {
   const set = (k: keyof typeof form, v: string) => setForm(p => ({ ...p, [k]: v }));
 
   const proType = PRO_TYPES.find(p => p.role === selected);
+  const isShop = selected === 'BOUTIQUE' || selected === 'QUINCAILLERIE';
 
   const handleChoose = (role: ProRole) => {
     setSelected(role);
@@ -62,6 +63,9 @@ export default function ProSetupScreen() {
     if (selected === 'AGENCE_HOTE' && !form.agencyName.trim()) {
       return Alert.alert('Champs manquants', 'Veuillez entrer le nom de votre agence.');
     }
+    if (selected === 'ENTREPRISE_BTP' && !form.agencyName.trim()) {
+      return Alert.alert('Champs manquants', 'Veuillez entrer le nom de votre entreprise.');
+    }
     if (['BOUTIQUE', 'QUINCAILLERIE'].includes(selected) && !form.shopName.trim()) {
       return Alert.alert('Champs manquants', 'Veuillez entrer le nom de votre établissement.');
     }
@@ -75,11 +79,14 @@ export default function ProSetupScreen() {
         agencyName: form.agencyName || undefined,
         shopName: form.shopName || undefined,
         address: form.address || undefined,
+        description: form.description || undefined,
         btpMode: selected === 'ENTREPRISE_BTP' ? form.btpMode : undefined,
       });
       Alert.alert(
         'Espace Pro activé !',
-        'Votre profil professionnel est en cours de vérification. Vous serez notifié sous 24-48h.',
+        isShop
+          ? 'Votre établissement est activé. Un e-mail de confirmation vous a été envoyé.'
+          : 'Votre profil professionnel est en cours de vérification. Vous serez notifié sous 24-48h.',
         [{ text: 'OK', onPress: () => router.replace('/(tabs)') }],
       );
     } catch (e: any) {
@@ -175,12 +182,24 @@ export default function ProSetupScreen() {
           </>
         )}
 
-        {/* Agence name */}
+        {/* Agence fields */}
         {selected === 'AGENCE_HOTE' && (
-          <Field label="Nom de l'agence" placeholder="Ex: Agence Pro Bâtiment" value={form.agencyName} onChangeText={v => set('agencyName', v)} />
+          <>
+            <Field label="Nom de l'agence" placeholder="Ex: Agence Pro Bâtiment" value={form.agencyName} onChangeText={v => set('agencyName', v)} />
+            <Field label="Adresse" placeholder="Ex: Cocody, Rue des Jardins" value={form.address} onChangeText={v => set('address', v)} />
+            <Field
+              label="Description de l'activité"
+              placeholder="Ex: Agence spécialisée en gros œuvre et second œuvre..."
+              value={form.description}
+              onChangeText={v => set('description', v)}
+              multiline
+              numberOfLines={3}
+              style={[styles.fieldInput, { minHeight: 80, textAlignVertical: 'top' }]}
+            />
+          </>
         )}
 
-        {/* BTP mode */}
+        {/* BTP fields */}
         {selected === 'ENTREPRISE_BTP' && (
           <>
             <Field label="Nom de l'entreprise" placeholder="Ex: BTP Kouassi & Fils" value={form.agencyName} onChangeText={v => set('agencyName', v)} />
@@ -196,6 +215,16 @@ export default function ProSetupScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+            <Field label="Adresse" placeholder="Ex: Yopougon, Zone industrielle" value={form.address} onChangeText={v => set('address', v)} />
+            <Field
+              label="Description de l'activité"
+              placeholder="Ex: Construction de bâtiments, VRD, réhabilitation..."
+              value={form.description}
+              onChangeText={v => set('description', v)}
+              multiline
+              numberOfLines={3}
+              style={[styles.fieldInput, { minHeight: 80, textAlignVertical: 'top' }]}
+            />
           </>
         )}
 
@@ -241,10 +270,16 @@ export default function ProSetupScreen() {
           </>
         )}
 
-        <View style={styles.verifBanner}>
-          <Ionicons name="shield-checkmark-outline" size={18} color="#1565C0" />
-          <Text style={styles.verifText}>
-            Votre profil sera vérifié par notre équipe sous 24-48h avant d'être visible aux clients.
+        <View style={[styles.verifBanner, isShop && styles.verifBannerShop]}>
+          <Ionicons
+            name={isShop ? 'mail-outline' : 'shield-checkmark-outline'}
+            size={18}
+            color={isShop ? '#1B8A2E' : '#1565C0'}
+          />
+          <Text style={[styles.verifText, isShop && styles.verifTextShop]}>
+            {isShop
+              ? "Aucune validation requise. Votre établissement sera actif immédiatement, avec une confirmation par e-mail."
+              : "Votre profil sera vérifié par notre équipe sous 24-48h avant d'être visible aux clients."}
           </Text>
         </View>
 
@@ -333,7 +368,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', gap: 10, alignItems: 'flex-start',
     backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, marginBottom: 20,
   },
+  verifBannerShop: { backgroundColor: '#ECFDF3' },
   verifText: { flex: 1, fontSize: 13, color: '#1E40AF', lineHeight: 19 },
+  verifTextShop: { color: '#15803D' },
   btn: {
     backgroundColor: '#6B3FA0', borderRadius: 14, paddingVertical: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,

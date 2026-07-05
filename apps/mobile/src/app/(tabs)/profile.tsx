@@ -101,9 +101,9 @@ export default function ProfileScreen() {
     {
       title: 'Mon compte',
       items: [
-        { icon: 'person-outline', label: 'Modifier le profil' },
+        { icon: 'person-outline', label: 'Modifier le profil', onPress: () => router.push('/profile/edit' as any) },
         { icon: 'notifications-outline', label: 'Notifications' },
-        { icon: 'wallet-outline', label: 'Mon portefeuille' },
+        { icon: 'wallet-outline', label: 'Mon portefeuille', onPress: () => router.push('/profile/wallet' as any) },
       ],
     },
     {

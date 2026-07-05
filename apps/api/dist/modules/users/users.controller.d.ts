@@ -13,7 +13,7 @@ export declare class UsersController {
         user: {
             sub: string;
         };
-    }, body: Partial<Pick<UserEntity, 'firstName' | 'lastName' | 'avatarUrl'>>): Promise<UserEntity>;
+    }, body: Partial<Pick<UserEntity, 'firstName' | 'lastName' | 'avatarUrl' | 'phone' | 'city' | 'address' | 'agencyName' | 'shopName' | 'specialty' | 'description' | 'payoutMethod' | 'payoutNumber'>>): Promise<UserEntity>;
     upgradeToPro(req: {
         user: {
             sub: string;
@@ -25,6 +25,7 @@ export declare class UsersController {
         agencyName?: string;
         shopName?: string;
         address?: string;
+        description?: string;
         btpMode?: string;
         radiusKm?: number;
     }): Promise<UserEntity>;

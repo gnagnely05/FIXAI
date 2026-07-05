@@ -33,7 +33,21 @@ let UsersService = class UsersService {
         return this.usersRepo.findOne({ where: { email } });
     }
     async updateProfile(id, updates) {
-        await this.usersRepo.update(id, updates);
+        // Ne garder que les champs autorisés et définis
+        const allowed = [
+            'firstName', 'lastName', 'avatarUrl', 'phone', 'city', 'address',
+            'agencyName', 'shopName', 'specialty', 'description',
+            'payoutMethod', 'payoutNumber',
+        ];
+        const clean = {};
+        for (const k of allowed) {
+            const v = updates[k];
+            if (v !== undefined)
+                clean[k] = v;
+        }
+        if (Object.keys(clean).length) {
+            await this.usersRepo.update(id, clean);
+        }
         return this.findById(id);
     }
     async verifyUser(id) {
@@ -48,12 +62,27 @@ let UsersService = class UsersService {
         if (!allowed.includes(data.role)) {
             throw new common_1.ConflictException('Type de profil pro invalide');
         }
+        // Boutiques et quincailleries : pas de validation manuelle, actives immédiatement
+        // (une simple confirmation e-mail suffit). Les autres passent en vérification 24-48h.
+        const isShop = data.role === user_role_enum_1.UserRole.BOUTIQUE || data.role === user_role_enum_1.UserRole.QUINCAILLERIE;
         const updates = {
             role: data.role,
-            verificationStatus: verification_status_enum_1.VerificationStatus.DOCS_SUBMITTED,
+            verificationStatus: isShop
+                ? verification_status_enum_1.VerificationStatus.ACTIVE
+                : verification_status_enum_1.VerificationStatus.DOCS_SUBMITTED,
         };
+        if (data.specialty)
+            updates.specialty = data.specialty;
         if (data.city)
             updates.city = data.city;
+        if (data.agencyName)
+            updates.agencyName = data.agencyName;
+        if (data.shopName)
+            updates.shopName = data.shopName;
+        if (data.address)
+            updates.address = data.address;
+        if (data.description)
+            updates.description = data.description;
         if (data.btpMode)
             updates.btpMode = data.btpMode;
         if (data.radiusKm)

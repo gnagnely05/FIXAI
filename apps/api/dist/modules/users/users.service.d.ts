@@ -6,11 +6,16 @@ export declare class UsersService {
     constructor(usersRepo: Repository<UserEntity>);
     findById(id: string): Promise<UserEntity>;
     findByEmail(email: string): Promise<UserEntity | null>;
-    updateProfile(id: string, updates: Partial<Pick<UserEntity, 'firstName' | 'lastName' | 'avatarUrl'>>): Promise<UserEntity>;
+    updateProfile(id: string, updates: Partial<Pick<UserEntity, 'firstName' | 'lastName' | 'avatarUrl' | 'phone' | 'city' | 'address' | 'agencyName' | 'shopName' | 'specialty' | 'description' | 'payoutMethod' | 'payoutNumber'>>): Promise<UserEntity>;
     verifyUser(id: string): Promise<void>;
     upgradeToPro(id: string, data: {
         role: UserRole;
+        specialty?: string;
         city?: string;
+        agencyName?: string;
+        shopName?: string;
+        address?: string;
+        description?: string;
         btpMode?: string;
         radiusKm?: number;
     }): Promise<UserEntity>;

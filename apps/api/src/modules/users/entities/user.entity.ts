@@ -62,6 +62,34 @@ export class UserEntity {
   @Column({ nullable: true })
   city?: string;
 
+  /** For ARTISAN: main specialty (ELECTRICITE, PLOMBERIE, …) */
+  @Column({ nullable: true })
+  specialty?: string;
+
+  /** For AGENCE_HOTE / ENTREPRISE_BTP: business name */
+  @Column({ nullable: true })
+  agencyName?: string;
+
+  /** For BOUTIQUE / QUINCAILLERIE: establishment name */
+  @Column({ nullable: true })
+  shopName?: string;
+
+  /** Physical address / intervention address */
+  @Column({ nullable: true })
+  address?: string;
+
+  /** Free-text description of the pro activity */
+  @Column({ type: 'text', nullable: true })
+  description?: string;
+
+  /** Payout account — mobile money operator (ORANGE_MONEY, MTN, MOOV, WAVE) */
+  @Column({ nullable: true })
+  payoutMethod?: string;
+
+  /** Payout account — phone number receiving the money */
+  @Column({ nullable: true })
+  payoutNumber?: string;
+
   /** Service radius in km (for artisans/agencies) */
   @Column({ nullable: true })
   radiusKm?: number;

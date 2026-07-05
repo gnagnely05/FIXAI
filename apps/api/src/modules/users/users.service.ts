@@ -22,8 +22,28 @@ export class UsersService {
     return this.usersRepo.findOne({ where: { email } });
   }
 
-  async updateProfile(id: string, updates: Partial<Pick<UserEntity, 'firstName' | 'lastName' | 'avatarUrl'>>) {
-    await this.usersRepo.update(id, updates);
+  async updateProfile(
+    id: string,
+    updates: Partial<Pick<UserEntity,
+      'firstName' | 'lastName' | 'avatarUrl' | 'phone' | 'city' | 'address'
+      | 'agencyName' | 'shopName' | 'specialty' | 'description'
+      | 'payoutMethod' | 'payoutNumber'
+    >>,
+  ) {
+    // Ne garder que les champs autorisés et définis
+    const allowed = [
+      'firstName', 'lastName', 'avatarUrl', 'phone', 'city', 'address',
+      'agencyName', 'shopName', 'specialty', 'description',
+      'payoutMethod', 'payoutNumber',
+    ] as const;
+    const clean: Partial<UserEntity> = {};
+    for (const k of allowed) {
+      const v = (updates as Record<string, unknown>)[k];
+      if (v !== undefined) (clean as Record<string, unknown>)[k] = v;
+    }
+    if (Object.keys(clean).length) {
+      await this.usersRepo.update(id, clean);
+    }
     return this.findById(id);
   }
 
@@ -33,7 +53,12 @@ export class UsersService {
 
   async upgradeToPro(id: string, data: {
     role: UserRole;
+    specialty?: string;
     city?: string;
+    agencyName?: string;
+    shopName?: string;
+    address?: string;
+    description?: string;
     btpMode?: string;
     radiusKm?: number;
   }): Promise<UserEntity> {
@@ -45,11 +70,23 @@ export class UsersService {
     if (!allowed.includes(data.role)) {
       throw new ConflictException('Type de profil pro invalide');
     }
+
+    // Boutiques et quincailleries : pas de validation manuelle, actives immédiatement
+    // (une simple confirmation e-mail suffit). Les autres passent en vérification 24-48h.
+    const isShop = data.role === UserRole.BOUTIQUE || data.role === UserRole.QUINCAILLERIE;
+
     const updates: Partial<UserEntity> = {
       role: data.role,
-      verificationStatus: VerificationStatus.DOCS_SUBMITTED,
+      verificationStatus: isShop
+        ? VerificationStatus.ACTIVE
+        : VerificationStatus.DOCS_SUBMITTED,
     };
+    if (data.specialty) updates.specialty = data.specialty;
     if (data.city) updates.city = data.city;
+    if (data.agencyName) updates.agencyName = data.agencyName;
+    if (data.shopName) updates.shopName = data.shopName;
+    if (data.address) updates.address = data.address;
+    if (data.description) updates.description = data.description;
     if (data.btpMode) updates.btpMode = data.btpMode as any;
     if (data.radiusKm) updates.radiusKm = data.radiusKm;
     await this.usersRepo.update(id, updates);

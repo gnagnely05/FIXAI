@@ -17,7 +17,11 @@ export class UsersController {
   @Patch('me')
   async updateProfile(
     @Request() req: { user: { sub: string } },
-    @Body() body: Partial<Pick<UserEntity, 'firstName' | 'lastName' | 'avatarUrl'>>,
+    @Body() body: Partial<Pick<UserEntity,
+      'firstName' | 'lastName' | 'avatarUrl' | 'phone' | 'city' | 'address'
+      | 'agencyName' | 'shopName' | 'specialty' | 'description'
+      | 'payoutMethod' | 'payoutNumber'
+    >>,
   ) {
     return this.usersService.updateProfile(req.user.sub, body);
   }
@@ -32,6 +36,7 @@ export class UsersController {
       agencyName?: string;
       shopName?: string;
       address?: string;
+      description?: string;
       btpMode?: string;
       radiusKm?: number;
     },

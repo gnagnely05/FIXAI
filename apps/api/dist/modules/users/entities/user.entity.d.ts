@@ -19,6 +19,20 @@ export declare class UserEntity {
     /** Wallet balance in XOF (used for escrow top-up) */
     walletBalance: number;
     city?: string;
+    /** For ARTISAN: main specialty (ELECTRICITE, PLOMBERIE, …) */
+    specialty?: string;
+    /** For AGENCE_HOTE / ENTREPRISE_BTP: business name */
+    agencyName?: string;
+    /** For BOUTIQUE / QUINCAILLERIE: establishment name */
+    shopName?: string;
+    /** Physical address / intervention address */
+    address?: string;
+    /** Free-text description of the pro activity */
+    description?: string;
+    /** Payout account — mobile money operator (ORANGE_MONEY, MTN, MOOV, WAVE) */
+    payoutMethod?: string;
+    /** Payout account — phone number receiving the money */
+    payoutNumber?: string;
     /** Service radius in km (for artisans/agencies) */
     radiusKm?: number;
     avatarUrl?: string;
