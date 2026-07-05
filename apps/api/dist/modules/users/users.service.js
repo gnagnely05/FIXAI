@@ -19,9 +19,11 @@ const typeorm_2 = require("typeorm");
 const user_entity_1 = require("./entities/user.entity");
 const user_role_enum_1 = require("../../common/enums/user-role.enum");
 const verification_status_enum_1 = require("../../common/enums/verification-status.enum");
+const document_entity_1 = require("../documents/entities/document.entity");
 let UsersService = class UsersService {
-    constructor(usersRepo) {
+    constructor(usersRepo, docsRepo) {
         this.usersRepo = usersRepo;
+        this.docsRepo = docsRepo;
     }
     async findById(id) {
         const user = await this.usersRepo.findOne({ where: { id } });
@@ -88,6 +90,18 @@ let UsersService = class UsersService {
         if (data.radiusKm)
             updates.radiusKm = data.radiusKm;
         await this.usersRepo.update(id, updates);
+        // Enregistrement des pièces justificatives (CNI, selfie, docs administratifs)
+        if (data.documents?.length) {
+            const docs = data.documents
+                .filter(d => d?.url)
+                .map(({ type, url }) => this.docsRepo.create({
+                userId: id,
+                type: document_entity_1.DocumentType[type] ?? document_entity_1.DocumentType.OTHER,
+                fileUrl: url,
+            }));
+            if (docs.length)
+                await this.docsRepo.save(docs);
+        }
         return this.findById(id);
     }
 };
@@ -95,6 +109,8 @@ exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.UserEntity)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(document_entity_1.DocumentEntity)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

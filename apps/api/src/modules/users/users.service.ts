@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { VerificationStatus } from '../../common/enums/verification-status.enum';
+import { DocumentEntity, DocumentType } from '../documents/entities/document.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly usersRepo: Repository<UserEntity>,
+    @InjectRepository(DocumentEntity)
+    private readonly docsRepo: Repository<DocumentEntity>,
   ) {}
 
   async findById(id: string): Promise<UserEntity> {
@@ -61,6 +64,7 @@ export class UsersService {
     description?: string;
     btpMode?: string;
     radiusKm?: number;
+    documents?: Array<{ type: string; url: string }>;
   }): Promise<UserEntity> {
     const user = await this.findById(id);
     if (user.role !== UserRole.CLIENT) {
@@ -90,6 +94,21 @@ export class UsersService {
     if (data.btpMode) updates.btpMode = data.btpMode as any;
     if (data.radiusKm) updates.radiusKm = data.radiusKm;
     await this.usersRepo.update(id, updates);
+
+    // Enregistrement des pièces justificatives (CNI, selfie, docs administratifs)
+    if (data.documents?.length) {
+      const docs = data.documents
+        .filter(d => d?.url)
+        .map(({ type, url }) =>
+          this.docsRepo.create({
+            userId: id,
+            type: DocumentType[type as keyof typeof DocumentType] ?? DocumentType.OTHER,
+            fileUrl: url,
+          }),
+        );
+      if (docs.length) await this.docsRepo.save(docs);
+    }
+
     return this.findById(id);
   }
 }

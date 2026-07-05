@@ -39,6 +39,7 @@ export class UsersController {
       description?: string;
       btpMode?: string;
       radiusKm?: number;
+      documents?: Array<{ type: string; url: string }>;
     },
   ) {
     return this.usersService.upgradeToPro(req.user.sub, body);

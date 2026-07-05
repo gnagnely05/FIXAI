@@ -28,6 +28,10 @@ export declare class UsersController {
         description?: string;
         btpMode?: string;
         radiusKm?: number;
+        documents?: Array<{
+            type: string;
+            url: string;
+        }>;
     }): Promise<UserEntity>;
 }
 //# sourceMappingURL=users.controller.d.ts.map

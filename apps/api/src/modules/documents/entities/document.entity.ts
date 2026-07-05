@@ -41,7 +41,9 @@ export class DocumentEntity {
   @Column({ type: 'enum', enum: DocumentType })
   type: DocumentType;
 
-  @Column()
+  // Peut contenir une URL OU une image encodée en base64 (data URI) —
+  // longtext car aucun stockage objet n'est configuré.
+  @Column({ type: 'longtext' })
   fileUrl: string;
 
   @Column({ type: 'enum', enum: DocumentStatus, default: DocumentStatus.PENDING })

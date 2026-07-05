@@ -9,3 +9,7 @@ ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `address`      VARCHAR(255) NULL;
 ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `description`  TEXT NULL;
 ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `payoutMethod` VARCHAR(255) NULL;
 ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `payoutNumber` VARCHAR(255) NULL;
+
+-- Les pièces justificatives (CNI, selfie, docs administratifs) sont stockées
+-- en base64 dans documents.fileUrl : il faut donc un type LONGTEXT (varchar(255) trop court).
+ALTER TABLE `documents` MODIFY `fileUrl` LONGTEXT NOT NULL;

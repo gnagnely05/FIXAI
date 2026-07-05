@@ -1,11 +1,25 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  TextInput, Alert, ActivityIndicator, SafeAreaView,
+  TextInput, Alert, ActivityIndicator, SafeAreaView, Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../hooks/useAuth';
+
+/** Ouvre la galerie et renvoie une data URI (base64) exploitable sur web et natif. */
+async function pickImageAsDataUri(): Promise<string | null> {
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    quality: 0.6,
+    base64: true,
+  });
+  if (result.canceled || !result.assets?.length) return null;
+  const a = result.assets[0];
+  if (a.base64) return `data:${a.mimeType ?? 'image/jpeg'};base64,${a.base64}`;
+  return a.uri;
+}
 
 type ProRole = 'ARTISAN' | 'AGENCE_HOTE' | 'ENTREPRISE_BTP' | 'BOUTIQUE' | 'QUINCAILLERIE';
 
@@ -44,6 +58,24 @@ export default function ProSetupScreen() {
   const [showCustomCity, setShowCustomCity] = useState(false);
   const set = (k: keyof typeof form, v: string) => setForm(p => ({ ...p, [k]: v }));
 
+  // Pièces justificatives (data URIs base64)
+  const [idDoc, setIdDoc] = useState<string | null>(null);       // ARTISAN — pièce d'identité
+  const [selfieDoc, setSelfieDoc] = useState<string | null>(null); // ARTISAN — selfie
+  const [adminDocs, setAdminDocs] = useState<string[]>([]);       // Agence/BTP/Boutique/Quincaillerie
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  const pickSingle = async (setter: (v: string | null) => void, key: string) => {
+    setUploading(key);
+    try { const uri = await pickImageAsDataUri(); if (uri) setter(uri); }
+    finally { setUploading(null); }
+  };
+  const addAdminDoc = async () => {
+    setUploading('admin');
+    try { const uri = await pickImageAsDataUri(); if (uri) setAdminDocs(prev => [...prev, uri]); }
+    finally { setUploading(null); }
+  };
+  const removeAdminDoc = (i: number) => setAdminDocs(prev => prev.filter((_, idx) => idx !== i));
+
   const proType = PRO_TYPES.find(p => p.role === selected);
   const isShop = selected === 'BOUTIQUE' || selected === 'QUINCAILLERIE';
 
@@ -70,6 +102,21 @@ export default function ProSetupScreen() {
       return Alert.alert('Champs manquants', 'Veuillez entrer le nom de votre établissement.');
     }
 
+    // Validation des pièces justificatives
+    if (selected === 'ARTISAN') {
+      if (!idDoc) return Alert.alert('Document requis', "Veuillez ajouter une photo de votre pièce d'identité.");
+      if (!selfieDoc) return Alert.alert('Document requis', 'Veuillez ajouter un selfie.');
+    }
+    if (['AGENCE_HOTE', 'ENTREPRISE_BTP', 'BOUTIQUE', 'QUINCAILLERIE'].includes(selected) && adminDocs.length === 0) {
+      return Alert.alert('Documents requis', 'Veuillez ajouter au moins un document administratif.');
+    }
+
+    // Construction de la liste des documents
+    const documents: Array<{ type: string; url: string }> = [];
+    if (idDoc) documents.push({ type: 'NATIONAL_ID', url: idDoc });
+    if (selfieDoc) documents.push({ type: 'SELFIE', url: selfieDoc });
+    adminDocs.forEach(url => documents.push({ type: 'RCCM', url }));
+
     setLoading(true);
     try {
       await upgradeToPro({
@@ -81,6 +128,7 @@ export default function ProSetupScreen() {
         address: form.address || undefined,
         description: form.description || undefined,
         btpMode: selected === 'ENTREPRISE_BTP' ? form.btpMode : undefined,
+        documents: documents.length ? documents : undefined,
       });
       Alert.alert(
         'Espace Pro activé !',
@@ -280,6 +328,58 @@ export default function ProSetupScreen() {
           </>
         )}
 
+        {/* Pièces justificatives — Artisan */}
+        {selected === 'ARTISAN' && (
+          <>
+            <SectionLabel>Pièces justificatives</SectionLabel>
+            <DocSlot
+              label="Pièce d'identité (CNI, passeport)"
+              icon="card-outline"
+              value={idDoc}
+              busy={uploading === 'id'}
+              onPick={() => pickSingle(setIdDoc, 'id')}
+              onRemove={() => setIdDoc(null)}
+            />
+            <DocSlot
+              label="Selfie (photo de votre visage)"
+              icon="happy-outline"
+              value={selfieDoc}
+              busy={uploading === 'selfie'}
+              onPick={() => pickSingle(setSelfieDoc, 'selfie')}
+              onRemove={() => setSelfieDoc(null)}
+            />
+          </>
+        )}
+
+        {/* Documents administratifs — Agence / BTP / Boutique / Quincaillerie */}
+        {['AGENCE_HOTE', 'ENTREPRISE_BTP', 'BOUTIQUE', 'QUINCAILLERIE'].includes(selected ?? '') && (
+          <>
+            <SectionLabel>Documents administratifs</SectionLabel>
+            <Text style={styles.docHint}>
+              Registre de commerce (RCCM), statuts, attestation fiscale, licence… Ajoutez une ou plusieurs photos.
+            </Text>
+            <View style={styles.adminGrid}>
+              {adminDocs.map((uri, i) => (
+                <View key={i} style={styles.adminThumbWrap}>
+                  <Image source={{ uri }} style={styles.adminThumb} />
+                  <TouchableOpacity style={styles.adminRemove} onPress={() => removeAdminDoc(i)}>
+                    <Ionicons name="close" size={14} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              <TouchableOpacity style={styles.adminAdd} onPress={addAdminDoc} disabled={uploading === 'admin'}>
+                {uploading === 'admin'
+                  ? <ActivityIndicator color="#6B3FA0" />
+                  : <>
+                      <Ionicons name="add" size={24} color="#6B3FA0" />
+                      <Text style={styles.adminAddText}>Ajouter</Text>
+                    </>
+                }
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
         <View style={[styles.verifBanner, isShop && styles.verifBannerShop]}>
           <Ionicons
             name={isShop ? 'mail-outline' : 'shield-checkmark-outline'}
@@ -314,6 +414,42 @@ export default function ProSetupScreen() {
 
 function SectionLabel({ children }: { children: string }) {
   return <Text style={styles.sectionLabel}>{children}</Text>;
+}
+
+function DocSlot({
+  label, icon, value, busy, onPick, onRemove,
+}: {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  value: string | null;
+  busy: boolean;
+  onPick: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {value ? (
+        <View style={styles.docFilled}>
+          <Image source={{ uri: value }} style={styles.docThumb} />
+          <Text style={styles.docFilledText} numberOfLines={1}>Document ajouté</Text>
+          <TouchableOpacity onPress={onRemove} style={styles.docChange}>
+            <Ionicons name="trash-outline" size={18} color="#DC2626" />
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.docEmpty} onPress={onPick} disabled={busy} activeOpacity={0.8}>
+          {busy
+            ? <ActivityIndicator color="#6B3FA0" />
+            : <>
+                <Ionicons name={icon} size={22} color="#6B3FA0" />
+                <Text style={styles.docEmptyText}>Ajouter une photo</Text>
+              </>
+          }
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 }
 
 function Field({ label, ...props }: { label: string } & React.ComponentProps<typeof TextInput>) {
@@ -378,6 +514,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row', gap: 10, alignItems: 'flex-start',
     backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, marginBottom: 20,
   },
+  docHint: { fontSize: 12, color: '#6B7280', marginBottom: 12, marginTop: -4, lineHeight: 17 },
+  docEmpty: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    borderWidth: 1.5, borderColor: '#C4B5E8', borderStyle: 'dashed',
+    borderRadius: 12, paddingVertical: 18, backgroundColor: '#FAF7FF',
+  },
+  docEmptyText: { color: '#6B3FA0', fontSize: 14, fontWeight: '600' },
+  docFilled: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#BBF7D0',
+    borderRadius: 12, padding: 10,
+  },
+  docThumb: { width: 44, height: 44, borderRadius: 8, backgroundColor: '#EEE' },
+  docFilledText: { flex: 1, fontSize: 14, color: '#15803D', fontWeight: '600' },
+  docChange: { padding: 6 },
+  adminGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+  adminThumbWrap: { position: 'relative' },
+  adminThumb: { width: 80, height: 80, borderRadius: 12, backgroundColor: '#EEE' },
+  adminRemove: {
+    position: 'absolute', top: -6, right: -6,
+    width: 22, height: 22, borderRadius: 11, backgroundColor: '#DC2626',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  adminAdd: {
+    width: 80, height: 80, borderRadius: 12,
+    borderWidth: 1.5, borderColor: '#C4B5E8', borderStyle: 'dashed',
+    alignItems: 'center', justifyContent: 'center', backgroundColor: '#FAF7FF', gap: 2,
+  },
+  adminAddText: { color: '#6B3FA0', fontSize: 11, fontWeight: '600' },
   verifBannerShop: { backgroundColor: '#ECFDF3' },
   verifText: { flex: 1, fontSize: 13, color: '#1E40AF', lineHeight: 19 },
   verifTextShop: { color: '#15803D' },
