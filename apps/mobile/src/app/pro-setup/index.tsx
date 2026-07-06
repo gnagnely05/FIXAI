@@ -77,7 +77,6 @@ export default function ProSetupScreen() {
   const removeAdminDoc = (i: number) => setAdminDocs(prev => prev.filter((_, idx) => idx !== i));
 
   const proType = PRO_TYPES.find(p => p.role === selected);
-  const isShop = selected === 'BOUTIQUE' || selected === 'QUINCAILLERIE';
 
   const handleChoose = (role: ProRole) => {
     setSelected(role);
@@ -132,9 +131,7 @@ export default function ProSetupScreen() {
       });
       Alert.alert(
         'Espace Pro activé !',
-        isShop
-          ? 'Votre établissement est activé. Un e-mail de confirmation vous a été envoyé.'
-          : 'Votre profil professionnel est en cours de vérification. Vous serez notifié sous 24-48h.',
+        'Votre profil professionnel est activé. Vous avez maintenant accès à votre espace.',
         [{ text: 'OK', onPress: () => router.replace('/(tabs)') }],
       );
     } catch (e: any) {
@@ -380,16 +377,10 @@ export default function ProSetupScreen() {
           </>
         )}
 
-        <View style={[styles.verifBanner, isShop && styles.verifBannerShop]}>
-          <Ionicons
-            name={isShop ? 'mail-outline' : 'shield-checkmark-outline'}
-            size={18}
-            color={isShop ? '#1B8A2E' : '#1565C0'}
-          />
-          <Text style={[styles.verifText, isShop && styles.verifTextShop]}>
-            {isShop
-              ? "Aucune validation requise. Votre établissement sera actif immédiatement, avec une confirmation par e-mail."
-              : "Votre profil sera vérifié par notre équipe sous 24-48h avant d'être visible aux clients."}
+        <View style={[styles.verifBanner, styles.verifBannerShop]}>
+          <Ionicons name="checkmark-circle-outline" size={18} color="#1B8A2E" />
+          <Text style={[styles.verifText, styles.verifTextShop]}>
+            Aucune validation requise. Votre profil sera actif immédiatement dès l'enregistrement.
           </Text>
         </View>
 

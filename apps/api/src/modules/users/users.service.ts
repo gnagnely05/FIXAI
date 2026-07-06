@@ -75,15 +75,11 @@ export class UsersService {
       throw new ConflictException('Type de profil pro invalide');
     }
 
-    // Boutiques et quincailleries : pas de validation manuelle, actives immédiatement
-    // (une simple confirmation e-mail suffit). Les autres passent en vérification 24-48h.
-    const isShop = data.role === UserRole.BOUTIQUE || data.role === UserRole.QUINCAILLERIE;
-
+    // Plus de validation manuelle : tous les profils pro sont actifs immédiatement
+    // dès que les informations sont renseignées.
     const updates: Partial<UserEntity> = {
       role: data.role,
-      verificationStatus: isShop
-        ? VerificationStatus.ACTIVE
-        : VerificationStatus.DOCS_SUBMITTED,
+      verificationStatus: VerificationStatus.ACTIVE,
     };
     if (data.specialty) updates.specialty = data.specialty;
     if (data.city) updates.city = data.city;
