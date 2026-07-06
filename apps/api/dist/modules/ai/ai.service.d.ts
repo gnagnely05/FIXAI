@@ -35,6 +35,7 @@ export declare class AiService {
         estimatedPriceMaxXof: number;
         requiresDiagnostic: boolean;
         diagnosticFeeXof: number;
+        readyForDecision: boolean;
     }>;
     /** Repli heuristique : détecte un problème complexe via mots-clés. */
     private detectComplexity;

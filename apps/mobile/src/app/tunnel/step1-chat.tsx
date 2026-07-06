@@ -144,7 +144,13 @@ export default function Step1Chat() {
           </TouchableOpacity>
         </View>
 
-        {diagnosisResult?.requiresDiagnostic ? (
+        {diagnosisResult?.readyForDecision === false ? (
+          // L'IA pose encore des questions : on invite à répondre, pas de bouton d'étape
+          <View style={styles.guideHint}>
+            <Ionicons name="chatbubble-ellipses-outline" size={16} color="#6B7280" />
+            <Text style={styles.guideHintText}>Répondez à la question ci-dessus pour continuer</Text>
+          </View>
+        ) : diagnosisResult?.requiresDiagnostic ? (
           <TouchableOpacity
             style={styles.diagBtn}
             onPress={() => router.push(
@@ -220,4 +226,9 @@ const styles = StyleSheet.create({
     margin: 12, backgroundColor: '#B45309', flexDirection: 'row', gap: 8,
     paddingVertical: 16, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
   },
+  guideHint: {
+    margin: 12, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#F3F4F6', paddingVertical: 14, borderRadius: 14,
+  },
+  guideHintText: { color: '#6B7280', fontSize: 13, fontWeight: '600' },
 });

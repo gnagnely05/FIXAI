@@ -19,6 +19,7 @@ export interface DiagnosisResult {
   estimatedPriceMaxXof: number;
   requiresDiagnostic?: boolean;
   diagnosticFeeXof?: number;
+  readyForDecision?: boolean;
 }
 
 export interface Quote {
@@ -95,10 +96,19 @@ export function useServiceTunnel(serviceType: ServiceType) {
       const result: DiagnosisResult = response.data;
       setDiagnosisResult(result);
 
-      let content = result.summary;
-      if (result.requiresDiagnostic) {
-        const fee = (result.diagnosticFeeXof ?? 5000).toLocaleString('fr-FR');
-        content += `\n\n🔧 Ce problème est complexe et nécessite un diagnostic sur place par un artisan (${fee} FCFA). L'artisan inspectera puis je vous établirai un devis précis. Ce montant sera déduit du devis final si vous confirmez la réparation.`;
+      let content: string;
+      if (result.readyForDecision === false) {
+        // Phase de questions guidées : on montre la question et des exemples de réponses
+        content = result.summary ? `${result.summary}\n\n${result.question}` : result.question;
+        if (result.options?.length) {
+          content += `\n\n(Ex : ${result.options.join(' · ')})`;
+        }
+      } else {
+        content = result.summary;
+        if (result.requiresDiagnostic) {
+          const fee = (result.diagnosticFeeXof ?? 5000).toLocaleString('fr-FR');
+          content += `\n\n🔧 Ce problème est complexe et nécessite un diagnostic sur place par un artisan (${fee} FCFA). L'artisan inspectera puis je vous établirai un devis précis. Ce montant sera déduit du devis final si vous confirmez la réparation.`;
+        }
       }
 
       const aiMessage: Message = {

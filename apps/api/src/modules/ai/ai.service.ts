@@ -177,6 +177,7 @@ export class AiService {
     estimatedPriceMaxXof: number;
     requiresDiagnostic: boolean;
     diagnosticFeeXof: number;
+    readyForDecision: boolean;
   }> {
     const serviceLabels: Record<string, string> = {
       DEPANNAGE: 'réparation / dépannage',
@@ -185,26 +186,37 @@ export class AiService {
     };
     const label = serviceLabels[serviceType] ?? serviceType;
     const conversation = messages.join('\n');
+    // Nombre d'échanges du client (les messages assistant sont mêlés, on estime)
+    const userTurns = Math.ceil(messages.length / 2);
 
-    const systemInstruction = `Tu es un expert en ${label} en Côte d'Ivoire.
-Analyse la description du client et réponds UNIQUEMENT en JSON valide avec exactement ces champs :
+    const systemInstruction = `Tu es un expert en ${label} en Côte d'Ivoire, chaleureux et pédagogue.
+Le client N'EST PAS un technicien : il ne connaît pas le vocabulaire ni les détails. Ton rôle est de le GUIDER pas à pas avec des questions SIMPLES, concrètes et faciles à répondre, pour rassembler assez d'informations avant de décider.
+
+RÈGLES DE CONVERSATION :
+- Pose UNE seule question à la fois, courte et sans jargon, avec des exemples de réponses possibles dans "options".
+- Ne demande jamais deux choses en même temps.
+- Continue à poser des questions tant que tu n'as pas assez d'éléments (nature exacte du problème, depuis quand, à quel endroit, ce que le client observe/entend/voit, gravité apparente).
+- Ne donne un devis ou une décision de diagnostic QUE lorsque tu as assez compris.
+
+Réponds UNIQUEMENT en JSON valide avec exactement ces champs :
 {
-  "summary": "résumé clair du problème en 1-2 phrases",
-  "detectedIssue": "problème technique détecté",
-  "question": "une question de précision pour mieux qualifier le besoin",
-  "options": ["option A", "option B", "option C"],
-  "estimatedPriceMinXof": <nombre entier en FCFA>,
-  "estimatedPriceMaxXof": <nombre entier en FCFA>,
-  "requiresDiagnostic": <true si le problème est complexe et nécessite une inspection physique par un artisan avant de pouvoir chiffrer précisément, sinon false>
+  "readyForDecision": <false tant que tu poses encore des questions ; true seulement quand tu as assez d'infos pour décider>,
+  "summary": "reformulation empathique de ce que tu as compris jusqu'ici (1-2 phrases)",
+  "question": "ta prochaine question simple si readyForDecision=false ; sinon une courte confirmation",
+  "options": ["réponse simple A", "réponse simple B", "réponse simple C"],
+  "detectedIssue": "problème pressenti (peut rester provisoire tant que readyForDecision=false)",
+  "estimatedPriceMinXof": <entier FCFA, 0 si pas encore estimable>,
+  "estimatedPriceMaxXof": <entier FCFA, 0 si pas encore estimable>,
+  "requiresDiagnostic": <true si, une fois assez d'infos, le problème reste complexe et nécessite une inspection physique par un artisan>
 }
-Mets "requiresDiagnostic" à true quand le problème est incertain, potentiellement grave, invisible sans démontage, ou quand plusieurs causes sont possibles (ex: fuite d'origine inconnue, panne électrique intermittente, fissure structurelle, infiltration).
+Mets "requiresDiagnostic" à true seulement quand readyForDecision=true ET que le problème est incertain, potentiellement grave, invisible sans démontage, ou multi-causes (ex: fuite d'origine inconnue, panne électrique intermittente, fissure structurelle, infiltration).
 Ne fournis aucun texte en dehors du JSON.`;
 
     try {
       let raw: string;
       if (imageUrls.length > 0) {
         raw = await this.openRouter.analyzeWithVision(
-          `${systemInstruction}\n\nDescription du client : ${conversation}`,
+          `${systemInstruction}\n\nConversation avec le client :\n${conversation}`,
           imageUrls[0],
         );
       } else {
@@ -213,17 +225,20 @@ Ne fournis aucun texte en dehors du JSON.`;
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
+        const ready = Boolean(parsed.readyForDecision);
+        const requiresDiagnostic = ready && Boolean(parsed.requiresDiagnostic);
         return {
           ...parsed,
-          requiresDiagnostic: Boolean(parsed.requiresDiagnostic),
-          diagnosticFeeXof: parsed.requiresDiagnostic ? DIAGNOSTIC_FEE_XOF : 0,
+          readyForDecision: ready,
+          requiresDiagnostic,
+          diagnosticFeeXof: requiresDiagnostic ? DIAGNOSTIC_FEE_XOF : 0,
         };
       }
     } catch (err) {
       this.logger.warn(`[Diagnose] OpenRouter failed: ${err}`);
     }
 
-    // Fallback contextuel si Gemini échoue
+    // Fallback contextuel si Gemini échoue : guide 1-2 tours puis décide
     const lastMsg = messages[messages.length - 1] ?? '';
     const priceMap: Record<string, [number, number]> = {
       DEPANNAGE:  [15000,  60000],
@@ -231,16 +246,33 @@ Ne fournis aucun texte en dehors du JSON.`;
       DECORATION: [80000,  400000],
     };
     const [minPrice, maxPrice] = priceMap[serviceType] ?? [15000, 60000];
+
+    // Premier tour : on pose une question de cadrage plutôt que de décider
+    if (userTurns < 2) {
+      return {
+        summary: `Je veux bien vous aider avec votre besoin de ${label}. Précisons ensemble.`,
+        detectedIssue: 'Analyse en cours',
+        question: 'Pouvez-vous me décrire précisément ce que vous constatez (ce que vous voyez, entendez ou sentez) et depuis quand ?',
+        options: ['C\'est apparu récemment', 'Ça dure depuis un moment', 'Je ne sais pas trop'],
+        estimatedPriceMinXof: 0,
+        estimatedPriceMaxXof: 0,
+        requiresDiagnostic: false,
+        diagnosticFeeXof: 0,
+        readyForDecision: false,
+      };
+    }
+
     const requiresDiagnostic = this.detectComplexity(conversation);
     return {
-      summary: `J'ai bien reçu votre demande : "${lastMsg.slice(0, 80)}". Je prépare une analyse pour votre projet de ${label}.`,
-      detectedIssue: `Demande de ${label} — analyse en cours`,
+      summary: `Merci pour ces précisions : "${lastMsg.slice(0, 80)}". Voici mon analyse pour votre projet de ${label}.`,
+      detectedIssue: `Demande de ${label}`,
       question: 'Pour affiner le devis, pouvez-vous préciser l\'urgence de votre besoin ?',
       options: ['C\'est urgent (< 24h)', 'Dans la semaine', 'Pas pressé — je planifie'],
       estimatedPriceMinXof: minPrice,
       estimatedPriceMaxXof: maxPrice,
       requiresDiagnostic,
       diagnosticFeeXof: requiresDiagnostic ? DIAGNOSTIC_FEE_XOF : 0,
+      readyForDecision: true,
     };
   }
 

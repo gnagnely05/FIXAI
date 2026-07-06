@@ -47,6 +47,7 @@ export declare class AiController {
         estimatedPriceMaxXof: number;
         requiresDiagnostic: boolean;
         diagnosticFeeXof: number;
+        readyForDecision: boolean;
     } | {
         summary: string;
         detectedIssue: string;
