@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, SafeAreaView,
-  TouchableOpacity, RefreshControl, ActivityIndicator, Alert,
+  TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../services/api';
@@ -14,7 +14,13 @@ interface Mission {
   escrowAmount: number;
   diagnosticFeeXof?: number;
   address?: string;
+  imageUrls?: string;
   client?: { firstName: string; lastName: string; phone?: string };
+}
+
+function parseImages(raw?: string): string[] {
+  if (!raw) return [];
+  try { const a = JSON.parse(raw); return Array.isArray(a) ? a : []; } catch { return []; }
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -132,6 +138,13 @@ export default function ArtisanMissionsScreen() {
                     <Text style={[styles.badgeText, { color: '#B45309' }]}>Diagnostic</Text>
                   </View>
                 </View>
+                {parseImages(d.imageUrls).length > 0 && (
+                  <View style={styles.photoRow}>
+                    {parseImages(d.imageUrls).map((uri, i) => (
+                      <Image key={i} source={{ uri }} style={styles.photoThumb} />
+                    ))}
+                  </View>
+                )}
                 <View style={styles.cardBottom}>
                   <Text style={styles.amount}>{Number(d.diagnosticFeeXof ?? d.escrowAmount).toLocaleString('fr-FR')} <Text style={styles.amountUnit}>FCFA</Text></Text>
                   <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#B45309' }]} onPress={() => handleAccept(d.id)}>
@@ -237,4 +250,6 @@ const styles = StyleSheet.create({
   diagSection: { marginBottom: 16 },
   diagSectionTitle: { fontSize: 14, fontWeight: '800', color: '#B45309', marginBottom: 10 },
   diagCard: { borderColor: '#FED7AA', backgroundColor: '#FFFBF5' },
+  photoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  photoThumb: { width: 72, height: 72, borderRadius: 10, backgroundColor: '#EEE' },
 });

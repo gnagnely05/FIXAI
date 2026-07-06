@@ -48,6 +48,7 @@ export declare class AiController {
         requiresDiagnostic: boolean;
         diagnosticFeeXof: number;
         readyForDecision: boolean;
+        artisanSummary: string;
     } | {
         summary: string;
         detectedIssue: string;

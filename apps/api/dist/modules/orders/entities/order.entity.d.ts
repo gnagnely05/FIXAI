@@ -26,6 +26,8 @@ export declare class OrderEntity {
     isDiagnostic: boolean;
     /** Frais du diagnostic (déduit du devis final si le client confirme la réparation). */
     diagnosticFeeXof: number;
+    /** Photos jointes par le client (data URIs base64), stockées en JSON. */
+    imageUrls?: string;
     /** Constat rédigé par l'artisan après inspection. */
     diagnosticResult?: string;
     /** Devis final établi par l'IA à partir du constat de l'artisan. */

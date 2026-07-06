@@ -179,6 +179,7 @@ export class AiService {
     requiresDiagnostic: boolean;
     diagnosticFeeXof: number;
     readyForDecision: boolean;
+    artisanSummary: string;
   }> {
     const serviceLabels: Record<string, string> = {
       DEPANNAGE: 'réparation / dépannage',
@@ -210,7 +211,8 @@ Réponds UNIQUEMENT en JSON valide avec exactement ces champs :
   "detectedIssue": "problème pressenti (peut rester provisoire tant que readyForDecision=false)",
   "estimatedPriceMinXof": <entier FCFA, 0 si pas encore estimable>,
   "estimatedPriceMaxXof": <entier FCFA, 0 si pas encore estimable>,
-  "requiresDiagnostic": <true si, une fois assez d'infos, le problème reste complexe et nécessite une inspection physique par un artisan>
+  "requiresDiagnostic": <true si, une fois assez d'infos, le problème reste complexe et nécessite une inspection physique par un artisan>,
+  "artisanSummary": "quand readyForDecision=true : un résumé TECHNIQUE clair et structuré destiné à l'ARTISAN qui va intervenir. Inclure : nature du problème, symptômes constatés, localisation, ancienneté, éléments à vérifier sur place, matériel probablement nécessaire. Sinon chaîne vide."
 }
 Mets "requiresDiagnostic" à true seulement quand readyForDecision=true ET que le problème est incertain, potentiellement grave, invisible sans démontage, ou multi-causes (ex: fuite d'origine inconnue, panne électrique intermittente, fissure structurelle, infiltration).
 Ne fournis aucun texte en dehors du JSON.`;
@@ -236,6 +238,7 @@ Ne fournis aucun texte en dehors du JSON.`;
           readyForDecision: ready,
           requiresDiagnostic,
           diagnosticFeeXof: requiresDiagnostic ? DIAGNOSTIC_FEE_XOF : 0,
+          artisanSummary: ready ? (parsed.artisanSummary || parsed.summary || '') : '',
         };
       }
     } catch (err) {
@@ -263,6 +266,7 @@ Ne fournis aucun texte en dehors du JSON.`;
         requiresDiagnostic: false,
         diagnosticFeeXof: 0,
         readyForDecision: false,
+        artisanSummary: '',
       };
     }
 
@@ -277,6 +281,7 @@ Ne fournis aucun texte en dehors du JSON.`;
       requiresDiagnostic,
       diagnosticFeeXof: requiresDiagnostic ? DIAGNOSTIC_FEE_XOF : 0,
       readyForDecision: true,
+      artisanSummary: `Demande de ${label}. ${lastMsg.slice(0, 200)}`,
     };
   }
 

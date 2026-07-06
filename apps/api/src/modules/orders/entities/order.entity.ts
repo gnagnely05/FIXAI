@@ -55,6 +55,10 @@ export class OrderEntity {
   @Column({ type: 'int', default: 0 })
   diagnosticFeeXof: number;
 
+  /** Photos jointes par le client (data URIs base64), stockées en JSON. */
+  @Column({ type: 'longtext', nullable: true })
+  imageUrls?: string;
+
   /** Constat rédigé par l'artisan après inspection. */
   @Column({ type: 'text', nullable: true })
   diagnosticResult?: string;

@@ -64,6 +64,10 @@ __decorate([
     __metadata("design:type", Number)
 ], OrderEntity.prototype, "diagnosticFeeXof", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'longtext', nullable: true }),
+    __metadata("design:type", String)
+], OrderEntity.prototype, "imageUrls", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], OrderEntity.prototype, "diagnosticResult", void 0);

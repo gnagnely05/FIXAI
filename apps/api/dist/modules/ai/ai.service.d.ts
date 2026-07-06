@@ -36,6 +36,7 @@ export declare class AiService {
         requiresDiagnostic: boolean;
         diagnosticFeeXof: number;
         readyForDecision: boolean;
+        artisanSummary: string;
     }>;
     /** Repli heuristique : détecte un problème complexe via mots-clés. */
     private detectComplexity;

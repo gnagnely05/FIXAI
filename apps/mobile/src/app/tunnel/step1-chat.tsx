@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useServiceTunnel, ServiceType, Message } from '../../hooks/useServiceTunnel';
 import TunnelHeader, { getTunnelTitle } from '../../components/TunnelHeader';
+import { storage } from '../../services/storage';
 
 export default function Step1Chat() {
   const { serviceType } = useLocalSearchParams<{ serviceType: string }>();
@@ -28,8 +29,16 @@ export default function Step1Chat() {
     }
   }, [messages]);
 
+  const imageMandatory = svcType === 'RENOVATION' || svcType === 'DECORATION';
+  const [imgHint, setImgHint] = useState('');
+
   const handleSend = async () => {
     if (!inputText.trim()) return;
+    if (imageMandatory && images.length === 0) {
+      setImgHint('Ajoutez au moins une photo de votre espace 📷 pour continuer.');
+      return;
+    }
+    setImgHint('');
     const text = inputText.trim();
     setInputText('');
     await sendMessage(text);
@@ -39,13 +48,14 @@ export default function Step1Chat() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
-      quality: 0.8,
+      quality: 0.5,
       base64: true,
     });
     if (!result.canceled) {
       result.assets.forEach(a => {
-        // Sur web, uri est déjà un blob URL utilisable — on l'utilise directement
-        addImage(a.uri);
+        // On stocke une data URI base64 (persistable et transmissible à l'artisan)
+        const uri = a.base64 ? `data:${a.mimeType ?? 'image/jpeg'};base64,${a.base64}` : a.uri;
+        addImage(uri);
       });
     }
   };
@@ -121,6 +131,18 @@ export default function Step1Chat() {
           }
         />
 
+        {imgHint ? (
+          <View style={styles.imgHintBox}>
+            <Ionicons name="alert-circle-outline" size={15} color="#B45309" />
+            <Text style={styles.imgHintText}>{imgHint}</Text>
+          </View>
+        ) : imageMandatory && images.length === 0 ? (
+          <View style={styles.imgHintBox}>
+            <Ionicons name="camera-outline" size={15} color="#6B7280" />
+            <Text style={styles.imgHintText}>Une photo de votre espace est requise pour ce service.</Text>
+          </View>
+        ) : null}
+
         {/* Input bar */}
         <View style={styles.inputBar}>
           <TouchableOpacity style={styles.iconBtn} onPress={handlePickImage}>
@@ -153,11 +175,18 @@ export default function Step1Chat() {
         ) : diagnosisResult?.requiresDiagnostic ? (
           <TouchableOpacity
             style={styles.diagBtn}
-            onPress={() => router.push(
-              `/tunnel/diagnostic-booking?serviceType=${svcType}` +
-              `&description=${encodeURIComponent(messages.filter(m => m.role === 'user').map(m => m.content).join(' • '))}` +
-              `&fee=${diagnosisResult.diagnosticFeeXof ?? 5000}`
-            )}
+            onPress={async () => {
+              // On stocke le résumé artisan + les photos (trop volumineux pour l'URL)
+              await storage.setItem('fixai_diag_payload', JSON.stringify({
+                artisanSummary: (diagnosisResult as any).artisanSummary
+                  || messages.filter(m => m.role === 'user').map(m => m.content).join(' • '),
+                images,
+              }));
+              router.push(
+                `/tunnel/diagnostic-booking?serviceType=${svcType}` +
+                `&fee=${diagnosisResult.diagnosticFeeXof ?? 5000}`
+              );
+            }}
           >
             <Ionicons name="construct-outline" size={18} color="#fff" />
             <Text style={styles.nextBtnText}>
@@ -231,4 +260,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6', paddingVertical: 14, borderRadius: 14,
   },
   guideHintText: { color: '#6B7280', fontSize: 13, fontWeight: '600' },
+  imgHintBox: {
+    flexDirection: 'row', gap: 6, alignItems: 'center',
+    paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF7ED',
+  },
+  imgHintText: { flex: 1, color: '#92400E', fontSize: 12 },
 });

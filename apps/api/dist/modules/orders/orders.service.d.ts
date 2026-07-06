@@ -17,6 +17,7 @@ export interface CreateDiagnosticData {
     city: string;
     scheduledAt?: Date;
     diagnosticFeeXof: number;
+    imageUrls?: string[];
 }
 export declare class OrdersService {
     private readonly ordersRepo;

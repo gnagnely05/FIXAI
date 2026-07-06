@@ -21,6 +21,7 @@ export interface CreateDiagnosticData {
   city: string;
   scheduledAt?: Date;
   diagnosticFeeXof: number;
+  imageUrls?: string[];
 }
 
 @Injectable()
@@ -65,6 +66,7 @@ export class OrdersService {
       serviceType: data.serviceType,
       isDiagnostic: true,
       diagnosticFeeXof: data.diagnosticFeeXof,
+      imageUrls: data.imageUrls?.length ? JSON.stringify(data.imageUrls) : undefined,
       escrowAmount: data.diagnosticFeeXof,
       scheduledAt: data.scheduledAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000),
       address: data.address,

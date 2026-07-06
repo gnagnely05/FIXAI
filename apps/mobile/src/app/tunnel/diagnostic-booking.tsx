@@ -1,23 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  SafeAreaView, TextInput, ActivityIndicator,
+  SafeAreaView, TextInput, ActivityIndicator, Image,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../services/api';
+import { storage } from '../../services/storage';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function DiagnosticBooking() {
-  const params = useLocalSearchParams<{ serviceType: string; description: string; fee: string }>();
+  const params = useLocalSearchParams<{ serviceType: string; fee: string }>();
   const { user } = useAuth();
   const fee = Number(params.fee ?? 5000);
 
   const [address, setAddress] = useState((user as any)?.address ?? '');
   const [city, setCity] = useState((user as any)?.city ?? '');
+  const [summary, setSummary] = useState('Diagnostic sur place');
+  const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    storage.getItem('fixai_diag_payload').then(raw => {
+      if (!raw) return;
+      try {
+        const p = JSON.parse(raw);
+        if (p.artisanSummary) setSummary(p.artisanSummary);
+        if (Array.isArray(p.images)) setImages(p.images);
+      } catch { /* ignore */ }
+    });
+  }, []);
 
   const handleBook = async () => {
     setError('');
@@ -27,11 +41,13 @@ export default function DiagnosticBooking() {
     try {
       await api.post('/orders/diagnostic', {
         serviceType: params.serviceType,
-        description: params.description || 'Diagnostic sur place',
+        description: summary || 'Diagnostic sur place',
         address: address.trim(),
         city: city.trim(),
         diagnosticFeeXof: fee,
+        imageUrls: images,
       });
+      await storage.removeItem('fixai_diag_payload');
       setDone(true);
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? e?.message ?? 'Réservation impossible.';
@@ -86,6 +102,19 @@ export default function DiagnosticBooking() {
           </Text>
         </View>
 
+        {/* Aperçu transmis à l'artisan */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Résumé transmis à l'artisan</Text>
+          <Text style={styles.summaryText}>{summary}</Text>
+          {images.length > 0 && (
+            <View style={styles.thumbRow}>
+              {images.map((uri, i) => (
+                <Image key={i} source={{ uri }} style={styles.thumb} />
+              ))}
+            </View>
+          )}
+        </View>
+
         <Text style={styles.label}>Adresse</Text>
         <View style={styles.inputRow}>
           <Ionicons name="home-outline" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
@@ -135,6 +164,14 @@ const styles = StyleSheet.create({
   feeLabel: { fontSize: 13, color: '#9A3412', fontWeight: '600' },
   feeValue: { fontSize: 28, fontWeight: '900', color: '#B45309', marginVertical: 4 },
   feeNote: { fontSize: 12, color: '#9A3412', lineHeight: 18 },
+  summaryCard: {
+    backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 20,
+    borderWidth: 1, borderColor: '#E5E7EB',
+  },
+  summaryTitle: { fontSize: 13, fontWeight: '700', color: '#6B3FA0', marginBottom: 8 },
+  summaryText: { fontSize: 14, color: '#374151', lineHeight: 20 },
+  thumbRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  thumb: { width: 72, height: 72, borderRadius: 10, backgroundColor: '#EEE' },
   label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
