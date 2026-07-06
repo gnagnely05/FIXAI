@@ -53,6 +53,12 @@ export class AiController {
     return this.service.pingOpenRouter();
   }
 
+  /** Auto-test génération d'image. */
+  @Get('selftest-image')
+  selftestImage() {
+    return this.service.pingOpenRouterImage();
+  }
+
   // Pas de guard — accessible sans connexion pour le tunnel de devis
   @Post('diagnose')
   async diagnose(@Body() dto: DiagnoseDto) {

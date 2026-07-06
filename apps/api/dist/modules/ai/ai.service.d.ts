@@ -26,6 +26,12 @@ export declare class AiService {
         reply?: string;
         error?: string;
     }>;
+    pingOpenRouterImage(): Promise<{
+        ok: boolean;
+        model: string;
+        length?: number;
+        error?: string;
+    }>;
     diagnose(serviceType: string, messages: string[], imageUrls: string[], clientTurns?: number): Promise<{
         summary: string;
         detectedIssue: string;

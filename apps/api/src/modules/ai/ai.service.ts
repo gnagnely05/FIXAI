@@ -164,6 +164,10 @@ export class AiService {
     return this.openRouter.ping();
   }
 
+  pingOpenRouterImage() {
+    return this.openRouter.pingImage();
+  }
+
   async diagnose(
     serviceType: string,
     messages: string[],

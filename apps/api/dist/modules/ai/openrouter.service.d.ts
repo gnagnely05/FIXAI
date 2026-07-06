@@ -10,6 +10,13 @@ export declare class OpenRouterService {
         reply?: string;
         error?: string;
     }>;
+    /** Auto-test génération d'image : renvoie ok + taille, ou l'erreur exacte. */
+    pingImage(): Promise<{
+        ok: boolean;
+        model: string;
+        length?: number;
+        error?: string;
+    }>;
     chat(userMessage: string, systemMessage?: string, model?: string): Promise<string>;
     generateImage(prompt: string): Promise<string>;
     analyzeWithVision(prompt: string, imageUrl?: string): Promise<string>;

@@ -38,6 +38,13 @@ export declare class AiController {
         reply?: string;
         error?: string;
     }>;
+    /** Auto-test génération d'image. */
+    selftestImage(): Promise<{
+        ok: boolean;
+        model: string;
+        length?: number;
+        error?: string;
+    }>;
     diagnose(dto: DiagnoseDto): Promise<{
         summary: string;
         detectedIssue: string;

@@ -4,6 +4,8 @@ import axios from 'axios';
 const BASE_URL   = 'https://openrouter.ai/api/v1';
 const TEXT_MODEL = 'google/gemini-2.5-flash-lite-preview-09-2025';
 const IMG_MODEL  = 'google/gemini-2.5-flash-lite-preview-09-2025';
+// Modèle de génération d'image ("nano banana") — via /chat/completions + modalities
+const IMAGE_GEN_MODEL = 'google/gemini-2.5-flash-image-preview';
 
 const HEADERS = (key: string) => ({
   Authorization: `Bearer ${key}`,
@@ -45,6 +47,17 @@ export class OpenRouterService {
     }
   }
 
+  /** Auto-test génération d'image : renvoie ok + taille, ou l'erreur exacte. */
+  async pingImage(): Promise<{ ok: boolean; model: string; length?: number; error?: string }> {
+    if (!this.apiKey) return { ok: false, model: IMAGE_GEN_MODEL, error: 'OPENROUTER_API_KEY non configurée' };
+    try {
+      const url = await this.generateImage('A simple modern living room, photorealistic');
+      return { ok: true, model: IMAGE_GEN_MODEL, length: url.length };
+    } catch (e: any) {
+      return { ok: false, model: IMAGE_GEN_MODEL, error: e?.message ?? String(e) };
+    }
+  }
+
   // ─── Text / Chat ────────────────────────────────────────────────────────────
 
   async chat(
@@ -81,30 +94,33 @@ export class OpenRouterService {
   async generateImage(prompt: string): Promise<string> {
     if (!this.apiKey) throw new ServiceUnavailableException('OpenRouter not configured');
 
-    this.logger.log(`[ImageGen] "${prompt.slice(0, 60)}..." | model=${IMG_MODEL}`);
+    this.logger.log(`[ImageGen] "${prompt.slice(0, 60)}..." | model=${IMAGE_GEN_MODEL}`);
 
     try {
-      // OpenRouter image generation — standard images/generations endpoint
+      // OpenRouter : la génération d'image passe par /chat/completions
+      // avec modalities: ["image","text"]. L'image revient en data URI.
       const { data } = await axios.post(
-        `${BASE_URL}/images/generations`,
+        `${BASE_URL}/chat/completions`,
         {
-          model: IMG_MODEL,
-          prompt,
-          n: 1,
-          size: '1024x1024',
-          response_format: 'url',
+          model: IMAGE_GEN_MODEL,
+          messages: [{ role: 'user', content: prompt }],
+          modalities: ['image', 'text'],
         },
-        { headers: HEADERS(this.apiKey), timeout: 60000 },
+        { headers: HEADERS(this.apiKey), timeout: 90000 },
       );
 
-      const url: string = data?.data?.[0]?.url ?? '';
-      if (!url) throw new Error('No image URL in OpenRouter response');
-      this.logger.log(`[ImageGen] OK: ${url}`);
+      const msg = data?.choices?.[0]?.message;
+      const url: string =
+        msg?.images?.[0]?.image_url?.url ??
+        msg?.images?.[0]?.url ??
+        '';
+      if (!url) throw new Error('Aucune image renvoyée par le modèle');
+      this.logger.log(`[ImageGen] OK (${url.slice(0, 30)}...)`);
       return url;
     } catch (e: any) {
       const msg = e?.response?.data?.error?.message ?? e?.message ?? String(e);
       this.logger.error(`[ImageGen] Error: ${msg}`);
-      throw new ServiceUnavailableException('Image generation failed. Please try again.');
+      throw new ServiceUnavailableException(`Génération d'image échouée : ${msg}`);
     }
   }
 

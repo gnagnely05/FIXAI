@@ -46,6 +46,10 @@ let AiController = AiController_1 = class AiController {
     selftest() {
         return this.service.pingOpenRouter();
     }
+    /** Auto-test génération d'image. */
+    selftestImage() {
+        return this.service.pingOpenRouterImage();
+    }
     // Pas de guard — accessible sans connexion pour le tunnel de devis
     async diagnose(dto) {
         try {
@@ -115,6 +119,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "selftest", null);
+__decorate([
+    (0, common_1.Get)('selftest-image'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AiController.prototype, "selftestImage", null);
 __decorate([
     (0, common_1.Post)('diagnose'),
     __param(0, (0, common_1.Body)()),

@@ -133,6 +133,9 @@ let AiService = AiService_1 = class AiService {
     pingOpenRouter() {
         return this.openRouter.ping();
     }
+    pingOpenRouterImage() {
+        return this.openRouter.pingImage();
+    }
     async diagnose(serviceType, messages, imageUrls, clientTurns = 1) {
         const serviceLabels = {
             DEPANNAGE: 'réparation / dépannage',
