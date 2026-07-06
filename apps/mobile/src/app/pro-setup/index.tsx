@@ -397,6 +397,7 @@ export default function ProSetupScreen() {
               </>
           }
         </TouchableOpacity>
+        <Text style={styles.buildTag}>build v2 · activation directe</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -539,6 +540,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#FECACA',
   },
   errorText: { flex: 1, fontSize: 13, color: '#DC2626', lineHeight: 19 },
+  buildTag: { textAlign: 'center', fontSize: 11, color: '#C4CAD4', marginTop: 12 },
   verifBannerShop: { backgroundColor: '#ECFDF3' },
   verifText: { flex: 1, fontSize: 13, color: '#1E40AF', lineHeight: 19 },
   verifTextShop: { color: '#15803D' },
