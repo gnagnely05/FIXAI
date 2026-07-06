@@ -19,6 +19,13 @@ export declare class AiService {
     generateDecorationVisualization(userId: string, dto: GenerateDecorationDto): Promise<DecorationResult>;
     private selectProducts;
     private buildPrompt;
+    pingOpenRouter(): Promise<{
+        ok: boolean;
+        hasKey: boolean;
+        model: string;
+        reply?: string;
+        error?: string;
+    }>;
     diagnose(serviceType: string, messages: string[], imageUrls: string[]): Promise<{
         summary: string;
         detectedIssue: string;

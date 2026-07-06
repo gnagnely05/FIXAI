@@ -35,7 +35,16 @@ let AiController = AiController_1 = class AiController {
         return this.service.analyzeImage(req.user.sub, dto.prompt, dto.imageUrl);
     }
     health() {
-        return { status: 'ok', build: 'v2-pro-activation', timestamp: new Date().toISOString() };
+        return {
+            status: 'ok',
+            build: 'v2-pro-activation',
+            hasOpenRouterKey: !!process.env.OPENROUTER_API_KEY,
+            timestamp: new Date().toISOString(),
+        };
+    }
+    /** Auto-test OpenRouter — renvoie la réponse réelle ou l'erreur exacte. */
+    selftest() {
+        return this.service.pingOpenRouter();
     }
     // Pas de guard — accessible sans connexion pour le tunnel de devis
     async diagnose(dto) {
@@ -100,6 +109,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "health", null);
+__decorate([
+    (0, common_1.Get)('selftest'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AiController.prototype, "selftest", null);
 __decorate([
     (0, common_1.Post)('diagnose'),
     __param(0, (0, common_1.Body)()),

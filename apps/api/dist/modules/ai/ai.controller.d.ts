@@ -27,8 +27,17 @@ export declare class AiController {
     health(): {
         status: string;
         build: string;
+        hasOpenRouterKey: boolean;
         timestamp: string;
     };
+    /** Auto-test OpenRouter — renvoie la réponse réelle ou l'erreur exacte. */
+    selftest(): Promise<{
+        ok: boolean;
+        hasKey: boolean;
+        model: string;
+        reply?: string;
+        error?: string;
+    }>;
     diagnose(dto: DiagnoseDto): Promise<{
         summary: string;
         detectedIssue: string;

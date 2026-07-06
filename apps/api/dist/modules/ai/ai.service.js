@@ -130,6 +130,9 @@ let AiService = AiService_1 = class AiService {
         parts.push('Bright natural light, high-end interior photography, architectural digest quality.', '4K resolution, photorealistic, warm and inviting.');
         return parts.join(' ');
     }
+    pingOpenRouter() {
+        return this.openRouter.ping();
+    }
     async diagnose(serviceType, messages, imageUrls) {
         const serviceLabels = {
             DEPANNAGE: 'réparation / dépannage',

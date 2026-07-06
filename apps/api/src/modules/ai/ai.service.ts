@@ -160,6 +160,10 @@ export class AiService {
     return parts.join(' ');
   }
 
+  pingOpenRouter() {
+    return this.openRouter.ping();
+  }
+
   async diagnose(
     serviceType: string,
     messages: string[],

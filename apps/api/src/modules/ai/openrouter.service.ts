@@ -24,6 +24,27 @@ export class OpenRouterService {
     }
   }
 
+  /** Auto-test : appelle OpenRouter et renvoie le résultat brut ou l'erreur exacte. */
+  async ping(): Promise<{ ok: boolean; hasKey: boolean; model: string; reply?: string; error?: string }> {
+    if (!this.apiKey) {
+      return { ok: false, hasKey: false, model: TEXT_MODEL, error: 'OPENROUTER_API_KEY non configurée sur le serveur' };
+    }
+    try {
+      const { data } = await axios.post(
+        `${BASE_URL}/chat/completions`,
+        { model: TEXT_MODEL, messages: [{ role: 'user', content: 'Réponds uniquement par: OK' }], stream: false },
+        { headers: HEADERS(this.apiKey), timeout: 20000 },
+      );
+      const reply: string = data?.choices?.[0]?.message?.content ?? '';
+      return { ok: true, hasKey: true, model: TEXT_MODEL, reply };
+    } catch (e: any) {
+      const error = e?.response?.data?.error?.message
+        ?? JSON.stringify(e?.response?.data ?? {})
+        ?? e?.message ?? String(e);
+      return { ok: false, hasKey: true, model: TEXT_MODEL, error };
+    }
+  }
+
   // ─── Text / Chat ────────────────────────────────────────────────────────────
 
   async chat(

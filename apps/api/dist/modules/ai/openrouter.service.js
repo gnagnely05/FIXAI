@@ -33,6 +33,23 @@ let OpenRouterService = OpenRouterService_1 = class OpenRouterService {
             this.logger.warn('OPENROUTER_API_KEY not configured — AI will use fallback responses');
         }
     }
+    /** Auto-test : appelle OpenRouter et renvoie le résultat brut ou l'erreur exacte. */
+    async ping() {
+        if (!this.apiKey) {
+            return { ok: false, hasKey: false, model: TEXT_MODEL, error: 'OPENROUTER_API_KEY non configurée sur le serveur' };
+        }
+        try {
+            const { data } = await axios_1.default.post(`${BASE_URL}/chat/completions`, { model: TEXT_MODEL, messages: [{ role: 'user', content: 'Réponds uniquement par: OK' }], stream: false }, { headers: HEADERS(this.apiKey), timeout: 20000 });
+            const reply = data?.choices?.[0]?.message?.content ?? '';
+            return { ok: true, hasKey: true, model: TEXT_MODEL, reply };
+        }
+        catch (e) {
+            const error = e?.response?.data?.error?.message
+                ?? JSON.stringify(e?.response?.data ?? {})
+                ?? e?.message ?? String(e);
+            return { ok: false, hasKey: true, model: TEXT_MODEL, error };
+        }
+    }
     // ─── Text / Chat ────────────────────────────────────────────────────────────
     async chat(userMessage, systemMessage, model = TEXT_MODEL) {
         if (!this.apiKey)

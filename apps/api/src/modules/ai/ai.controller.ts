@@ -39,7 +39,18 @@ export class AiController {
 
   @Get('health')
   health() {
-    return { status: 'ok', build: 'v2-pro-activation', timestamp: new Date().toISOString() };
+    return {
+      status: 'ok',
+      build: 'v2-pro-activation',
+      hasOpenRouterKey: !!process.env.OPENROUTER_API_KEY,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /** Auto-test OpenRouter — renvoie la réponse réelle ou l'erreur exacte. */
+  @Get('selftest')
+  selftest() {
+    return this.service.pingOpenRouter();
   }
 
   // Pas de guard — accessible sans connexion pour le tunnel de devis
