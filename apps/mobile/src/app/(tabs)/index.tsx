@@ -52,7 +52,7 @@ const SERVICES = [
     subtitle: 'Transformez votre intérieur',
     icon: 'color-palette' as const,
     color: '#6B3FA0',
-    route: '/tunnel/step1-chat?serviceType=DECORATION',
+    route: '/decoration',
   },
   {
     key: 'renovation',
@@ -60,7 +60,7 @@ const SERVICES = [
     subtitle: "Projets d'envergure",
     icon: 'home' as const,
     color: '#1565C0',
-    route: '/tunnel/step1-chat?serviceType=RENOVATION',
+    route: '/renovation/new',
   },
   {
     key: 'devis-pro',
@@ -88,7 +88,7 @@ const REALISATIONS = [
     city: 'Abidjan',
     colors: ['#3B1F6E', '#6B3FA0'],
     icon: 'color-palette' as const,
-    route: '/tunnel/step1-chat?serviceType=DECORATION',
+    route: '/decoration',
   },
   {
     key: 'r2',
@@ -99,7 +99,7 @@ const REALISATIONS = [
     city: 'Bouaké',
     colors: ['#0D3B66', '#1565C0'],
     icon: 'home' as const,
-    route: '/tunnel/step1-chat?serviceType=RENOVATION',
+    route: '/renovation/new',
   },
   {
     key: 'r3',
@@ -110,7 +110,7 @@ const REALISATIONS = [
     city: 'Abidjan',
     colors: ['#4A2C0A', '#795548'],
     icon: 'color-palette' as const,
-    route: '/tunnel/step1-chat?serviceType=DECORATION',
+    route: '/decoration',
   },
   {
     key: 'r4',
@@ -121,7 +121,7 @@ const REALISATIONS = [
     city: 'San-Pédro',
     colors: ['#1B3A2F', '#2E7D32'],
     icon: 'home' as const,
-    route: '/tunnel/step1-chat?serviceType=RENOVATION',
+    route: '/renovation/new',
   },
 ];
 

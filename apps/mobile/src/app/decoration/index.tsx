@@ -6,8 +6,8 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
+import { api } from '../../services/api';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 const { width: W } = Dimensions.get('window');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -144,17 +144,12 @@ export default function DecorationScreen() {
         budget: form.budget,
         keepItemsDescription: form.keepItemsDescription || undefined,
       };
-      const res = await fetch(`${API_BASE}/ai/decoration/visualize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setResult(data);
+      const res = await api.post('/ai/decoration/visualize', body);
+      setResult(res.data);
       setStep(9); // résultat
-    } catch {
-      Alert.alert('Erreur', 'Impossible de générer la visualisation.');
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? e?.message ?? 'Impossible de générer la visualisation.';
+      Alert.alert('Erreur', Array.isArray(msg) ? msg.join('\n') : msg);
     } finally {
       setLoading(false);
     }
