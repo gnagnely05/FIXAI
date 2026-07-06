@@ -15,6 +15,8 @@ const common_1 = require("@nestjs/common");
 const catalog_service_1 = require("../catalog/catalog.service");
 const openrouter_service_1 = require("./openrouter.service");
 const subscriptions_service_1 = require("../subscriptions/subscriptions.service");
+/** Frais fixe de diagnostic physique par un artisan (déduit du devis si réparation). */
+const DIAGNOSTIC_FEE_XOF = 5000;
 const BUDGET_MAX = {
     MOINS_100K: 100_000,
     '100K_300K': 300_000,
@@ -144,8 +146,10 @@ Analyse la description du client et réponds UNIQUEMENT en JSON valide avec exac
   "question": "une question de précision pour mieux qualifier le besoin",
   "options": ["option A", "option B", "option C"],
   "estimatedPriceMinXof": <nombre entier en FCFA>,
-  "estimatedPriceMaxXof": <nombre entier en FCFA>
+  "estimatedPriceMaxXof": <nombre entier en FCFA>,
+  "requiresDiagnostic": <true si le problème est complexe et nécessite une inspection physique par un artisan avant de pouvoir chiffrer précisément, sinon false>
 }
+Mets "requiresDiagnostic" à true quand le problème est incertain, potentiellement grave, invisible sans démontage, ou quand plusieurs causes sont possibles (ex: fuite d'origine inconnue, panne électrique intermittente, fissure structurelle, infiltration).
 Ne fournis aucun texte en dehors du JSON.`;
         try {
             let raw;
@@ -156,8 +160,14 @@ Ne fournis aucun texte en dehors du JSON.`;
                 raw = await this.openRouter.chat(conversation, systemInstruction);
             }
             const jsonMatch = raw.match(/\{[\s\S]*\}/);
-            if (jsonMatch)
-                return JSON.parse(jsonMatch[0]);
+            if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]);
+                return {
+                    ...parsed,
+                    requiresDiagnostic: Boolean(parsed.requiresDiagnostic),
+                    diagnosticFeeXof: parsed.requiresDiagnostic ? DIAGNOSTIC_FEE_XOF : 0,
+                };
+            }
         }
         catch (err) {
             this.logger.warn(`[Diagnose] OpenRouter failed: ${err}`);
@@ -170,6 +180,7 @@ Ne fournis aucun texte en dehors du JSON.`;
             DECORATION: [80000, 400000],
         };
         const [minPrice, maxPrice] = priceMap[serviceType] ?? [15000, 60000];
+        const requiresDiagnostic = this.detectComplexity(conversation);
         return {
             summary: `J'ai bien reçu votre demande : "${lastMsg.slice(0, 80)}". Je prépare une analyse pour votre projet de ${label}.`,
             detectedIssue: `Demande de ${label} — analyse en cours`,
@@ -177,7 +188,21 @@ Ne fournis aucun texte en dehors du JSON.`;
             options: ['C\'est urgent (< 24h)', 'Dans la semaine', 'Pas pressé — je planifie'],
             estimatedPriceMinXof: minPrice,
             estimatedPriceMaxXof: maxPrice,
+            requiresDiagnostic,
+            diagnosticFeeXof: requiresDiagnostic ? DIAGNOSTIC_FEE_XOF : 0,
         };
+    }
+    /** Repli heuristique : détecte un problème complexe via mots-clés. */
+    detectComplexity(text) {
+        const t = text.toLowerCase();
+        const complexKeywords = [
+            'fuite', 'infiltration', 'court-circuit', 'court circuit', 'disjoncte',
+            'fissure', 'effondr', 'inond', 'ne démarre pas', 'ne demarre pas',
+            'intermittent', 'odeur de brûlé', 'odeur de brule', 'étincelle', 'etincelle',
+            'humidité', 'humidite', 'moisissure', 'affaiss', 'grave', 'partout',
+            'plusieurs', 'origine inconnue', 'sais pas', 'sais pas d\'où',
+        ];
+        return complexKeywords.some(k => t.includes(k));
     }
     async generateImage(userId, prompt) {
         await this.subscriptions.assertAiAllowed(userId);

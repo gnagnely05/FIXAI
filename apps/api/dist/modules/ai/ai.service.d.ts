@@ -26,7 +26,11 @@ export declare class AiService {
         options: string[];
         estimatedPriceMinXof: number;
         estimatedPriceMaxXof: number;
+        requiresDiagnostic: boolean;
+        diagnosticFeeXof: number;
     }>;
+    /** Repli heuristique : détecte un problème complexe via mots-clés. */
+    private detectComplexity;
     generateImage(userId: string, prompt: string): Promise<string>;
     generateImageByProvider(userId: string, prompt: string): Promise<string>;
     analyzeImage(userId: string, prompt: string, imageUrl?: string): Promise<string>;

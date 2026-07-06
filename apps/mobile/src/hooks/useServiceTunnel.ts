@@ -17,6 +17,8 @@ export interface DiagnosisResult {
   options: string[];
   estimatedPriceMinXof: number;
   estimatedPriceMaxXof: number;
+  requiresDiagnostic?: boolean;
+  diagnosticFeeXof?: number;
 }
 
 export interface Quote {
@@ -93,10 +95,16 @@ export function useServiceTunnel(serviceType: ServiceType) {
       const result: DiagnosisResult = response.data;
       setDiagnosisResult(result);
 
+      let content = result.summary;
+      if (result.requiresDiagnostic) {
+        const fee = (result.diagnosticFeeXof ?? 5000).toLocaleString('fr-FR');
+        content += `\n\n🔧 Ce problème est complexe et nécessite un diagnostic sur place par un artisan (${fee} FCFA). L'artisan inspectera puis je vous établirai un devis précis. Ce montant sera déduit du devis final si vous confirmez la réparation.`;
+      }
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: result.summary,
+        content,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiMessage]);

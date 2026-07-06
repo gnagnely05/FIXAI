@@ -36,6 +36,15 @@ export declare class AiController {
         options: string[];
         estimatedPriceMinXof: number;
         estimatedPriceMaxXof: number;
+        requiresDiagnostic: boolean;
+        diagnosticFeeXof: number;
+    } | {
+        summary: string;
+        detectedIssue: string;
+        question: string;
+        options: string[];
+        estimatedPriceMinXof: number;
+        estimatedPriceMaxXof: number;
     }>;
     generateByProvider(req: {
         user: {
