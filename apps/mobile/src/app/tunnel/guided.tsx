@@ -147,7 +147,7 @@ export default function GuidedChat() {
         const res = await api.post('/ai/diagnose', {
           serviceType: 'RENOVATION', messages: [description],
           imageUrls: finalAnswers.photo ? [finalAnswers.photo] : [], clientTurns: 4,
-        });
+        }, { timeout: 120000 });
         push({ role: 'ai', result: { type: 'reno', ...res.data, photo: finalAnswers.photo } });
       } else {
         const res = await api.post('/ai/decoration/visualize', {
@@ -158,7 +158,7 @@ export default function GuidedChat() {
           isTenant: !!finalAnswers.isTenant,
           occupants: finalAnswers.occupants,
           budget: finalAnswers.budget,
-        });
+        }, { timeout: 120000 });
         push({ role: 'ai', result: { type: 'deco', ...res.data } });
       }
       setDone(true);
