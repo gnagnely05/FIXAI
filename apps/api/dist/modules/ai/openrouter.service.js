@@ -17,8 +17,8 @@ exports.OpenRouterService = void 0;
 const common_1 = require("@nestjs/common");
 const axios_1 = __importDefault(require("axios"));
 const BASE_URL = 'https://openrouter.ai/api/v1';
-const TEXT_MODEL = 'google/gemini-flash-1.5';
-const IMG_MODEL = 'google/gemini-2.5-pro-preview';
+const TEXT_MODEL = 'google/gemini-2.0-flash-001';
+const IMG_MODEL = 'google/gemini-2.0-flash-001';
 const HEADERS = (key) => ({
     Authorization: `Bearer ${key}`,
     'Content-Type': 'application/json',

@@ -2,8 +2,8 @@ import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import axios from 'axios';
 
 const BASE_URL   = 'https://openrouter.ai/api/v1';
-const TEXT_MODEL = 'google/gemini-flash-1.5';
-const IMG_MODEL  = 'google/gemini-2.5-pro-preview';
+const TEXT_MODEL = 'google/gemini-2.0-flash-001';
+const IMG_MODEL  = 'google/gemini-2.0-flash-001';
 
 const HEADERS = (key: string) => ({
   Authorization: `Bearer ${key}`,
