@@ -103,15 +103,7 @@ export default function ProSetupScreen() {
       return setError('Veuillez entrer le nom de votre établissement.');
     }
 
-    // Validation des pièces justificatives
-    if (selected === 'ARTISAN') {
-      if (!idDoc) return setError("Veuillez ajouter une photo de votre pièce d'identité.");
-      if (!selfieDoc) return setError('Veuillez ajouter un selfie.');
-    }
-    if (['AGENCE_HOTE', 'ENTREPRISE_BTP', 'BOUTIQUE', 'QUINCAILLERIE'].includes(selected) && adminDocs.length === 0) {
-      return setError('Veuillez ajouter au moins un document administratif.');
-    }
-
+    // Documents optionnels : on peut activer et les ajouter plus tard.
     // Construction de la liste des documents
     const documents: Array<{ type: string; url: string }> = [];
     if (idDoc) documents.push({ type: 'NATIONAL_ID', url: idDoc });
@@ -328,7 +320,7 @@ export default function ProSetupScreen() {
         {/* Pièces justificatives — Artisan */}
         {selected === 'ARTISAN' && (
           <>
-            <SectionLabel>Pièces justificatives</SectionLabel>
+            <SectionLabel>Pièces justificatives (optionnel)</SectionLabel>
             <DocSlot
               label="Pièce d'identité (CNI, passeport)"
               icon="card-outline"
@@ -351,7 +343,7 @@ export default function ProSetupScreen() {
         {/* Documents administratifs — Agence / BTP / Boutique / Quincaillerie */}
         {['AGENCE_HOTE', 'ENTREPRISE_BTP', 'BOUTIQUE', 'QUINCAILLERIE'].includes(selected ?? '') && (
           <>
-            <SectionLabel>Documents administratifs</SectionLabel>
+            <SectionLabel>Documents administratifs (optionnel)</SectionLabel>
             <Text style={styles.docHint}>
               Registre de commerce (RCCM), statuts, attestation fiscale, licence… Ajoutez une ou plusieurs photos.
             </Text>
