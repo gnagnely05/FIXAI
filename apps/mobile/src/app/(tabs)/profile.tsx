@@ -115,21 +115,20 @@ export default function ProfileScreen() {
 
   const menuSections: Array<{ title: string; items: Array<{ icon: IoniconName; label: string; danger?: boolean; badge?: string; onPress?: () => void }> }> = [
     ...(role === 'CLIENT' ? [{
+      // Vue identique à un client normal : une seule option pro.
+      // S'il a déjà un profil pro activé, on le réactive directement ;
+      // sinon on ouvre la configuration.
       title: 'Espace Pro',
-      items: [
-        {
-          icon: 'briefcase-outline' as IoniconName,
-          label: 'Activer un profil professionnel',
-          badge: 'Nouveau',
-          onPress: () => router.push('/pro-setup' as any),
-        },
-        // Retour rapide vers un profil pro déjà activé
-        ...(lastProRole && PRO_ROLE_LABEL[lastProRole] ? [{
-          icon: 'swap-horizontal-outline' as IoniconName,
-          label: `Repasser en mode ${PRO_ROLE_LABEL[lastProRole]}`,
-          onPress: () => doSwitch(lastProRole),
-        }] : []),
-      ],
+      items: [{
+        icon: 'briefcase-outline' as IoniconName,
+        label: lastProRole && PRO_ROLE_LABEL[lastProRole]
+          ? `Repasser en profil ${PRO_ROLE_LABEL[lastProRole]}`
+          : 'Activer un profil professionnel',
+        badge: lastProRole ? undefined : 'Nouveau',
+        onPress: lastProRole && PRO_ROLE_LABEL[lastProRole]
+          ? () => doSwitch(lastProRole)
+          : () => router.push('/pro-setup' as any),
+      }],
     }] : [{
       title: 'Espace Pro',
       items: [{
