@@ -26,6 +26,7 @@ export declare class AiController {
     }): Promise<string>;
     health(): {
         status: string;
+        build: string;
         timestamp: string;
     };
     diagnose(dto: DiagnoseDto): Promise<{

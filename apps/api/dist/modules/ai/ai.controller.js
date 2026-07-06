@@ -35,7 +35,7 @@ let AiController = AiController_1 = class AiController {
         return this.service.analyzeImage(req.user.sub, dto.prompt, dto.imageUrl);
     }
     health() {
-        return { status: 'ok', timestamp: new Date().toISOString() };
+        return { status: 'ok', build: 'v2-pro-activation', timestamp: new Date().toISOString() };
     }
     // Pas de guard — accessible sans connexion pour le tunnel de devis
     async diagnose(dto) {

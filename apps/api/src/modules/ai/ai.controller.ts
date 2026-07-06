@@ -39,7 +39,7 @@ export class AiController {
 
   @Get('health')
   health() {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+    return { status: 'ok', build: 'v2-pro-activation', timestamp: new Date().toISOString() };
   }
 
   // Pas de guard — accessible sans connexion pour le tunnel de devis
