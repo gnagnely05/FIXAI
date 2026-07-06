@@ -4,8 +4,10 @@ const core_1 = require("@nestjs/core");
 const common_1 = require("@nestjs/common");
 const express_1 = require("express");
 const app_module_1 = require("./app.module");
+const all_exceptions_filter_1 = require("./common/filters/all-exceptions.filter");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    app.useGlobalFilters(new all_exceptions_filter_1.AllExceptionsFilter());
     // Les documents (CNI, selfie, docs administratifs) sont envoyés en base64 :
     // on relève la limite du corps de requête (défaut Express : 100 kb).
     app.use((0, express_1.json)({ limit: '25mb' }));
