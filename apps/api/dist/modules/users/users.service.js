@@ -52,6 +52,26 @@ let UsersService = class UsersService {
         }
         return this.findById(id);
     }
+    /**
+     * Bascule le rôle actif entre CLIENT (compte standard) et un rôle pro déjà
+     * activé. Les infos pro (spécialité, nom, documents) restent en base, donc
+     * l'utilisateur peut revenir en mode pro sans rien ressaisir.
+     */
+    async switchRole(id, role) {
+        const allowed = [
+            user_role_enum_1.UserRole.CLIENT, user_role_enum_1.UserRole.ARTISAN, user_role_enum_1.UserRole.AGENCE_HOTE,
+            user_role_enum_1.UserRole.ENTREPRISE_BTP, user_role_enum_1.UserRole.BOUTIQUE, user_role_enum_1.UserRole.QUINCAILLERIE,
+        ];
+        if (!allowed.includes(role)) {
+            throw new common_1.ConflictException('Rôle invalide');
+        }
+        const updates = { role };
+        if (role !== user_role_enum_1.UserRole.CLIENT) {
+            updates.verificationStatus = verification_status_enum_1.VerificationStatus.ACTIVE;
+        }
+        await this.usersRepo.update(id, updates);
+        return this.findById(id);
+    }
     async verifyUser(id) {
         await this.usersRepo.update(id, { verificationStatus: verification_status_enum_1.VerificationStatus.ACTIVE });
     }

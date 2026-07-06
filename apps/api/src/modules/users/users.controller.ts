@@ -47,10 +47,24 @@ export class UsersController {
       return await this.usersService.upgradeToPro(req.user.sub, body);
     } catch (err: any) {
       if (err instanceof HttpException) throw err;
-      // Faire remonter le vrai message (ex: colonne manquante) au lieu d'un 500 opaque
       const detail = err?.sqlMessage ?? err?.message ?? 'Erreur inconnue';
       this.logger.error(`[upgrade-pro] ${detail}`, err?.stack);
       throw new BadRequestException(`Activation impossible : ${detail}`);
+    }
+  }
+
+  @Patch('me/switch-role')
+  async switchRole(
+    @Request() req: { user: { sub: string } },
+    @Body() body: { role: UserRole },
+  ) {
+    try {
+      return await this.usersService.switchRole(req.user.sub, body.role);
+    } catch (err: any) {
+      if (err instanceof HttpException) throw err;
+      const detail = err?.sqlMessage ?? err?.message ?? 'Erreur inconnue';
+      this.logger.error(`[switch-role] ${detail}`, err?.stack);
+      throw new BadRequestException(`Changement de compte impossible : ${detail}`);
     }
   }
 }

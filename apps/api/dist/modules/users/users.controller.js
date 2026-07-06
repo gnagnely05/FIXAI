@@ -35,10 +35,21 @@ let UsersController = UsersController_1 = class UsersController {
         catch (err) {
             if (err instanceof common_1.HttpException)
                 throw err;
-            // Faire remonter le vrai message (ex: colonne manquante) au lieu d'un 500 opaque
             const detail = err?.sqlMessage ?? err?.message ?? 'Erreur inconnue';
             this.logger.error(`[upgrade-pro] ${detail}`, err?.stack);
             throw new common_1.BadRequestException(`Activation impossible : ${detail}`);
+        }
+    }
+    async switchRole(req, body) {
+        try {
+            return await this.usersService.switchRole(req.user.sub, body.role);
+        }
+        catch (err) {
+            if (err instanceof common_1.HttpException)
+                throw err;
+            const detail = err?.sqlMessage ?? err?.message ?? 'Erreur inconnue';
+            this.logger.error(`[switch-role] ${detail}`, err?.stack);
+            throw new common_1.BadRequestException(`Changement de compte impossible : ${detail}`);
         }
     }
 };
@@ -66,6 +77,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "upgradeToPro", null);
+__decorate([
+    (0, common_1.Patch)('me/switch-role'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "switchRole", null);
 exports.UsersController = UsersController = UsersController_1 = __decorate([
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

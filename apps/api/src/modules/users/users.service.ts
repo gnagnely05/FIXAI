@@ -50,6 +50,27 @@ export class UsersService {
     return this.findById(id);
   }
 
+  /**
+   * Bascule le rôle actif entre CLIENT (compte standard) et un rôle pro déjà
+   * activé. Les infos pro (spécialité, nom, documents) restent en base, donc
+   * l'utilisateur peut revenir en mode pro sans rien ressaisir.
+   */
+  async switchRole(id: string, role: UserRole): Promise<UserEntity> {
+    const allowed = [
+      UserRole.CLIENT, UserRole.ARTISAN, UserRole.AGENCE_HOTE,
+      UserRole.ENTREPRISE_BTP, UserRole.BOUTIQUE, UserRole.QUINCAILLERIE,
+    ];
+    if (!allowed.includes(role)) {
+      throw new ConflictException('Rôle invalide');
+    }
+    const updates: Partial<UserEntity> = { role };
+    if (role !== UserRole.CLIENT) {
+      updates.verificationStatus = VerificationStatus.ACTIVE;
+    }
+    await this.usersRepo.update(id, updates);
+    return this.findById(id);
+  }
+
   async verifyUser(id: string): Promise<void> {
     await this.usersRepo.update(id, { verificationStatus: VerificationStatus.ACTIVE });
   }

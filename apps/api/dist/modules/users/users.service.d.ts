@@ -9,6 +9,12 @@ export declare class UsersService {
     findById(id: string): Promise<UserEntity>;
     findByEmail(email: string): Promise<UserEntity | null>;
     updateProfile(id: string, updates: Partial<Pick<UserEntity, 'firstName' | 'lastName' | 'avatarUrl' | 'phone' | 'city' | 'address' | 'agencyName' | 'shopName' | 'specialty' | 'description' | 'payoutMethod' | 'payoutNumber'>>): Promise<UserEntity>;
+    /**
+     * Bascule le rôle actif entre CLIENT (compte standard) et un rôle pro déjà
+     * activé. Les infos pro (spécialité, nom, documents) restent en base, donc
+     * l'utilisateur peut revenir en mode pro sans rien ressaisir.
+     */
+    switchRole(id: string, role: UserRole): Promise<UserEntity>;
     verifyUser(id: string): Promise<void>;
     upgradeToPro(id: string, data: {
         role: UserRole;

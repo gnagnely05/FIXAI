@@ -34,5 +34,12 @@ export declare class UsersController {
             url: string;
         }>;
     }): Promise<UserEntity>;
+    switchRole(req: {
+        user: {
+            sub: string;
+        };
+    }, body: {
+        role: UserRole;
+    }): Promise<UserEntity>;
 }
 //# sourceMappingURL=users.controller.d.ts.map

@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
+import { storage } from '../../services/storage';
 import { COLORS, SHADOW, RADIUS } from '../../theme';
+
+const PRO_ROLE_LABEL: Record<string, string> = {
+  ARTISAN: 'Artisan', AGENCE_HOTE: 'Agence', ENTREPRISE_BTP: 'Entreprise BTP',
+  BOUTIQUE: 'Boutique', QUINCAILLERIE: 'Quincaillerie',
+};
 
 const ROLE_LABEL: Record<string, string> = {
   CLIENT: 'Client', ARTISAN: 'Artisan', AGENCE_HOTE: 'Agence Hôte',
@@ -70,7 +76,13 @@ function GuestProfile() {
 }
 
 export default function ProfileScreen() {
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, switchRole, isLoading } = useAuth();
+  const [lastProRole, setLastProRole] = useState<string | null>(null);
+  const [switching, setSwitching] = useState(false);
+
+  useEffect(() => {
+    storage.getItem('fixai_last_pro_role').then(setLastProRole);
+  }, [user?.role]);
 
   if (isLoading) return null;
   if (!user) return <GuestProfile />;
@@ -82,6 +94,19 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const doSwitch = async (target: string) => {
+    if (switching) return;
+    setSwitching(true);
+    try {
+      await switchRole(target);
+      router.replace('/(tabs)');
+    } catch {
+      // silencieux — l'état ne change pas
+    } finally {
+      setSwitching(false);
+    }
+  };
+
   const role = user.role ?? 'CLIENT';
   const accent = ROLE_COLOR[role] ?? '#6B3FA0';
   const dark = ROLE_DARK[role] ?? '#4A2880';
@@ -91,13 +116,28 @@ export default function ProfileScreen() {
   const menuSections: Array<{ title: string; items: Array<{ icon: IoniconName; label: string; danger?: boolean; badge?: string; onPress?: () => void }> }> = [
     ...(role === 'CLIENT' ? [{
       title: 'Espace Pro',
+      items: [
+        {
+          icon: 'briefcase-outline' as IoniconName,
+          label: 'Activer un profil professionnel',
+          badge: 'Nouveau',
+          onPress: () => router.push('/pro-setup' as any),
+        },
+        // Retour rapide vers un profil pro déjà activé
+        ...(lastProRole && PRO_ROLE_LABEL[lastProRole] ? [{
+          icon: 'swap-horizontal-outline' as IoniconName,
+          label: `Repasser en mode ${PRO_ROLE_LABEL[lastProRole]}`,
+          onPress: () => doSwitch(lastProRole),
+        }] : []),
+      ],
+    }] : [{
+      title: 'Espace Pro',
       items: [{
-        icon: 'briefcase-outline' as IoniconName,
-        label: 'Activer un profil professionnel',
-        badge: 'Nouveau',
-        onPress: () => router.push('/pro-setup' as any),
+        icon: 'swap-horizontal-outline' as IoniconName,
+        label: 'Passer en compte standard',
+        onPress: () => doSwitch('CLIENT'),
       }],
-    }] : []),
+    }]),
     {
       title: 'Mon compte',
       items: [

@@ -114,9 +114,22 @@ export function useAuth() {
     return user;
   }, []);
 
+  const switchRole = useCallback(async (role: string) => {
+    // Mémorise le dernier rôle pro pour pouvoir y revenir facilement
+    if (role !== 'CLIENT') {
+      await storage.setItem('fixai_last_pro_role', role);
+    }
+    const response = await api.patch<User>('/users/me/switch-role', { role });
+    const user = response.data as unknown as User;
+    await storage.setItem(USER_KEY, JSON.stringify(user));
+    setState(prev => ({ ...prev, user }));
+    return user;
+  }, []);
+
   const upgradeToPro = useCallback(async (data: Record<string, any>) => {
     const response = await api.patch<{ user: User }>('/users/me/upgrade-pro', data);
     const user = response.data as unknown as User;
+    if (data.role) await storage.setItem('fixai_last_pro_role', String(data.role));
     await storage.setItem(USER_KEY, JSON.stringify(user));
     setState(prev => ({ ...prev, user }));
     return user;
@@ -131,6 +144,7 @@ export function useAuth() {
     register,
     registerProvider,
     updateMe,
+    switchRole,
     upgradeToPro,
     logout,
   };
