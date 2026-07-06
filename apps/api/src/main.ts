@@ -1,9 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Les documents (CNI, selfie, docs administratifs) sont envoyés en base64 :
+  // on relève la limite du corps de requête (défaut Express : 100 kb).
+  app.use(json({ limit: '25mb' }));
+  app.use(urlencoded({ limit: '25mb', extended: true }));
 
   app.setGlobalPrefix('api/v1');
 
