@@ -43,6 +43,26 @@ export class OrderEntity {
   @Column({ type: 'text' })
   description: string;
 
+  /** Type de service : DEPANNAGE | RENOVATION | DECORATION */
+  @Column({ nullable: true })
+  serviceType?: string;
+
+  /** True si cette commande est une mission de diagnostic sur place. */
+  @Column({ default: false })
+  isDiagnostic: boolean;
+
+  /** Frais du diagnostic (déduit du devis final si le client confirme la réparation). */
+  @Column({ type: 'int', default: 0 })
+  diagnosticFeeXof: number;
+
+  /** Constat rédigé par l'artisan après inspection. */
+  @Column({ type: 'text', nullable: true })
+  diagnosticResult?: string;
+
+  /** Devis final établi par l'IA à partir du constat de l'artisan. */
+  @Column({ type: 'int', nullable: true })
+  finalQuoteXof?: number;
+
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 

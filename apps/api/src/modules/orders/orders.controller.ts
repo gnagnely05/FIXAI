@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Patch, Param, Body, UseGuards, Request, ParseUUIDPipe } from '@nestjs/common';
-import { OrdersService, CreateOrderData } from './orders.service';
+import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards, Request, ParseUUIDPipe } from '@nestjs/common';
+import { OrdersService, CreateOrderData, CreateDiagnosticData } from './orders.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { UserEntity } from '../users/entities/user.entity';
 
@@ -16,6 +16,30 @@ export class OrdersController {
     @Body() body: CreateOrderData,
   ) {
     return this.ordersService.create(req.user, body);
+  }
+
+  /** Le client réserve un diagnostic sur place (problème complexe). */
+  @Post('diagnostic')
+  async createDiagnostic(
+    @Request() req: { user: UserEntity & AuthUser },
+    @Body() body: CreateDiagnosticData,
+  ) {
+    return this.ordersService.createDiagnostic(req.user, body);
+  }
+
+  /** Missions de diagnostic ouvertes, visibles par les artisans. */
+  @Get('diagnostics/available')
+  async availableDiagnostics(@Query('city') city?: string) {
+    return this.ordersService.findAvailableDiagnostics(city);
+  }
+
+  /** Un artisan accepte une mission de diagnostic. */
+  @Patch(':id/accept-diagnostic')
+  async acceptDiagnostic(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req: { user: AuthUser },
+  ) {
+    return this.ordersService.acceptDiagnostic(id, req.user.sub);
   }
 
   @Get('my')

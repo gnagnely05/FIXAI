@@ -1,4 +1,4 @@
-import { OrdersService, CreateOrderData } from './orders.service';
+import { OrdersService, CreateOrderData, CreateDiagnosticData } from './orders.service';
 import { UserEntity } from '../users/entities/user.entity';
 interface AuthUser {
     sub: string;
@@ -10,6 +10,16 @@ export declare class OrdersController {
     create(req: {
         user: UserEntity & AuthUser;
     }, body: CreateOrderData): Promise<import("./entities/order.entity").OrderEntity>;
+    /** Le client réserve un diagnostic sur place (problème complexe). */
+    createDiagnostic(req: {
+        user: UserEntity & AuthUser;
+    }, body: CreateDiagnosticData): Promise<import("./entities/order.entity").OrderEntity>;
+    /** Missions de diagnostic ouvertes, visibles par les artisans. */
+    availableDiagnostics(city?: string): Promise<import("./entities/order.entity").OrderEntity[]>;
+    /** Un artisan accepte une mission de diagnostic. */
+    acceptDiagnostic(id: string, req: {
+        user: AuthUser;
+    }): Promise<import("./entities/order.entity").OrderEntity>;
     getMyOrders(req: {
         user: AuthUser;
     }): Promise<import("./entities/order.entity").OrderEntity[]>;

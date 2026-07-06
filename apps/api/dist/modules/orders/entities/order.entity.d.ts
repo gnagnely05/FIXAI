@@ -20,6 +20,16 @@ export declare class OrderEntity {
     client: UserEntity;
     artisan: ArtisanEntity;
     description: string;
+    /** Type de service : DEPANNAGE | RENOVATION | DECORATION */
+    serviceType?: string;
+    /** True si cette commande est une mission de diagnostic sur place. */
+    isDiagnostic: boolean;
+    /** Frais du diagnostic (déduit du devis final si le client confirme la réparation). */
+    diagnosticFeeXof: number;
+    /** Constat rédigé par l'artisan après inspection. */
+    diagnosticResult?: string;
+    /** Devis final établi par l'IA à partir du constat de l'artisan. */
+    finalQuoteXof?: number;
     status: OrderStatus;
     scheduledAt: Date;
     completedAt?: Date;

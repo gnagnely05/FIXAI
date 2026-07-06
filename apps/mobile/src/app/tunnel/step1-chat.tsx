@@ -144,13 +144,29 @@ export default function Step1Chat() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={[styles.nextBtn, (!diagnosisResult || isLoading) && styles.nextBtnDisabled]}
-          onPress={handleNext}
-          disabled={!diagnosisResult || isLoading}
-        >
-          <Text style={styles.nextBtnText}>→  Suivant</Text>
-        </TouchableOpacity>
+        {diagnosisResult?.requiresDiagnostic ? (
+          <TouchableOpacity
+            style={styles.diagBtn}
+            onPress={() => router.push(
+              `/tunnel/diagnostic-booking?serviceType=${svcType}` +
+              `&description=${encodeURIComponent(messages.filter(m => m.role === 'user').map(m => m.content).join(' • '))}` +
+              `&fee=${diagnosisResult.diagnosticFeeXof ?? 5000}`
+            )}
+          >
+            <Ionicons name="construct-outline" size={18} color="#fff" />
+            <Text style={styles.nextBtnText}>
+              Réserver un diagnostic ({(diagnosisResult.diagnosticFeeXof ?? 5000).toLocaleString('fr-FR')} FCFA)
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.nextBtn, (!diagnosisResult || isLoading) && styles.nextBtnDisabled]}
+            onPress={handleNext}
+            disabled={!diagnosisResult || isLoading}
+          >
+            <Text style={styles.nextBtnText}>→  Suivant</Text>
+          </TouchableOpacity>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -200,4 +216,8 @@ const styles = StyleSheet.create({
   },
   nextBtnDisabled: { backgroundColor: '#D1D5DB' },
   nextBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  diagBtn: {
+    margin: 12, backgroundColor: '#B45309', flexDirection: 'row', gap: 8,
+    paddingVertical: 16, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+  },
 });

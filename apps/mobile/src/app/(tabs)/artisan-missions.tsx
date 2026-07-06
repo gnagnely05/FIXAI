@@ -12,6 +12,7 @@ interface Mission {
   status: string;
   scheduledAt: string;
   escrowAmount: number;
+  diagnosticFeeXof?: number;
   address?: string;
   client?: { firstName: string; lastName: string; phone?: string };
 }
@@ -44,21 +45,35 @@ const FILTERS = [
 export default function ArtisanMissionsScreen() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [filtered, setFiltered] = useState<Mission[]>([]);
+  const [diagnostics, setDiagnostics] = useState<Mission[]>([]);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = async () => {
     try {
-      const res = await api.get('/orders/my');
+      const [res, diag] = await Promise.all([
+        api.get('/orders/my'),
+        api.get('/orders/diagnostics/available').catch(() => ({ data: [] })),
+      ]);
       const data: Mission[] = res.data ?? [];
       setMissions(data);
+      setDiagnostics(diag.data ?? []);
       applyFilter(data, activeFilter);
     } catch {
       Alert.alert('Erreur', 'Impossible de charger les missions.');
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const handleAccept = async (id: string) => {
+    try {
+      await api.patch(`/orders/${id}/accept-diagnostic`, {});
+      load();
+    } catch (e: any) {
+      Alert.alert('Erreur', e?.response?.data?.message ?? 'Impossible d\'accepter ce diagnostic.');
     }
   };
 
@@ -102,6 +117,32 @@ export default function ArtisanMissionsScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#2E7D32" />}
       >
+        {/* Diagnostics disponibles à accepter */}
+        {activeFilter === 'ALL' && diagnostics.length > 0 && (
+          <View style={styles.diagSection}>
+            <Text style={styles.diagSectionTitle}>🔧 Diagnostics à réaliser</Text>
+            {diagnostics.map(d => (
+              <View key={d.id} style={[styles.card, styles.diagCard]}>
+                <View style={styles.cardTop}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.desc} numberOfLines={2}>{d.description}</Text>
+                    {d.address && <Text style={styles.address}><Ionicons name="location-outline" size={12} color="#9CA3AF" /> {d.address}</Text>}
+                  </View>
+                  <View style={[styles.badge, { backgroundColor: '#B4530920' }]}>
+                    <Text style={[styles.badgeText, { color: '#B45309' }]}>Diagnostic</Text>
+                  </View>
+                </View>
+                <View style={styles.cardBottom}>
+                  <Text style={styles.amount}>{Number(d.diagnosticFeeXof ?? d.escrowAmount).toLocaleString('fr-FR')} <Text style={styles.amountUnit}>FCFA</Text></Text>
+                  <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#B45309' }]} onPress={() => handleAccept(d.id)}>
+                    <Text style={styles.actionBtnText}>Accepter</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         {loading ? (
           <ActivityIndicator color="#2E7D32" style={{ marginTop: 40 }} />
         ) : filtered.length === 0 ? (
@@ -193,4 +234,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 8 },
   actionBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   actionBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  diagSection: { marginBottom: 16 },
+  diagSectionTitle: { fontSize: 14, fontWeight: '800', color: '#B45309', marginBottom: 10 },
+  diagCard: { borderColor: '#FED7AA', backgroundColor: '#FFFBF5' },
 });

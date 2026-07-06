@@ -14,6 +14,15 @@ export interface CreateOrderData {
   notes?: string;
 }
 
+export interface CreateDiagnosticData {
+  serviceType: string;
+  description: string;
+  address: string;
+  city: string;
+  scheduledAt?: Date;
+  diagnosticFeeXof: number;
+}
+
 @Injectable()
 export class OrdersService {
   constructor(
@@ -42,6 +51,54 @@ export class OrdersService {
       escrowStatus: EscrowStatus.NOT_FUNDED,
     });
 
+    return this.ordersRepo.save(order);
+  }
+
+  /**
+   * Crée une mission de DIAGNOSTIC (sans artisan assigné au départ).
+   * Elle devient visible aux artisans disponibles qui peuvent l'accepter.
+   */
+  async createDiagnostic(client: UserEntity, data: CreateDiagnosticData): Promise<OrderEntity> {
+    const order = this.ordersRepo.create({
+      client,
+      description: data.description,
+      serviceType: data.serviceType,
+      isDiagnostic: true,
+      diagnosticFeeXof: data.diagnosticFeeXof,
+      escrowAmount: data.diagnosticFeeXof,
+      scheduledAt: data.scheduledAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000),
+      address: data.address,
+      city: data.city,
+      status: OrderStatus.PENDING,
+      escrowStatus: EscrowStatus.NOT_FUNDED,
+    });
+    return this.ordersRepo.save(order);
+  }
+
+  /** Missions de diagnostic ouvertes (non encore acceptées par un artisan). */
+  async findAvailableDiagnostics(city?: string) {
+    const qb = this.ordersRepo
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.client', 'client')
+      .where('order.isDiagnostic = :d', { d: true })
+      .andWhere('order.artisan IS NULL')
+      .andWhere('order.status = :s', { s: OrderStatus.PENDING })
+      .orderBy('order.createdAt', 'DESC');
+    if (city) qb.andWhere('order.city = :city', { city });
+    return qb.getMany();
+  }
+
+  /** Un artisan accepte une mission de diagnostic → il s'y assigne. */
+  async acceptDiagnostic(orderId: string, artisanUserId: string): Promise<OrderEntity> {
+    const order = await this.findById(orderId);
+    if (!order.isDiagnostic) throw new BadRequestException("Ce n'est pas une mission de diagnostic");
+    if (order.artisan) throw new BadRequestException('Cette mission a déjà été acceptée');
+
+    const artisan = await this.artisansRepo.findOne({ where: { user: { id: artisanUserId } }, relations: ['user'] });
+    if (!artisan) throw new NotFoundException('Profil artisan introuvable');
+
+    order.artisan = artisan;
+    order.status = OrderStatus.CONFIRMED;
     return this.ordersRepo.save(order);
   }
 

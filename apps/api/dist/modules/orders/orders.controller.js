@@ -23,6 +23,18 @@ let OrdersController = class OrdersController {
     async create(req, body) {
         return this.ordersService.create(req.user, body);
     }
+    /** Le client réserve un diagnostic sur place (problème complexe). */
+    async createDiagnostic(req, body) {
+        return this.ordersService.createDiagnostic(req.user, body);
+    }
+    /** Missions de diagnostic ouvertes, visibles par les artisans. */
+    async availableDiagnostics(city) {
+        return this.ordersService.findAvailableDiagnostics(city);
+    }
+    /** Un artisan accepte une mission de diagnostic. */
+    async acceptDiagnostic(id, req) {
+        return this.ordersService.acceptDiagnostic(id, req.user.sub);
+    }
     async getMyOrders(req) {
         const { sub, role } = req.user;
         if (role === 'ARTISAN')
@@ -79,6 +91,29 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('diagnostic'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "createDiagnostic", null);
+__decorate([
+    (0, common_1.Get)('diagnostics/available'),
+    __param(0, (0, common_1.Query)('city')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "availableDiagnostics", null);
+__decorate([
+    (0, common_1.Patch)(':id/accept-diagnostic'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "acceptDiagnostic", null);
 __decorate([
     (0, common_1.Get)('my'),
     __param(0, (0, common_1.Request)()),

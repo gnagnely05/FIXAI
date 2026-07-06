@@ -10,12 +10,29 @@ export interface CreateOrderData {
     city: string;
     notes?: string;
 }
+export interface CreateDiagnosticData {
+    serviceType: string;
+    description: string;
+    address: string;
+    city: string;
+    scheduledAt?: Date;
+    diagnosticFeeXof: number;
+}
 export declare class OrdersService {
     private readonly ordersRepo;
     private readonly artisansRepo;
     private readonly usersRepo;
     constructor(ordersRepo: Repository<OrderEntity>, artisansRepo: Repository<ArtisanEntity>, usersRepo: Repository<UserEntity>);
     create(client: UserEntity, data: CreateOrderData): Promise<OrderEntity>;
+    /**
+     * Crée une mission de DIAGNOSTIC (sans artisan assigné au départ).
+     * Elle devient visible aux artisans disponibles qui peuvent l'accepter.
+     */
+    createDiagnostic(client: UserEntity, data: CreateDiagnosticData): Promise<OrderEntity>;
+    /** Missions de diagnostic ouvertes (non encore acceptées par un artisan). */
+    findAvailableDiagnostics(city?: string): Promise<OrderEntity[]>;
+    /** Un artisan accepte une mission de diagnostic → il s'y assigne. */
+    acceptDiagnostic(orderId: string, artisanUserId: string): Promise<OrderEntity>;
     findByClient(clientId: string): Promise<OrderEntity[]>;
     findByArtisan(artisanId: string): Promise<OrderEntity[]>;
     findByArtisanUserId(userId: string): Promise<OrderEntity[]>;
