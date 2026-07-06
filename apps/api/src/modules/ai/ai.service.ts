@@ -168,6 +168,7 @@ export class AiService {
     serviceType: string,
     messages: string[],
     imageUrls: string[],
+    clientTurns = 1,
   ): Promise<{
     summary: string;
     detectedIssue: string;
@@ -186,17 +187,19 @@ export class AiService {
     };
     const label = serviceLabels[serviceType] ?? serviceType;
     const conversation = messages.join('\n');
-    // Nombre d'échanges du client (les messages assistant sont mêlés, on estime)
-    const userTurns = Math.ceil(messages.length / 2);
+    // Le client a déjà envoyé (clientTurns) messages. On autorise 3 questions max
+    // après la description initiale → on force la décision au 4e message du client.
+    const questionsAsked = Math.max(0, clientTurns - 1);
+    const mustDecide = clientTurns >= 4;
 
     const systemInstruction = `Tu es un expert en ${label} en Côte d'Ivoire, chaleureux et pédagogue.
-Le client N'EST PAS un technicien : il ne connaît pas le vocabulaire ni les détails. Ton rôle est de le GUIDER pas à pas avec des questions SIMPLES, concrètes et faciles à répondre, pour rassembler assez d'informations avant de décider.
+Le client N'EST PAS un technicien. Il vient de te décrire son besoin.
 
-RÈGLES DE CONVERSATION :
-- Pose UNE seule question à la fois, courte et sans jargon, avec des exemples de réponses possibles dans "options".
+RÈGLES IMPORTANTES :
+- Le client a déjà posé ${questionsAsked} question(s) de ta part. Tu peux poser AU MAXIMUM 3 questions au total, et UNIQUEMENT si c'est vraiment nécessaire pour comprendre.
+- Si la description est déjà suffisamment claire, NE POSE PAS de question : passe directement à la décision (readyForDecision=true).
+- ${mustDecide ? 'Tu as atteint la limite de questions : tu DOIS impérativement mettre readyForDecision=true et donner ta décision maintenant.' : 'Si tu poses une question, une seule à la fois, courte, sans jargon, avec des exemples de réponses dans "options".'}
 - Ne demande jamais deux choses en même temps.
-- Continue à poser des questions tant que tu n'as pas assez d'éléments (nature exacte du problème, depuis quand, à quel endroit, ce que le client observe/entend/voit, gravité apparente).
-- Ne donne un devis ou une décision de diagnostic QUE lorsque tu as assez compris.
 
 Réponds UNIQUEMENT en JSON valide avec exactement ces champs :
 {
@@ -225,7 +228,8 @@ Ne fournis aucun texte en dehors du JSON.`;
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-        const ready = Boolean(parsed.readyForDecision);
+        // On force la décision si la limite de 3 questions est atteinte
+        const ready = mustDecide || Boolean(parsed.readyForDecision);
         const requiresDiagnostic = ready && Boolean(parsed.requiresDiagnostic);
         return {
           ...parsed,
@@ -248,7 +252,7 @@ Ne fournis aucun texte en dehors du JSON.`;
     const [minPrice, maxPrice] = priceMap[serviceType] ?? [15000, 60000];
 
     // Premier tour : on pose une question de cadrage plutôt que de décider
-    if (userTurns < 2) {
+    if (clientTurns < 2 && !mustDecide) {
       return {
         summary: `Je veux bien vous aider avec votre besoin de ${label}. Précisons ensemble.`,
         detectedIssue: 'Analyse en cours',

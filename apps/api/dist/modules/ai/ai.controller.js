@@ -49,7 +49,7 @@ let AiController = AiController_1 = class AiController {
     // Pas de guard — accessible sans connexion pour le tunnel de devis
     async diagnose(dto) {
         try {
-            return await this.service.diagnose(dto.serviceType, dto.messages, dto.imageUrls ?? []);
+            return await this.service.diagnose(dto.serviceType, dto.messages, dto.imageUrls ?? [], dto.clientTurns ?? 1);
         }
         catch (err) {
             this.logger.error('[diagnose] Unexpected error:', err);

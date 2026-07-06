@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import { Ionicons } from '@expo/vector-icons';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 const { width: W } = Dimensions.get('window');
@@ -47,11 +48,27 @@ const PROBLEMS: { key: Problem; label: string }[] = [
   { key: 'ENVIE_CHANGEMENT', label: 'Envie de changement' },
 ];
 
-const STYLES: { key: Style; label: string; desc: string; color: string }[] = [
-  { key: 'MODERNE_EPURE',    label: 'Moderne épuré',    desc: 'Lignes claires, tons neutres',   color: '#E8EAF6' },
-  { key: 'CHAUD_NATUREL',    label: 'Chaud & naturel',  desc: 'Bois, textiles cosy, tropical',  color: '#FFF3E0' },
-  { key: 'COLORE_VIVANT',    label: 'Coloré & vivant',  desc: 'Accents vifs, motifs audacieux', color: '#FCE4EC' },
-  { key: 'CLASSIQUE_ELEGANT',label: 'Classique élégant',desc: 'Raffiné, intemporel',            color: '#EDE7F6' },
+const STYLES: { key: Style; label: string; desc: string; color: string; palette: string[]; image: string }[] = [
+  {
+    key: 'MODERNE_EPURE', label: 'Moderne épuré', desc: 'Lignes claires, tons neutres, minimaliste',
+    color: '#E8EAF6', palette: ['#FFFFFF', '#D7D7D7', '#9E9E9E', '#2E2E2E'],
+    image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=400&q=55&auto=format&fit=crop',
+  },
+  {
+    key: 'CHAUD_NATUREL', label: 'Chaud & naturel', desc: 'Bois, textiles cosy, plantes, tons terre',
+    color: '#FFF3E0', palette: ['#F3E3CE', '#C89B6C', '#8B5A2B', '#4E7C4E'],
+    image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&q=55&auto=format&fit=crop',
+  },
+  {
+    key: 'COLORE_VIVANT', label: 'Coloré & vivant', desc: 'Accents vifs, motifs audacieux, énergique',
+    color: '#FCE4EC', palette: ['#FFD166', '#EF476F', '#06D6A0', '#118AB2'],
+    image: 'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=400&q=55&auto=format&fit=crop',
+  },
+  {
+    key: 'CLASSIQUE_ELEGANT', label: 'Classique élégant', desc: 'Raffiné, matières nobles, intemporel',
+    color: '#EDE7F6', palette: ['#F4EFE6', '#C9A66B', '#6B4E2E', '#2B2B3A'],
+    image: 'https://images.unsplash.com/photo-1600210492493-0946911123ea?w=400&q=55&auto=format&fit=crop',
+  },
 ];
 
 const BUDGETS: { key: Budget; label: string }[] = [
@@ -248,17 +265,35 @@ export default function DecorationScreen() {
         {step === 4 && (
           <View style={s.stepBox}>
             <Text style={s.stepTitle}>Quel style tu aimes ?</Text>
+            <Text style={s.stepSub}>Regarde les exemples ci-dessous et choisis l'ambiance qui te parle.</Text>
             <View style={s.styleGrid}>
-              {STYLES.map(st => (
-                <TouchableOpacity
-                  key={st.key}
-                  style={[s.styleCard, { backgroundColor: st.color }, form.style === st.key && s.styleCardActive]}
-                  onPress={() => setForm(f => ({ ...f, style: st.key }))}
-                >
-                  <Text style={[s.styleLabel, form.style === st.key && s.styleLabelActive]}>{st.label}</Text>
-                  <Text style={s.styleDesc}>{st.desc}</Text>
-                </TouchableOpacity>
-              ))}
+              {STYLES.map(st => {
+                const active = form.style === st.key;
+                return (
+                  <TouchableOpacity
+                    key={st.key}
+                    style={[s.styleCard, active && s.styleCardActive]}
+                    onPress={() => setForm(f => ({ ...f, style: st.key }))}
+                    activeOpacity={0.85}
+                  >
+                    <Image source={{ uri: st.image }} style={s.styleImage} resizeMode="cover" />
+                    <View style={s.stylePalette}>
+                      {st.palette.map((c, i) => (
+                        <View key={i} style={[s.styleSwatch, { backgroundColor: c }]} />
+                      ))}
+                    </View>
+                    <View style={s.styleInfo}>
+                      <Text style={[s.styleLabel, active && s.styleLabelActive]}>{st.label}</Text>
+                      <Text style={s.styleDesc}>{st.desc}</Text>
+                    </View>
+                    {active && (
+                      <View style={s.styleCheck}>
+                        <Ionicons name="checkmark-circle" size={22} color="#6B3FA0" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         )}
@@ -410,14 +445,24 @@ const s = StyleSheet.create({
   chipActive: { borderColor: '#6B3FA0', backgroundColor: '#6B3FA0' },
   chipText: { fontSize: 14, color: '#374151', fontWeight: '600' },
   chipTextActive: { color: '#fff' },
-  styleGrid: { gap: 12 },
+  styleGrid: { gap: 14 },
   styleCard: {
-    borderRadius: 14, padding: 18, borderWidth: 2, borderColor: 'transparent',
+    borderRadius: 16, borderWidth: 2, borderColor: '#EEE', backgroundColor: '#fff',
+    overflow: 'hidden', position: 'relative',
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
   },
   styleCardActive: { borderColor: '#6B3FA0' },
+  styleImage: { width: '100%', height: 140, backgroundColor: '#EEE' },
+  stylePalette: { flexDirection: 'row', height: 10 },
+  styleSwatch: { flex: 1 },
+  styleInfo: { padding: 14 },
   styleLabel: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 4 },
   styleLabelActive: { color: '#6B3FA0' },
   styleDesc: { fontSize: 13, color: '#6B7280' },
+  styleCheck: {
+    position: 'absolute', top: 10, right: 10,
+    backgroundColor: '#fff', borderRadius: 12,
+  },
   bigOption: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: '#fff', borderRadius: 14, padding: 16,

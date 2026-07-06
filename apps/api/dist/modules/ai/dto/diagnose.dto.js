@@ -29,4 +29,9 @@ __decorate([
     (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], DiagnoseDto.prototype, "imageUrls", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], DiagnoseDto.prototype, "clientTurns", void 0);
 //# sourceMappingURL=diagnose.dto.js.map

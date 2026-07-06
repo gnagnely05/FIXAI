@@ -1,4 +1,4 @@
-import { IsString, IsArray, IsOptional } from 'class-validator';
+import { IsString, IsArray, IsOptional, IsNumber } from 'class-validator';
 
 export class DiagnoseDto {
   @IsString()
@@ -12,4 +12,8 @@ export class DiagnoseDto {
   @IsArray()
   @IsString({ each: true })
   imageUrls?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  clientTurns?: number;
 }

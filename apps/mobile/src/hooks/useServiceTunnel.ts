@@ -33,17 +33,17 @@ export interface Quote {
 
 const SERVICE_CONFIGS = {
   DEPANNAGE: {
-    welcomeMessage: "Bonjour ! Je suis votre assistant FixAI. Décrivez-moi votre problème avec des photos si possible.",
+    welcomeMessage: "Bonjour ! Je suis votre assistant FixAI. Pour aller vite, décrivez-moi un maximum de détails :\n• Qu'est-ce qui ne marche pas ? (ex : robinet, prise, clim...)\n• Depuis quand ?\n• Ce que vous voyez/entendez/sentez (fuite, bruit, odeur...)\n• Ajoutez une photo si possible 📷\n\nJe vous poserai au plus 3 questions si besoin.",
     systemLabel: "Réparation & Dépannage",
     apiEndpoint: '/depannage',
   },
   RENOVATION: {
-    welcomeMessage: "Bonjour ! Décrivez votre projet de rénovation. Ajoutez des photos pour un devis plus précis.",
+    welcomeMessage: "Bonjour ! Décrivez votre projet de rénovation avec un maximum de détails :\n• Quelle pièce ? (cuisine, salle de bain, salon...)\n• Ce que vous voulez changer\n• La surface approximative\n• Ajoutez des photos 📷\n\nJe vous poserai au plus 3 questions si besoin.",
     systemLabel: "Rénovation",
     apiEndpoint: '/renovation',
   },
   DECORATION: {
-    welcomeMessage: "Bonjour ! Décrivez votre projet de décoration. Partagez des photos de votre espace.",
+    welcomeMessage: "Bonjour ! Décrivez votre projet de décoration :\n• Quelle pièce ?\n• L'ambiance qui vous plaît (voir les styles ci-dessous)\n• Ce que vous aimez / n'aimez pas\n• Ajoutez des photos de votre espace 📷",
     systemLabel: "Décoration d'intérieur",
     apiEndpoint: '/decoration',
   },
@@ -87,11 +87,14 @@ export function useServiceTunnel(serviceType: ServiceType) {
     setIsLoading(true);
 
     try {
-      const messageTexts = [...messages, userMessage].map(m => m.content);
+      const allMsgs = [...messages, userMessage];
+      const messageTexts = allMsgs.map(m => m.content);
+      const clientTurns = allMsgs.filter(m => m.role === 'user').length;
       const response = await axios.post(`${API_BASE_URL}/ai/diagnose`, {
         serviceType,
         messages: messageTexts,
         imageUrls: images,
+        clientTurns,
       });
       const result: DiagnosisResult = response.data;
       setDiagnosisResult(result);

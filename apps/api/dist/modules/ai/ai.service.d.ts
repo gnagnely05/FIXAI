@@ -26,7 +26,7 @@ export declare class AiService {
         reply?: string;
         error?: string;
     }>;
-    diagnose(serviceType: string, messages: string[], imageUrls: string[]): Promise<{
+    diagnose(serviceType: string, messages: string[], imageUrls: string[], clientTurns?: number): Promise<{
         summary: string;
         detectedIssue: string;
         question: string;

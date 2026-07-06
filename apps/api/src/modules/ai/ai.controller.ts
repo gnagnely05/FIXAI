@@ -57,7 +57,7 @@ export class AiController {
   @Post('diagnose')
   async diagnose(@Body() dto: DiagnoseDto) {
     try {
-      return await this.service.diagnose(dto.serviceType, dto.messages, dto.imageUrls ?? []);
+      return await this.service.diagnose(dto.serviceType, dto.messages, dto.imageUrls ?? [], dto.clientTurns ?? 1);
     } catch (err) {
       this.logger.error('[diagnose] Unexpected error:', err);
       const serviceType = dto.serviceType ?? 'DEPANNAGE';
