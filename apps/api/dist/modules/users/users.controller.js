@@ -11,14 +11,16 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var UsersController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
 const users_service_1 = require("./users.service");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
-let UsersController = class UsersController {
+let UsersController = UsersController_1 = class UsersController {
     constructor(usersService) {
         this.usersService = usersService;
+        this.logger = new common_1.Logger(UsersController_1.name);
     }
     async getProfile(req) {
         return this.usersService.findById(req.user.sub);
@@ -27,7 +29,17 @@ let UsersController = class UsersController {
         return this.usersService.updateProfile(req.user.sub, body);
     }
     async upgradeToPro(req, body) {
-        return this.usersService.upgradeToPro(req.user.sub, body);
+        try {
+            return await this.usersService.upgradeToPro(req.user.sub, body);
+        }
+        catch (err) {
+            if (err instanceof common_1.HttpException)
+                throw err;
+            // Faire remonter le vrai message (ex: colonne manquante) au lieu d'un 500 opaque
+            const detail = err?.sqlMessage ?? err?.message ?? 'Erreur inconnue';
+            this.logger.error(`[upgrade-pro] ${detail}`, err?.stack);
+            throw new common_1.BadRequestException(`Activation impossible : ${detail}`);
+        }
     }
 };
 exports.UsersController = UsersController;
@@ -54,7 +66,7 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "upgradeToPro", null);
-exports.UsersController = UsersController = __decorate([
+exports.UsersController = UsersController = UsersController_1 = __decorate([
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [users_service_1.UsersService])

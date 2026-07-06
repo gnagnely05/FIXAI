@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Patch, Body, UseGuards, Request, Logger, BadRequestException, HttpException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { UserEntity } from './entities/user.entity';
@@ -7,6 +7,7 @@ import { UserRole } from '../../common/enums/user-role.enum';
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
+  private readonly logger = new Logger(UsersController.name);
   constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
@@ -42,6 +43,14 @@ export class UsersController {
       documents?: Array<{ type: string; url: string }>;
     },
   ) {
-    return this.usersService.upgradeToPro(req.user.sub, body);
+    try {
+      return await this.usersService.upgradeToPro(req.user.sub, body);
+    } catch (err: any) {
+      if (err instanceof HttpException) throw err;
+      // Faire remonter le vrai message (ex: colonne manquante) au lieu d'un 500 opaque
+      const detail = err?.sqlMessage ?? err?.message ?? 'Erreur inconnue';
+      this.logger.error(`[upgrade-pro] ${detail}`, err?.stack);
+      throw new BadRequestException(`Activation impossible : ${detail}`);
+    }
   }
 }

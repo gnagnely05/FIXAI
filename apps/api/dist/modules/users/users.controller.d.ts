@@ -3,6 +3,7 @@ import { UserEntity } from './entities/user.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
 export declare class UsersController {
     private readonly usersService;
+    private readonly logger;
     constructor(usersService: UsersService);
     getProfile(req: {
         user: {
