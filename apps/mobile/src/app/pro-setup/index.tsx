@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  TextInput, Alert, ActivityIndicator, SafeAreaView, Image,
+  TextInput, ActivityIndicator, SafeAreaView, Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,6 +49,7 @@ export default function ProSetupScreen() {
   const [step, setStep] = useState<'choose' | 'form'>('choose');
   const [selected, setSelected] = useState<ProRole | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     specialty: '', city: '', agencyName: '', shopName: '', address: '', description: '', btpMode: 'AGENCE',
   });
@@ -84,30 +85,31 @@ export default function ProSetupScreen() {
   };
 
   const handleSubmit = async () => {
+    setError('');
     if (!selected) return;
     if ((selected === 'ARTISAN') && !form.specialty) {
-      return Alert.alert('Champs manquants', 'Veuillez choisir votre spécialité.');
+      return setError('Veuillez choisir votre spécialité.');
     }
     if (['ARTISAN', 'AGENCE_HOTE', 'ENTREPRISE_BTP'].includes(selected) && !form.city) {
-      return Alert.alert('Champs manquants', 'Veuillez sélectionner votre ville.');
+      return setError('Veuillez sélectionner votre ville.');
     }
     if (selected === 'AGENCE_HOTE' && !form.agencyName.trim()) {
-      return Alert.alert('Champs manquants', 'Veuillez entrer le nom de votre agence.');
+      return setError('Veuillez entrer le nom de votre agence.');
     }
     if (selected === 'ENTREPRISE_BTP' && !form.agencyName.trim()) {
-      return Alert.alert('Champs manquants', 'Veuillez entrer le nom de votre entreprise.');
+      return setError('Veuillez entrer le nom de votre entreprise.');
     }
     if (['BOUTIQUE', 'QUINCAILLERIE'].includes(selected) && !form.shopName.trim()) {
-      return Alert.alert('Champs manquants', 'Veuillez entrer le nom de votre établissement.');
+      return setError('Veuillez entrer le nom de votre établissement.');
     }
 
     // Validation des pièces justificatives
     if (selected === 'ARTISAN') {
-      if (!idDoc) return Alert.alert('Document requis', "Veuillez ajouter une photo de votre pièce d'identité.");
-      if (!selfieDoc) return Alert.alert('Document requis', 'Veuillez ajouter un selfie.');
+      if (!idDoc) return setError("Veuillez ajouter une photo de votre pièce d'identité.");
+      if (!selfieDoc) return setError('Veuillez ajouter un selfie.');
     }
     if (['AGENCE_HOTE', 'ENTREPRISE_BTP', 'BOUTIQUE', 'QUINCAILLERIE'].includes(selected) && adminDocs.length === 0) {
-      return Alert.alert('Documents requis', 'Veuillez ajouter au moins un document administratif.');
+      return setError('Veuillez ajouter au moins un document administratif.');
     }
 
     // Construction de la liste des documents
@@ -129,13 +131,11 @@ export default function ProSetupScreen() {
         btpMode: selected === 'ENTREPRISE_BTP' ? form.btpMode : undefined,
         documents: documents.length ? documents : undefined,
       });
-      Alert.alert(
-        'Espace Pro activé !',
-        'Votre profil professionnel est activé. Vous avez maintenant accès à votre espace.',
-        [{ text: 'OK', onPress: () => router.replace('/(tabs)') }],
-      );
+      // Navigation directe (pas de dépendance à un bouton d'Alert non fiable sur web)
+      router.replace('/(tabs)');
     } catch (e: any) {
-      Alert.alert('Erreur', e?.response?.data?.message ?? 'Impossible d\'activer l\'espace pro.');
+      const msg = e?.response?.data?.message ?? e?.message ?? "Impossible d'activer l'espace pro.";
+      setError(Array.isArray(msg) ? msg.join('\n') : msg);
     } finally {
       setLoading(false);
     }
@@ -384,6 +384,13 @@ export default function ProSetupScreen() {
           </Text>
         </View>
 
+        {error ? (
+          <View style={styles.errorBox}>
+            <Ionicons name="alert-circle-outline" size={16} color="#DC2626" />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
         <TouchableOpacity
           style={[styles.btn, loading && styles.btnDisabled]}
           onPress={handleSubmit}
@@ -534,6 +541,12 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', backgroundColor: '#FAF7FF', gap: 2,
   },
   adminAddText: { color: '#6B3FA0', fontSize: 11, fontWeight: '600' },
+  errorBox: {
+    flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+    backgroundColor: '#FEF2F2', borderRadius: 12, padding: 14, marginBottom: 12,
+    borderWidth: 1, borderColor: '#FECACA',
+  },
+  errorText: { flex: 1, fontSize: 13, color: '#DC2626', lineHeight: 19 },
   verifBannerShop: { backgroundColor: '#ECFDF3' },
   verifText: { flex: 1, fontSize: 13, color: '#1E40AF', lineHeight: 19 },
   verifTextShop: { color: '#15803D' },
