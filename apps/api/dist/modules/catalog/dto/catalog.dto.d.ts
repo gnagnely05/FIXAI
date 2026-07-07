@@ -16,7 +16,12 @@ export declare class CreateProductDto {
     merchantName: string;
     merchantType: MerchantType;
     imageUrls?: string[];
+    imageUrl?: string;
     unit?: string;
     stock?: number;
+    lengthCm?: number;
+    widthCm?: number;
+    heightCm?: number;
+    weightKg?: number;
 }
 //# sourceMappingURL=catalog.dto.d.ts.map

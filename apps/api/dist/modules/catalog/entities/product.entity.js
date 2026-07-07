@@ -71,6 +71,10 @@ __decorate([
     __metadata("design:type", Array)
 ], ProductEntity.prototype, "imageUrls", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'longtext', nullable: true }),
+    __metadata("design:type", String)
+], ProductEntity.prototype, "imageUrl", void 0);
+__decorate([
     (0, typeorm_1.Column)({ default: true }),
     __metadata("design:type", Boolean)
 ], ProductEntity.prototype, "isAvailable", void 0);
@@ -82,6 +86,22 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], ProductEntity.prototype, "unit", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'float', nullable: true }),
+    __metadata("design:type", Number)
+], ProductEntity.prototype, "lengthCm", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'float', nullable: true }),
+    __metadata("design:type", Number)
+], ProductEntity.prototype, "widthCm", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'float', nullable: true }),
+    __metadata("design:type", Number)
+], ProductEntity.prototype, "heightCm", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'float', nullable: true }),
+    __metadata("design:type", Number)
+], ProductEntity.prototype, "weightKg", void 0);
 __decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)

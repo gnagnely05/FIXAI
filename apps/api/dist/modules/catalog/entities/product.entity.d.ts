@@ -26,9 +26,17 @@ export declare class ProductEntity {
     merchantName: string;
     merchantType: MerchantType;
     imageUrls: string[];
+    /** Photo principale du produit (URL ou data URI base64) */
+    imageUrl?: string;
     isAvailable: boolean;
     stock: number;
     unit: string;
+    /** Dimensions du produit (cm) */
+    lengthCm?: number;
+    widthCm?: number;
+    heightCm?: number;
+    /** Poids du produit (kg) */
+    weightKg?: number;
     /**
      * Produit promu : priorisé dans les suggestions IA et l'affichage catalogue.
      * Activé par la boutique (option payante).

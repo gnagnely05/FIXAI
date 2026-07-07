@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsInt, Min } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsInt, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProductCategory, MerchantType } from '../entities/product.entity';
 
@@ -62,10 +62,34 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsString()
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsString()
   unit?: string;
 
   @IsOptional()
   @IsInt()
   @Min(0)
   stock?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  lengthCm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  widthCm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  heightCm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  weightKg?: number;
 }

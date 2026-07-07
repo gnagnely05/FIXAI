@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Alert,
-  Modal, TextInput, ActivityIndicator, RefreshControl, Switch,
+  Modal, TextInput, ActivityIndicator, RefreshControl, Switch, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../hooks/useAuth';
 import { api } from '../../services/api';
 
@@ -31,6 +32,11 @@ interface Product {
   unit?: string;
   isAvailable: boolean;
   isPromoted: boolean;
+  imageUrl?: string;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
+  weightKg?: number;
 }
 
 interface FormState {
@@ -41,10 +47,16 @@ interface FormState {
   stock: string;
   unit: string;
   isAvailable: boolean;
+  imageUrl: string;
+  lengthCm: string;
+  widthCm: string;
+  heightCm: string;
+  weightKg: string;
 }
 
 const EMPTY_FORM: FormState = {
   name: '', description: '', category: CATEGORIES[0], priceXof: '', stock: '', unit: '', isAvailable: true,
+  imageUrl: '', lengthCm: '', widthCm: '', heightCm: '', weightKg: '',
 };
 
 export default function ShopCatalogScreen() {
@@ -87,8 +99,21 @@ export default function ShopCatalogScreen() {
       stock: String(p.stock),
       unit: p.unit ?? '',
       isAvailable: p.isAvailable,
+      imageUrl: p.imageUrl ?? '',
+      lengthCm: p.lengthCm != null ? String(p.lengthCm) : '',
+      widthCm: p.widthCm != null ? String(p.widthCm) : '',
+      heightCm: p.heightCm != null ? String(p.heightCm) : '',
+      weightKg: p.weightKg != null ? String(p.weightKg) : '',
     });
     setModalVisible(true);
+  }
+
+  async function pickImage() {
+    const res = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.5, mediaTypes: ImagePicker.MediaTypeOptions.Images });
+    if (res.canceled || !res.assets?.length) return;
+    const a = res.assets[0];
+    const uri = a.base64 ? `data:${a.mimeType ?? 'image/jpeg'};base64,${a.base64}` : a.uri;
+    setForm(f => ({ ...f, imageUrl: uri }));
   }
 
   async function save() {
@@ -107,6 +132,11 @@ export default function ShopCatalogScreen() {
         stock: parseInt(form.stock || '0', 10),
         unit: form.unit.trim() || undefined,
         isAvailable: form.isAvailable,
+        imageUrl: form.imageUrl || undefined,
+        lengthCm: form.lengthCm ? parseFloat(form.lengthCm) : undefined,
+        widthCm: form.widthCm ? parseFloat(form.widthCm) : undefined,
+        heightCm: form.heightCm ? parseFloat(form.heightCm) : undefined,
+        weightKg: form.weightKg ? parseFloat(form.weightKg) : undefined,
         merchantId: u?.sub ?? u?.id,
         merchantName: u?.shopName ?? u?.merchantName ?? '',
         merchantType: u?.role === 'BOUTIQUE' ? 'BOUTIQUE' : 'QUINCAILLERIE',
@@ -154,6 +184,7 @@ export default function ShopCatalogScreen() {
     return (
       <View style={styles.productCard}>
         <View style={styles.productHeader}>
+          {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.cardThumb} /> : null}
           <View style={{ flex: 1 }}>
             <View style={styles.nameRow}>
               <Text style={styles.productName}>{item.name}</Text>
@@ -247,6 +278,17 @@ export default function ShopCatalogScreen() {
             ListHeaderComponent={
               <View style={{ padding: 16, gap: 14 }}>
                 <View>
+                  <Text style={styles.fieldLabel}>Photo du produit</Text>
+                  <TouchableOpacity style={styles.imageBox} onPress={pickImage} activeOpacity={0.8}>
+                    {form.imageUrl
+                      ? <Image source={{ uri: form.imageUrl }} style={styles.imagePreview} resizeMode="cover" />
+                      : <View style={styles.imagePlaceholder}>
+                          <Ionicons name="camera-outline" size={28} color={ACCENT} />
+                          <Text style={styles.imageHint}>Ajouter une photo</Text>
+                        </View>}
+                  </TouchableOpacity>
+                </View>
+                <View>
                   <Text style={styles.fieldLabel}>Nom du produit *</Text>
                   <TextInput style={styles.input} value={form.name} onChangeText={v => setForm(f => ({ ...f, name: v }))} placeholder="Ex: Ciment Portland 50kg" />
                 </View>
@@ -278,6 +320,29 @@ export default function ShopCatalogScreen() {
                   <Text style={styles.fieldLabel}>Stock</Text>
                   <TextInput style={styles.input} value={form.stock} onChangeText={v => setForm(f => ({ ...f, stock: v }))} keyboardType="numeric" placeholder="0 = illimité" />
                 </View>
+
+                <Text style={styles.sectionTitle}>Format du produit</Text>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Longueur (cm)</Text>
+                    <TextInput style={styles.input} value={form.lengthCm} onChangeText={v => setForm(f => ({ ...f, lengthCm: v }))} keyboardType="numeric" placeholder="Ex: 120" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Largeur (cm)</Text>
+                    <TextInput style={styles.input} value={form.widthCm} onChangeText={v => setForm(f => ({ ...f, widthCm: v }))} keyboardType="numeric" placeholder="Ex: 60" />
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Hauteur / Taille (cm)</Text>
+                    <TextInput style={styles.input} value={form.heightCm} onChangeText={v => setForm(f => ({ ...f, heightCm: v }))} keyboardType="numeric" placeholder="Ex: 75" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fieldLabel}>Poids (kg)</Text>
+                    <TextInput style={styles.input} value={form.weightKg} onChangeText={v => setForm(f => ({ ...f, weightKg: v }))} keyboardType="numeric" placeholder="Ex: 50" />
+                  </View>
+                </View>
+
                 <View style={styles.switchRow}>
                   <Text style={styles.fieldLabel}>Disponible à la vente</Text>
                   <Switch value={form.isAvailable} onValueChange={v => setForm(f => ({ ...f, isAvailable: v }))} trackColor={{ false: '#D1D5DB', true: ACCENT }} thumbColor="#fff" />
@@ -295,6 +360,12 @@ export default function ShopCatalogScreen() {
 }
 
 const styles = StyleSheet.create({
+  imageBox: { height: 160, borderRadius: 12, overflow: 'hidden', borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#fff' },
+  imagePreview: { width: '100%', height: '100%' },
+  imagePlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6, borderStyle: 'dashed', borderWidth: 1.5, borderColor: '#FED7AA', borderRadius: 12, backgroundColor: '#FFFBF5' },
+  imageHint: { color: '#E65100', fontWeight: '600', fontSize: 13 },
+  sectionTitle: { fontSize: 13, fontWeight: '800', color: '#E65100', marginTop: 4 },
+  cardThumb: { width: 48, height: 48, borderRadius: 10, marginRight: 10, backgroundColor: '#EEE' },
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
   topTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },

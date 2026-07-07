@@ -49,6 +49,10 @@ export class ProductEntity {
   @Column({ type: 'simple-array', nullable: true })
   imageUrls: string[];
 
+  /** Photo principale du produit (URL ou data URI base64) */
+  @Column({ type: 'longtext', nullable: true })
+  imageUrl?: string;
+
   @Column({ default: true })
   isAvailable: boolean;
 
@@ -57,6 +61,20 @@ export class ProductEntity {
 
   @Column({ nullable: true })
   unit: string; // e.g. "sac 50kg", "m²", "pièce"
+
+  /** Dimensions du produit (cm) */
+  @Column({ type: 'float', nullable: true })
+  lengthCm?: number;
+
+  @Column({ type: 'float', nullable: true })
+  widthCm?: number;
+
+  @Column({ type: 'float', nullable: true })
+  heightCm?: number;
+
+  /** Poids du produit (kg) */
+  @Column({ type: 'float', nullable: true })
+  weightKg?: number;
 
   /**
    * Produit promu : priorisé dans les suggestions IA et l'affichage catalogue.
