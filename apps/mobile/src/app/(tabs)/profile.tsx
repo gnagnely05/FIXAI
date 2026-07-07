@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
@@ -87,10 +87,16 @@ export default function ProfileScreen() {
   if (isLoading) return null;
   if (!user) return <GuestProfile />;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Sur web, Alert.alert ne déclenche pas les callbacks → on utilise window.confirm
+    if (Platform.OS === 'web') {
+      const ok = typeof window !== 'undefined' ? window.confirm('Voulez-vous vous déconnecter ?') : true;
+      if (ok) { await logout(); router.replace('/(tabs)'); }
+      return;
+    }
     Alert.alert('Déconnexion', 'Voulez-vous vous déconnecter ?', [
       { text: 'Annuler', style: 'cancel' },
-      { text: 'Déconnexion', style: 'destructive', onPress: async () => { await logout(); } },
+      { text: 'Déconnexion', style: 'destructive', onPress: async () => { await logout(); router.replace('/(tabs)'); } },
     ]);
   };
 
