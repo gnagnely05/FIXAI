@@ -30,6 +30,7 @@ export declare class UsersService {
             type: string;
             url: string;
         }>;
+        contractAccepted?: boolean;
     }): Promise<UserEntity>;
 }
 //# sourceMappingURL=users.service.d.ts.map

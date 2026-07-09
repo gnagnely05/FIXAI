@@ -33,6 +33,7 @@ export declare class UsersController {
             type: string;
             url: string;
         }>;
+        contractAccepted?: boolean;
     }): Promise<UserEntity>;
     switchRole(req: {
         user: {

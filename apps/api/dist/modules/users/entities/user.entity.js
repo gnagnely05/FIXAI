@@ -105,6 +105,10 @@ __decorate([
     __metadata("design:type", String)
 ], UserEntity.prototype, "payoutNumber", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", Date)
+], UserEntity.prototype, "proContractAcceptedAt", void 0);
+__decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Number)
 ], UserEntity.prototype, "radiusKm", void 0);

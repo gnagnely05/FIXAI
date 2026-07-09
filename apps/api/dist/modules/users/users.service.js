@@ -106,6 +106,8 @@ let UsersService = class UsersService {
             updates.btpMode = data.btpMode;
         if (data.radiusKm)
             updates.radiusKm = data.radiusKm;
+        if (data.contractAccepted)
+            updates.proContractAcceptedAt = new Date();
         await this.usersRepo.update(id, updates);
         // Enregistrement des pièces justificatives (CNI, selfie, docs administratifs)
         if (data.documents?.length) {

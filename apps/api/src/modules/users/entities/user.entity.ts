@@ -90,6 +90,10 @@ export class UserEntity {
   @Column({ nullable: true })
   payoutNumber?: string;
 
+  /** Date d'acceptation du contrat professionnel (null = non accepté) */
+  @Column({ type: 'timestamp', nullable: true })
+  proContractAcceptedAt?: Date;
+
   /** Service radius in km (for artisans/agencies) */
   @Column({ nullable: true })
   radiusKm?: number;

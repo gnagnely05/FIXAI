@@ -86,6 +86,7 @@ export class UsersService {
     btpMode?: string;
     radiusKm?: number;
     documents?: Array<{ type: string; url: string }>;
+    contractAccepted?: boolean;
   }): Promise<UserEntity> {
     const user = await this.findById(id);
     if (user.role !== UserRole.CLIENT) {
@@ -110,6 +111,7 @@ export class UsersService {
     if (data.description) updates.description = data.description;
     if (data.btpMode) updates.btpMode = data.btpMode as any;
     if (data.radiusKm) updates.radiusKm = data.radiusKm;
+    if (data.contractAccepted) updates.proContractAcceptedAt = new Date();
     await this.usersRepo.update(id, updates);
 
     // Enregistrement des pièces justificatives (CNI, selfie, docs administratifs)

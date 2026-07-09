@@ -33,6 +33,8 @@ export declare class UserEntity {
     payoutMethod?: string;
     /** Payout account — phone number receiving the money */
     payoutNumber?: string;
+    /** Date d'acceptation du contrat professionnel (null = non accepté) */
+    proContractAcceptedAt?: Date;
     /** Service radius in km (for artisans/agencies) */
     radiusKm?: number;
     avatarUrl?: string;

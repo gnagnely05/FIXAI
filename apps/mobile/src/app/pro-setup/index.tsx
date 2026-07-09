@@ -39,6 +39,17 @@ const PRO_TYPES: Array<{
 
 const CITIES = ['Abidjan', 'Bouaké', 'Daloa', 'San-Pédro', 'Yamoussoukro', 'Korhogo', 'Man', 'Divo'];
 
+const CONTRACT_TEXT = `En activant un espace professionnel sur FixAI, vous vous engagez à :
+
+1. Fournir des informations exactes et des documents authentiques.
+2. Réaliser les prestations avec sérieux, dans les délais convenus et selon les règles de l'art.
+3. Respecter les tarifs annoncés et la grille de commission de la plateforme.
+4. Utiliser le paiement sécurisé (escrow) : les fonds ne sont libérés qu'après validation du client.
+5. Traiter les clients avec courtoisie et régler les litiges de bonne foi via la médiation FixAI.
+6. Ne pas contourner la plateforme pour les mises en relation issues de FixAI.
+
+FixAI se réserve le droit de suspendre tout compte en cas de manquement, de fraude ou d'avis négatifs répétés. Le professionnel reste seul responsable de la qualité de ses prestations et du respect de la réglementation en vigueur en Côte d'Ivoire.`;
+
 const ARTISAN_SPECIALTIES = [
   'ELECTRICITE', 'PLOMBERIE', 'MENUISERIE', 'PEINTURE',
   'CARRELAGE', 'MACONNERIE', 'CLIMATISATION', 'SERRURERIE',
@@ -50,6 +61,8 @@ export default function ProSetupScreen() {
   const [selected, setSelected] = useState<ProRole | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [contractAccepted, setContractAccepted] = useState(false);
+  const [showContract, setShowContract] = useState(false);
   const [form, setForm] = useState({
     specialty: '', city: '', agencyName: '', shopName: '', address: '', description: '', btpMode: 'AGENCE',
   });
@@ -103,6 +116,10 @@ export default function ProSetupScreen() {
       return setError('Veuillez entrer le nom de votre établissement.');
     }
 
+    if (!contractAccepted) {
+      return setError('Vous devez lire et accepter le contrat professionnel pour activer votre espace.');
+    }
+
     // Documents optionnels : on peut activer et les ajouter plus tard.
     // Construction de la liste des documents
     const documents: Array<{ type: string; url: string }> = [];
@@ -122,6 +139,7 @@ export default function ProSetupScreen() {
         description: form.description || undefined,
         btpMode: selected === 'ENTREPRISE_BTP' ? form.btpMode : undefined,
         documents: documents.length ? documents : undefined,
+        contractAccepted: true,
       });
       // Navigation directe (pas de dépendance à un bouton d'Alert non fiable sur web)
       router.replace('/(tabs)');
@@ -376,6 +394,30 @@ export default function ProSetupScreen() {
           </Text>
         </View>
 
+        {/* Contrat professionnel */}
+        <View style={styles.contractCard}>
+          <TouchableOpacity style={styles.contractHeader} onPress={() => setShowContract(s => !s)} activeOpacity={0.8}>
+            <Ionicons name="document-text-outline" size={18} color="#6B3FA0" />
+            <Text style={styles.contractTitle}>Contrat professionnel FixAI</Text>
+            <Ionicons name={showContract ? 'chevron-up' : 'chevron-down'} size={18} color="#6B3FA0" />
+          </TouchableOpacity>
+          {showContract && (
+            <Text style={styles.contractText}>{CONTRACT_TEXT}</Text>
+          )}
+          <TouchableOpacity
+            style={styles.checkRow}
+            onPress={() => { setContractAccepted(a => !a); setError(''); }}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.checkbox, contractAccepted && styles.checkboxOn]}>
+              {contractAccepted && <Ionicons name="checkmark" size={15} color="#fff" />}
+            </View>
+            <Text style={styles.checkLabel}>
+              J'ai lu et j'accepte le contrat professionnel et les conditions de la plateforme FixAI.
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {error ? (
           <View style={styles.errorBox}>
             <Ionicons name="alert-circle-outline" size={16} color="#DC2626" />
@@ -384,7 +426,7 @@ export default function ProSetupScreen() {
         ) : null}
 
         <TouchableOpacity
-          style={[styles.btn, loading && styles.btnDisabled]}
+          style={[styles.btn, (loading || !contractAccepted) && styles.btnDisabled]}
           onPress={handleSubmit}
           disabled={loading}
           activeOpacity={0.85}
@@ -541,6 +583,20 @@ const styles = StyleSheet.create({
   },
   errorText: { flex: 1, fontSize: 13, color: '#DC2626', lineHeight: 19 },
   buildTag: { textAlign: 'center', fontSize: 11, color: '#C4CAD4', marginTop: 12 },
+  contractCard: {
+    backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 14,
+    borderWidth: 1, borderColor: '#E5E7EB',
+  },
+  contractHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  contractTitle: { flex: 1, fontSize: 14, fontWeight: '700', color: '#6B3FA0' },
+  contractText: { fontSize: 12.5, color: '#4B5563', lineHeight: 19, marginTop: 12 },
+  checkRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 14 },
+  checkbox: {
+    width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: '#C4B5E8',
+    alignItems: 'center', justifyContent: 'center', marginTop: 1,
+  },
+  checkboxOn: { backgroundColor: '#6B3FA0', borderColor: '#6B3FA0' },
+  checkLabel: { flex: 1, fontSize: 13, color: '#374151', lineHeight: 19 },
   verifBannerShop: { backgroundColor: '#ECFDF3' },
   verifText: { flex: 1, fontSize: 13, color: '#1E40AF', lineHeight: 19 },
   verifTextShop: { color: '#15803D' },

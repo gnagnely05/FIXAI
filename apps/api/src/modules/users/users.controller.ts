@@ -41,6 +41,7 @@ export class UsersController {
       btpMode?: string;
       radiusKm?: number;
       documents?: Array<{ type: string; url: string }>;
+      contractAccepted?: boolean;
     },
   ) {
     try {

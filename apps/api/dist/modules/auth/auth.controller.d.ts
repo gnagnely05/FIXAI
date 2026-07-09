@@ -41,6 +41,7 @@ export declare class AuthController {
             description?: string;
             payoutMethod?: string;
             payoutNumber?: string;
+            proContractAcceptedAt?: Date;
             radiusKm?: number;
             avatarUrl?: string;
             artisanProfile?: import("../artisans/entities/artisan.entity").ArtisanEntity;
@@ -71,6 +72,7 @@ export declare class AuthController {
             description?: string;
             payoutMethod?: string;
             payoutNumber?: string;
+            proContractAcceptedAt?: Date;
             radiusKm?: number;
             avatarUrl?: string;
             artisanProfile?: import("../artisans/entities/artisan.entity").ArtisanEntity;
@@ -101,6 +103,7 @@ export declare class AuthController {
             description?: string;
             payoutMethod?: string;
             payoutNumber?: string;
+            proContractAcceptedAt?: Date;
             radiusKm?: number;
             avatarUrl?: string;
             artisanProfile?: import("../artisans/entities/artisan.entity").ArtisanEntity;
