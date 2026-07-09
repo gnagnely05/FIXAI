@@ -38,13 +38,6 @@ const DECO_SCRIPT: Step[] = [
     { label: 'Manque de rangement', value: 'MANQUE_RANGEMENT' }, { label: 'Envie de changement', value: 'ENVIE_CHANGEMENT' },
   ] },
   { key: 'style', field: 'style', kind: 'style', prompt: 'Quelle ambiance te plaît ? Regarde les exemples 👇', options: STYLE_OPTS },
-  { key: 'status', field: 'isTenant', kind: 'single', prompt: 'Tu es propriétaire ou locataire ?', options: [
-    { label: 'Propriétaire', value: false }, { label: 'Locataire (pas de travaux)', value: true },
-  ] },
-  { key: 'occupants', field: 'occupants', kind: 'single', prompt: "C'est pour combien de personnes ?", options: [
-    { label: 'Seul(e)', value: 'SEUL' }, { label: 'Couple', value: 'COUPLE' },
-    { label: 'Famille (sans jeunes enfants)', value: 'FAMILLE' }, { label: 'Famille avec enfants', value: 'FAMILLE_ENFANTS' },
-  ] },
   { key: 'budget', field: 'budget', kind: 'single', prompt: 'Ton budget approximatif ?', options: [
     { label: 'Moins de 100 000 FCFA', value: 'MOINS_100K' }, { label: '100 000 – 300 000 FCFA', value: '100K_300K' },
     { label: '300 000 – 500 000 FCFA', value: '300K_500K' }, { label: 'Plus de 500 000 FCFA', value: 'PLUS_500K' },
@@ -67,9 +60,6 @@ const RENO_SCRIPT: Step[] = [
   ] },
   { key: 'scale', field: 'scale', kind: 'single', prompt: 'Quelle ampleur de travaux ?', options: [
     { label: 'Petit rafraîchissement', value: 'petit rafraîchissement' }, { label: 'Rénovation moyenne', value: 'rénovation moyenne' }, { label: 'Gros œuvre', value: 'gros œuvre' },
-  ] },
-  { key: 'status', field: 'isTenant', kind: 'single', prompt: 'Tu es propriétaire ou locataire ?', options: [
-    { label: 'Propriétaire', value: false }, { label: 'Locataire', value: true },
   ] },
   { key: 'budget', field: 'budget', kind: 'single', prompt: 'Budget approximatif ?', options: [
     { label: 'Moins de 500 000 FCFA', value: 'moins de 500 000 FCFA' }, { label: '500 000 – 2 000 000 FCFA', value: '500 000 à 2 000 000 FCFA' },
@@ -143,7 +133,7 @@ export default function GuidedChat() {
       if (isReno) {
         const description =
           `Projet de rénovation — ${finalAnswers.room}. Travaux : ${(finalAnswers.works ?? []).join(', ')}. ` +
-          `Ampleur : ${finalAnswers.scale}. ${finalAnswers.isTenant ? 'Locataire.' : 'Propriétaire.'} Budget : ${finalAnswers.budget}.`;
+          `Ampleur : ${finalAnswers.scale}. Budget : ${finalAnswers.budget}.`;
         const res = await api.post('/ai/diagnose', {
           serviceType: 'RENOVATION', messages: [description],
           imageUrls: finalAnswers.photo ? [finalAnswers.photo] : [], clientTurns: 4,
@@ -155,8 +145,8 @@ export default function GuidedChat() {
           roomType: finalAnswers.roomType,
           problems: finalAnswers.problems ?? [],
           style: finalAnswers.style,
-          isTenant: !!finalAnswers.isTenant,
-          occupants: finalAnswers.occupants,
+          isTenant: false,          // question retirée du questionnaire
+          occupants: 'COUPLE',      // valeur par défaut (question retirée)
           budget: finalAnswers.budget,
         }, { timeout: 120000 });
         push({ role: 'ai', result: { type: 'deco', ...res.data } });
