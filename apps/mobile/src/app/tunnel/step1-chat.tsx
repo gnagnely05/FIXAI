@@ -29,16 +29,13 @@ export default function Step1Chat() {
     }
   }, [messages]);
 
-  const imageMandatory = svcType === 'RENOVATION' || svcType === 'DECORATION';
-  const [imgHint, setImgHint] = useState('');
+  // Réparation : la photo n'est pas requise pour la 1re description, mais
+  // elle devient obligatoire avant d'obtenir le devis / le diagnostic.
+  const photoNeeded = images.length === 0;
+  const conversationStarted = messages.length > 1;
 
   const handleSend = async () => {
     if (!inputText.trim()) return;
-    if (imageMandatory && images.length === 0) {
-      setImgHint('Ajoutez au moins une photo de votre espace 📷 pour continuer.');
-      return;
-    }
-    setImgHint('');
     const text = inputText.trim();
     setInputText('');
     await sendMessage(text);
@@ -131,15 +128,16 @@ export default function Step1Chat() {
           }
         />
 
-        {imgHint ? (
-          <View style={styles.imgHintBox}>
-            <Ionicons name="alert-circle-outline" size={15} color="#B45309" />
-            <Text style={styles.imgHintText}>{imgHint}</Text>
-          </View>
-        ) : imageMandatory && images.length === 0 ? (
-          <View style={styles.imgHintBox}>
-            <Ionicons name="camera-outline" size={15} color="#6B7280" />
-            <Text style={styles.imgHintText}>Une photo de votre espace est requise pour ce service.</Text>
+        {/* Carte photo obligatoire (apparaît après la 1re réponse de l'IA) */}
+        {conversationStarted && photoNeeded ? (
+          <View style={styles.photoCard}>
+            <Text style={styles.photoCardText}>
+              📷 Une photo aiderait l'artisan à identifier le problème et l'étendue des dégâts. Elle est obligatoire pour obtenir votre devis.
+            </Text>
+            <TouchableOpacity style={styles.photoCardBtn} onPress={handlePickImage}>
+              <Ionicons name="camera" size={18} color="#fff" />
+              <Text style={styles.photoCardBtnText}>Ajouter une photo</Text>
+            </TouchableOpacity>
           </View>
         ) : null}
 
@@ -171,6 +169,12 @@ export default function Step1Chat() {
           <View style={styles.guideHint}>
             <Ionicons name="chatbubble-ellipses-outline" size={16} color="#6B7280" />
             <Text style={styles.guideHintText}>Répondez à la question ci-dessus pour continuer</Text>
+          </View>
+        ) : diagnosisResult && photoNeeded ? (
+          // Prêt à décider mais aucune photo : on impose la photo (carte affichée au-dessus)
+          <View style={styles.guideHint}>
+            <Ionicons name="camera-outline" size={16} color="#B45309" />
+            <Text style={[styles.guideHintText, { color: '#B45309' }]}>Ajoutez une photo pour obtenir votre devis</Text>
           </View>
         ) : diagnosisResult?.requiresDiagnostic ? (
           <TouchableOpacity
@@ -260,9 +264,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6', paddingVertical: 14, borderRadius: 14,
   },
   guideHintText: { color: '#6B7280', fontSize: 13, fontWeight: '600' },
-  imgHintBox: {
-    flexDirection: 'row', gap: 6, alignItems: 'center',
-    paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#FFF7ED',
+  photoCard: {
+    margin: 12, marginBottom: 0, padding: 14, borderRadius: 14,
+    backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB', gap: 12,
   },
-  imgHintText: { flex: 1, color: '#92400E', fontSize: 12 },
+  photoCardText: { fontSize: 13.5, color: '#374151', lineHeight: 20 },
+  photoCardBtn: {
+    flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#2E7D32', borderRadius: 24, paddingVertical: 12, alignSelf: 'flex-start', paddingHorizontal: 20,
+  },
+  photoCardBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });
