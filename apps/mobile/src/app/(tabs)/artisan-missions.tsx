@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, SafeAreaView,
-  TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Image,
+  TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Image, Modal, TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../services/api';
@@ -15,6 +15,10 @@ interface Mission {
   diagnosticFeeXof?: number;
   address?: string;
   imageUrls?: string;
+  isDiagnostic?: boolean;
+  diagnosticResult?: string;
+  quoteStatus?: string;
+  finalQuoteXof?: number;
   client?: { firstName: string; lastName: string; phone?: string };
 }
 
@@ -55,6 +59,23 @@ export default function ArtisanMissionsScreen() {
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [constatFor, setConstatFor] = useState<Mission | null>(null);
+  const [constatText, setConstatText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const submitConstat = async () => {
+    if (!constatFor || !constatText.trim()) return;
+    setSubmitting(true);
+    try {
+      await api.patch(`/orders/${constatFor.id}/diagnostic-result`, { result: constatText.trim() });
+      setConstatFor(null); setConstatText('');
+      load();
+    } catch (e: any) {
+      Alert.alert('Erreur', e?.response?.data?.message ?? 'Envoi impossible.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const load = async () => {
     try {
@@ -191,20 +212,38 @@ export default function ArtisanMissionsScreen() {
               <View style={styles.cardBottom}>
                 <Text style={styles.amount}>{Number(m.escrowAmount).toLocaleString('fr-FR')} <Text style={styles.amountUnit}>FCFA</Text></Text>
                 <View style={styles.actions}>
-                  {m.status === 'PENDING' && (
-                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#3B82F6' }]} onPress={() => handleAction(m.id, 'confirm')}>
-                      <Text style={styles.actionBtnText}>Confirmer</Text>
-                    </TouchableOpacity>
-                  )}
-                  {m.status === 'CONFIRMED' && (
-                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]} onPress={() => handleAction(m.id, 'start')}>
-                      <Text style={styles.actionBtnText}>Démarrer</Text>
-                    </TouchableOpacity>
-                  )}
-                  {m.status === 'IN_PROGRESS' && (
-                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#2E7D32' }]} onPress={() => handleAction(m.id, 'complete')}>
-                      <Text style={styles.actionBtnText}>Terminer</Text>
-                    </TouchableOpacity>
+                  {m.isDiagnostic ? (
+                    m.quoteStatus === 'SENT' ? (
+                      <View style={[styles.actionBtn, { backgroundColor: '#E8F5E9' }]}>
+                        <Text style={[styles.actionBtnText, { color: '#2E7D32' }]}>Devis envoyé ✓</Text>
+                      </View>
+                    ) : m.quoteStatus === 'ACCEPTED' ? (
+                      <View style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]}>
+                        <Text style={styles.actionBtnText}>Réparation acceptée</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#B45309' }]} onPress={() => { setConstatFor(m); setConstatText(m.diagnosticResult ?? ''); }}>
+                        <Text style={styles.actionBtnText}>Saisir le constat</Text>
+                      </TouchableOpacity>
+                    )
+                  ) : (
+                    <>
+                      {m.status === 'PENDING' && (
+                        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#3B82F6' }]} onPress={() => handleAction(m.id, 'confirm')}>
+                          <Text style={styles.actionBtnText}>Confirmer</Text>
+                        </TouchableOpacity>
+                      )}
+                      {m.status === 'CONFIRMED' && (
+                        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]} onPress={() => handleAction(m.id, 'start')}>
+                          <Text style={styles.actionBtnText}>Démarrer</Text>
+                        </TouchableOpacity>
+                      )}
+                      {m.status === 'IN_PROGRESS' && (
+                        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#2E7D32' }]} onPress={() => handleAction(m.id, 'complete')}>
+                          <Text style={styles.actionBtnText}>Terminer</Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
                   )}
                 </View>
               </View>
@@ -212,6 +251,32 @@ export default function ArtisanMissionsScreen() {
           ))
         )}
       </ScrollView>
+
+      {/* Modal : saisie du constat de diagnostic */}
+      <Modal visible={!!constatFor} animationType="slide" transparent onRequestClose={() => setConstatFor(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Constat du diagnostic</Text>
+            <Text style={styles.modalSub}>Décrivez ce que vous avez constaté sur place. L'IA établira le devis final à partir de votre constat.</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={constatText}
+              onChangeText={setConstatText}
+              placeholder="Ex: Robinet de cuisine à remplacer, joint défectueux, léger dégât sous l'évier..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setConstatFor(null)}>
+                <Text style={styles.modalCancelText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalSubmit, (!constatText.trim() || submitting) && { opacity: 0.6 }]} onPress={submitConstat} disabled={!constatText.trim() || submitting}>
+                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalSubmitText}>Envoyer le devis</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -252,4 +317,17 @@ const styles = StyleSheet.create({
   diagCard: { borderColor: '#FED7AA', backgroundColor: '#FFFBF5' },
   photoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
   photoThumb: { width: 72, height: 72, borderRadius: 10, backgroundColor: '#EEE' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, gap: 12 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
+  modalSub: { fontSize: 13, color: '#6B7280', lineHeight: 19 },
+  modalInput: {
+    borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12, padding: 14,
+    fontSize: 15, color: '#111827', minHeight: 110, textAlignVertical: 'top',
+  },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  modalCancel: { flex: 1, borderWidth: 1.5, borderColor: '#D1D5DB', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  modalCancelText: { color: '#6B7280', fontWeight: '600' },
+  modalSubmit: { flex: 2, backgroundColor: '#B45309', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  modalSubmitText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });

@@ -67,6 +67,14 @@ export class OrderEntity {
   @Column({ type: 'int', nullable: true })
   finalQuoteXof?: number;
 
+  /** Justification courte du devis final (postes principaux). */
+  @Column({ type: 'text', nullable: true })
+  quoteJustification?: string;
+
+  /** Suivi du devis : SENT (envoyé au client) | ACCEPTED | REFUSED */
+  @Column({ nullable: true })
+  quoteStatus?: string;
+
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
   status: OrderStatus;
 

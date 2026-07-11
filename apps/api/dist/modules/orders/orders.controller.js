@@ -35,6 +35,14 @@ let OrdersController = class OrdersController {
     async acceptDiagnostic(id, req) {
         return this.ordersService.acceptDiagnostic(id, req.user.sub);
     }
+    /** L'artisan saisit son constat → l'IA génère le devis final. */
+    async submitDiagnosticResult(id, body, req) {
+        return this.ordersService.submitDiagnosticResult(id, req.user.sub, body.result);
+    }
+    /** Le client accepte ou refuse le devis final. */
+    async respondToQuote(id, body, req) {
+        return this.ordersService.respondToQuote(id, req.user.sub, body.accept);
+    }
     async getMyOrders(req) {
         const { sub, role } = req.user;
         if (role === 'ARTISAN')
@@ -114,6 +122,24 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "acceptDiagnostic", null);
+__decorate([
+    (0, common_1.Patch)(':id/diagnostic-result'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "submitDiagnosticResult", null);
+__decorate([
+    (0, common_1.Patch)(':id/quote-response'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "respondToQuote", null);
 __decorate([
     (0, common_1.Get)('my'),
     __param(0, (0, common_1.Request)()),

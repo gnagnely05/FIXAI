@@ -14,12 +14,13 @@ const orders_controller_1 = require("./orders.controller");
 const order_entity_1 = require("./entities/order.entity");
 const artisan_entity_1 = require("../artisans/entities/artisan.entity");
 const user_entity_1 = require("../users/entities/user.entity");
+const ai_module_1 = require("../ai/ai.module");
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
 exports.OrdersModule = OrdersModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([order_entity_1.OrderEntity, artisan_entity_1.ArtisanEntity, user_entity_1.UserEntity])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([order_entity_1.OrderEntity, artisan_entity_1.ArtisanEntity, user_entity_1.UserEntity]), ai_module_1.AiModule],
         providers: [orders_service_1.OrdersService],
         controllers: [orders_controller_1.OrdersController],
         exports: [orders_service_1.OrdersService],

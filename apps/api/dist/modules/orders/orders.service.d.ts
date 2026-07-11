@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { OrderEntity, EscrowStatus } from './entities/order.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { ArtisanEntity } from '../artisans/entities/artisan.entity';
+import { AiService } from '../ai/ai.service';
 export interface CreateOrderData {
     artisanId: string;
     description: string;
@@ -23,7 +24,19 @@ export declare class OrdersService {
     private readonly ordersRepo;
     private readonly artisansRepo;
     private readonly usersRepo;
-    constructor(ordersRepo: Repository<OrderEntity>, artisansRepo: Repository<ArtisanEntity>, usersRepo: Repository<UserEntity>);
+    private readonly aiService;
+    constructor(ordersRepo: Repository<OrderEntity>, artisansRepo: Repository<ArtisanEntity>, usersRepo: Repository<UserEntity>, aiService: AiService);
+    /**
+     * Étape 3 — l'artisan saisit son constat après la visite de diagnostic.
+     * L'IA génère alors le devis final envoyé au client.
+     */
+    submitDiagnosticResult(orderId: string, artisanUserId: string, resultText: string): Promise<OrderEntity>;
+    /**
+     * Le client accepte ou refuse le devis final.
+     * - accept  : réparation lancée, le diagnostic déjà payé est déduit du devis.
+     * - refuse  : l'artisan conserve les frais de diagnostic.
+     */
+    respondToQuote(orderId: string, clientId: string, accept: boolean): Promise<OrderEntity>;
     create(client: UserEntity, data: CreateOrderData): Promise<OrderEntity>;
     /**
      * Crée une mission de DIAGNOSTIC (sans artisan assigné au départ).

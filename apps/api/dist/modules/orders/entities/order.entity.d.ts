@@ -32,6 +32,10 @@ export declare class OrderEntity {
     diagnosticResult?: string;
     /** Devis final établi par l'IA à partir du constat de l'artisan. */
     finalQuoteXof?: number;
+    /** Justification courte du devis final (postes principaux). */
+    quoteJustification?: string;
+    /** Suivi du devis : SENT (envoyé au client) | ACCEPTED | REFUSED */
+    quoteStatus?: string;
     status: OrderStatus;
     scheduledAt: Date;
     completedAt?: Date;

@@ -19,11 +19,60 @@ const typeorm_2 = require("typeorm");
 const order_entity_1 = require("./entities/order.entity");
 const user_entity_1 = require("../users/entities/user.entity");
 const artisan_entity_1 = require("../artisans/entities/artisan.entity");
+const ai_service_1 = require("../ai/ai.service");
 let OrdersService = class OrdersService {
-    constructor(ordersRepo, artisansRepo, usersRepo) {
+    constructor(ordersRepo, artisansRepo, usersRepo, aiService) {
         this.ordersRepo = ordersRepo;
         this.artisansRepo = artisansRepo;
         this.usersRepo = usersRepo;
+        this.aiService = aiService;
+    }
+    /**
+     * Étape 3 — l'artisan saisit son constat après la visite de diagnostic.
+     * L'IA génère alors le devis final envoyé au client.
+     */
+    async submitDiagnosticResult(orderId, artisanUserId, resultText) {
+        const order = await this.findById(orderId);
+        if (!order.isDiagnostic)
+            throw new common_1.BadRequestException("Ce n'est pas une mission de diagnostic");
+        if (order.artisan?.user?.id !== artisanUserId)
+            throw new common_1.ForbiddenException('Vous n\'êtes pas l\'artisan de cette mission');
+        if (!resultText?.trim())
+            throw new common_1.BadRequestException('Le constat est vide');
+        order.diagnosticResult = resultText.trim();
+        const { finalQuoteXof, justification } = await this.aiService.quoteFromDiagnostic(order.serviceType ?? 'DEPANNAGE', order.description, resultText.trim());
+        order.finalQuoteXof = finalQuoteXof;
+        order.quoteJustification = justification;
+        order.quoteStatus = 'SENT';
+        return this.ordersRepo.save(order);
+    }
+    /**
+     * Le client accepte ou refuse le devis final.
+     * - accept  : réparation lancée, le diagnostic déjà payé est déduit du devis.
+     * - refuse  : l'artisan conserve les frais de diagnostic.
+     */
+    async respondToQuote(orderId, clientId, accept) {
+        const order = await this.findById(orderId);
+        if (order.client.id !== clientId)
+            throw new common_1.ForbiddenException();
+        if (order.quoteStatus !== 'SENT')
+            throw new common_1.BadRequestException('Aucun devis en attente de réponse');
+        if (accept) {
+            order.quoteStatus = 'ACCEPTED';
+            order.status = order_entity_1.OrderStatus.CONFIRMED;
+            // Le diagnostic déjà réglé est déduit du devis final : montant net restant à payer.
+            const net = Math.max(0, (order.finalQuoteXof ?? 0) - (order.diagnosticFeeXof ?? 0));
+            order.escrowAmount = net;
+            order.escrowStatus = order_entity_1.EscrowStatus.NOT_FUNDED;
+        }
+        else {
+            order.quoteStatus = 'REFUSED';
+            order.status = order_entity_1.OrderStatus.COMPLETED;
+            order.completedAt = new Date();
+            // L'artisan est rémunéré pour le diagnostic effectué.
+            order.escrowStatus = order_entity_1.EscrowStatus.RELEASED;
+        }
+        return this.ordersRepo.save(order);
     }
     async create(client, data) {
         const artisan = await this.artisansRepo.findOne({ where: { id: data.artisanId } });
@@ -297,6 +346,7 @@ exports.OrdersService = OrdersService = __decorate([
     __param(2, (0, typeorm_1.InjectRepository)(user_entity_1.UserEntity)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        ai_service_1.AiService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

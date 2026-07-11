@@ -5,9 +5,10 @@ import { OrdersController } from './orders.controller';
 import { OrderEntity } from './entities/order.entity';
 import { ArtisanEntity } from '../artisans/entities/artisan.entity';
 import { UserEntity } from '../users/entities/user.entity';
+import { AiModule } from '../ai/ai.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OrderEntity, ArtisanEntity, UserEntity])],
+  imports: [TypeOrmModule.forFeature([OrderEntity, ArtisanEntity, UserEntity]), AiModule],
   providers: [OrdersService],
   controllers: [OrdersController],
   exports: [OrdersService],

@@ -26,6 +26,14 @@ export declare class AiService {
         reply?: string;
         error?: string;
     }>;
+    /**
+     * Devis final à partir du constat de l'artisan (étape 3 du diagnostic).
+     * Renvoie un prix ferme en FCFA + une justification courte.
+     */
+    quoteFromDiagnostic(serviceType: string, clientDescription: string, diagnosticResult: string): Promise<{
+        finalQuoteXof: number;
+        justification: string;
+    }>;
     pingOpenRouterImage(): Promise<{
         ok: boolean;
         model: string;

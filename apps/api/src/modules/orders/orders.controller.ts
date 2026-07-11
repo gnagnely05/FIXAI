@@ -42,6 +42,26 @@ export class OrdersController {
     return this.ordersService.acceptDiagnostic(id, req.user.sub);
   }
 
+  /** L'artisan saisit son constat → l'IA génère le devis final. */
+  @Patch(':id/diagnostic-result')
+  async submitDiagnosticResult(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { result: string },
+    @Request() req: { user: AuthUser },
+  ) {
+    return this.ordersService.submitDiagnosticResult(id, req.user.sub, body.result);
+  }
+
+  /** Le client accepte ou refuse le devis final. */
+  @Patch(':id/quote-response')
+  async respondToQuote(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { accept: boolean },
+    @Request() req: { user: AuthUser },
+  ) {
+    return this.ordersService.respondToQuote(id, req.user.sub, body.accept);
+  }
+
   @Get('my')
   async getMyOrders(@Request() req: { user: AuthUser }) {
     const { sub, role } = req.user;

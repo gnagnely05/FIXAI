@@ -20,6 +20,18 @@ export declare class OrdersController {
     acceptDiagnostic(id: string, req: {
         user: AuthUser;
     }): Promise<import("./entities/order.entity").OrderEntity>;
+    /** L'artisan saisit son constat → l'IA génère le devis final. */
+    submitDiagnosticResult(id: string, body: {
+        result: string;
+    }, req: {
+        user: AuthUser;
+    }): Promise<import("./entities/order.entity").OrderEntity>;
+    /** Le client accepte ou refuse le devis final. */
+    respondToQuote(id: string, body: {
+        accept: boolean;
+    }, req: {
+        user: AuthUser;
+    }): Promise<import("./entities/order.entity").OrderEntity>;
     getMyOrders(req: {
         user: AuthUser;
     }): Promise<import("./entities/order.entity").OrderEntity[]>;

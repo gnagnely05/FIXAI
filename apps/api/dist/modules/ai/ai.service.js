@@ -133,6 +133,37 @@ let AiService = AiService_1 = class AiService {
     pingOpenRouter() {
         return this.openRouter.ping();
     }
+    /**
+     * Devis final à partir du constat de l'artisan (étape 3 du diagnostic).
+     * Renvoie un prix ferme en FCFA + une justification courte.
+     */
+    async quoteFromDiagnostic(serviceType, clientDescription, diagnosticResult) {
+        const labels = {
+            DEPANNAGE: 'réparation / dépannage', RENOVATION: 'rénovation', DECORATION: "décoration",
+        };
+        const label = labels[serviceType] ?? serviceType;
+        const system = `Tu es un expert en ${label} en Côte d'Ivoire. À partir de la demande du client et du CONSTAT technique de l'artisan qui s'est déplacé, établis un DEVIS FINAL ferme (main d'œuvre + matériel), réaliste pour le marché ivoirien.
+Réponds UNIQUEMENT en JSON :
+{ "finalQuoteXof": <entier FCFA>, "justification": "1-2 phrases expliquant le prix (postes principaux)" }
+Ne fournis aucun texte hors du JSON.`;
+        const user = `Demande du client : ${clientDescription}\n\nConstat de l'artisan : ${diagnosticResult}`;
+        try {
+            const raw = await this.openRouter.chat(user, system);
+            const m = raw.match(/\{[\s\S]*\}/);
+            if (m) {
+                const p = JSON.parse(m[0]);
+                const q = Math.max(0, Math.round(Number(p.finalQuoteXof) || 0));
+                if (q > 0)
+                    return { finalQuoteXof: q, justification: p.justification ?? 'Devis établi selon le constat.' };
+            }
+        }
+        catch (err) {
+            this.logger.warn(`[QuoteFromDiagnostic] ${err}`);
+        }
+        // Fallback : fourchette par défaut selon le service
+        const fallback = { DEPANNAGE: 35000, RENOVATION: 300000, DECORATION: 150000 };
+        return { finalQuoteXof: fallback[serviceType] ?? 35000, justification: 'Estimation basée sur le constat de l\'artisan.' };
+    }
     pingOpenRouterImage() {
         return this.openRouter.pingImage();
     }
