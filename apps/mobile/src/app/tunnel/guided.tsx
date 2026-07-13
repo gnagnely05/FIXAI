@@ -70,14 +70,18 @@ const RENO_SCRIPT: Step[] = [
 type Bubble = { id: string; role: 'ai' | 'user'; text?: string; image?: string; result?: any };
 
 export default function GuidedChat() {
-  const { serviceType } = useLocalSearchParams<{ serviceType: string }>();
+  const { serviceType, productId, productName } = useLocalSearchParams<{ serviceType: string; productId?: string; productName?: string }>();
   const isReno = serviceType === 'RENOVATION';
   const script = isReno ? RENO_SCRIPT : DECO_SCRIPT;
   const accent = isReno ? '#B45309' : '#6B3FA0';
 
+  const firstBubbleText = productName
+    ? `Super choix : « ${productName} » ! 🎨\nJe vais concevoir une décoration autour de ce produit.\n\nPour commencer, envoie-moi une photo de la pièce (obligatoire).`
+    : script[0].prompt;
+
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
-  const [bubbles, setBubbles] = useState<Bubble[]>([{ id: '0', role: 'ai', text: script[0].prompt }]);
+  const [bubbles, setBubbles] = useState<Bubble[]>([{ id: '0', role: 'ai', text: firstBubbleText }]);
   const [multi, setMulti] = useState<any[]>([]);
   const [photo, setPhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -148,6 +152,7 @@ export default function GuidedChat() {
           isTenant: false,          // question retirée du questionnaire
           occupants: 'COUPLE',      // valeur par défaut (question retirée)
           budget: finalAnswers.budget,
+          productIds: productId ? [productId] : undefined,  // produit associé depuis l'accueil
         }, { timeout: 120000 });
         push({ role: 'ai', result: { type: 'deco', ...res.data } });
       }

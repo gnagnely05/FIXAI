@@ -1,11 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
   FlatList, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW, RADIUS } from '../../theme';
+import { api } from '../../services/api';
+
+interface ShopProduct { id: string; name: string; priceXof: number; imageUrl?: string; merchantName?: string }
 
 const SLIDES = [
   {
@@ -173,6 +176,13 @@ function HeroCarousel() {
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const cardW = (width - 40 - 12) / 2;
+  const [products, setProducts] = useState<ShopProduct[]>([]);
+
+  useEffect(() => {
+    api.get('/catalog/boutiques')
+      .then(r => setProducts((Array.isArray(r.data) ? r.data : []).filter((p: ShopProduct) => p.imageUrl)))
+      .catch(() => setProducts([]));
+  }, []);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -203,6 +213,36 @@ export default function HomeScreen() {
           ))}
         </View>
       </View>
+
+      {/* Inspirations déco — produits boutique cliquables */}
+      {products.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Inspirations déco</Text>
+          <Text style={styles.sectionSub}>Touchez un produit pour lancer un projet de décoration autour de lui</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 8 }}>
+            {products.map(p => (
+              <TouchableOpacity
+                key={p.id}
+                style={styles.prodCard}
+                activeOpacity={0.85}
+                onPress={() => router.push(
+                  `/tunnel/guided?serviceType=DECORATION&productId=${p.id}&productName=${encodeURIComponent(p.name)}` as Parameters<typeof router.push>[0]
+                )}
+              >
+                <Image source={{ uri: p.imageUrl }} style={styles.prodImg} resizeMode="cover" />
+                <View style={styles.prodBody}>
+                  <Text style={styles.prodName} numberOfLines={1}>{p.name}</Text>
+                  <Text style={styles.prodPrice}>{Number(p.priceXof).toLocaleString('fr-FR')} FCFA</Text>
+                  <View style={styles.prodCta}>
+                    <Ionicons name="color-palette-outline" size={13} color="#6B3FA0" />
+                    <Text style={styles.prodCtaText}>Lancer un projet</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Comment ça marche */}
       <View style={styles.section}>
@@ -320,6 +360,13 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   sectionTitle: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4 },
   sectionSub: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 16, lineHeight: 20 },
+  prodCard: { width: 160, backgroundColor: '#fff', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#EEE', ...SHADOW.sm },
+  prodImg: { width: '100%', height: 120, backgroundColor: '#EEE' },
+  prodBody: { padding: 10 },
+  prodName: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  prodPrice: { fontSize: 13, fontWeight: '800', color: '#6B3FA0', marginTop: 2 },
+  prodCta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
+  prodCtaText: { fontSize: 12, color: '#6B3FA0', fontWeight: '600' },
   seeAll: { fontSize: 13, color: COLORS.client, fontWeight: '600' },
 
   serviceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
