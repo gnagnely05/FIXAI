@@ -71,6 +71,7 @@ export default function ProSetupScreen() {
   });
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [agencyId, setAgencyId] = useState<string>('');
+  const [agencyError, setAgencyError] = useState<string>('');
   const [customSpecialty, setCustomSpecialty] = useState('');
   const [showCustomSpecialty, setShowCustomSpecialty] = useState(false);
   const [customCity, setCustomCity] = useState('');
@@ -97,9 +98,14 @@ export default function ProSetupScreen() {
 
   useEffect(() => {
     if (selected === 'ARTISAN') {
+      setAgencyError('');
       api.get('/users/agencies')
         .then(r => setAgencies(Array.isArray(r.data) ? r.data : []))
-        .catch(() => setAgencies([]));
+        .catch(e => {
+          const status = e?.response?.status;
+          setAgencyError(`Erreur chargement agences (${status ?? 'réseau'}: ${e?.response?.data?.message ?? e?.message})`);
+          setAgencies([]);
+        });
     }
   }, [selected]);
 
@@ -264,7 +270,9 @@ export default function ProSetupScreen() {
 
             <SectionLabel>Affiliez-vous à une agence *</SectionLabel>
             <Text style={styles.docHint}>Tout artisan doit être rattaché à une agence ou une entreprise BTP.</Text>
-            {agencies.length === 0 ? (
+            {agencyError ? (
+              <Text style={[styles.docHint, { color: '#DC2626' }]}>{agencyError}</Text>
+            ) : agencies.length === 0 ? (
               <Text style={styles.docHint}>Aucune agence disponible pour le moment. Réessayez plus tard.</Text>
             ) : (
               <View style={{ marginBottom: 16, gap: 8 }}>
