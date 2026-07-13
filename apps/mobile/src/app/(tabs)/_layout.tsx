@@ -57,12 +57,16 @@ const header = StyleSheet.create({
 export default function TabsLayout() {
   const { user } = useAuth();
   const role = user?.role ?? 'CLIENT';
+  const btpMode = (user as any)?.btpMode ?? 'AGENCE';
+  // Une entreprise BTP en mode ARTISAN se comporte comme un artisan (pas d'agence)
+  const btpAsArtisan = role === 'ENTREPRISE_BTP' && btpMode === 'ARTISAN';
+  const btpMixte = role === 'ENTREPRISE_BTP' && btpMode === 'MIXTE';
 
   const tabBarStyle = styles.tabBar;
   const tabLabelStyle = styles.tabLabel;
 
-  // ── ARTISAN ──────────────────────────────────────────────────────────
-  if (role === 'ARTISAN') {
+  // ── ARTISAN (ou Entreprise BTP en mode ARTISAN) ──────────────────────
+  if (role === 'ARTISAN' || btpAsArtisan) {
     return (
       <Tabs screenOptions={{ tabBarActiveTintColor: COLORS.artisan, tabBarInactiveTintColor: '#9BA8B4', tabBarStyle, tabBarLabelStyle: tabLabelStyle, tabBarShowLabel: true, header: () => <FixAIHeader accentColor={COLORS.artisan} /> }}>
         <Tabs.Screen name="artisan-home" options={{ title: 'Tableau de bord', tabBarIcon: ({ focused }) => <TabIcon name="grid" focused={focused} color={COLORS.artisan} /> }} />
@@ -84,7 +88,30 @@ export default function TabsLayout() {
     );
   }
 
-  // ── AGENCE / ENTREPRISE BTP ──────────────────────────────────────────
+  // ── ENTREPRISE BTP en mode MIXTE (agence + missions artisan) ─────────
+  if (btpMixte) {
+    return (
+      <Tabs screenOptions={{ tabBarActiveTintColor: COLORS.agency, tabBarInactiveTintColor: '#9BA8B4', tabBarStyle, tabBarLabelStyle: tabLabelStyle, tabBarShowLabel: true, header: () => <FixAIHeader accentColor={COLORS.agency} /> }}>
+        <Tabs.Screen name="agency-home" options={{ title: 'Tableau de bord', tabBarIcon: ({ focused }) => <TabIcon name="grid" focused={focused} color={COLORS.agency} /> }} />
+        <Tabs.Screen name="agency-artisans" options={{ title: 'Artisans', tabBarIcon: ({ focused }) => <TabIcon name="people" focused={focused} color={COLORS.agency} /> }} />
+        <Tabs.Screen name="artisan-missions" options={{ title: 'Missions', tabBarIcon: ({ focused }) => <TabIcon name="briefcase" focused={focused} color={COLORS.agency} /> }} />
+        <Tabs.Screen name="agency-requests" options={{ title: 'Demandes', tabBarIcon: ({ focused }) => <TabIcon name="document-text" focused={focused} color={COLORS.agency} /> }} />
+        <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: ({ focused }) => <TabIcon name="business" focused={focused} color={COLORS.agency} /> }} />
+        <Tabs.Screen name="index" options={{ href: null }} />
+        <Tabs.Screen name="search" options={{ href: null }} />
+        <Tabs.Screen name="decouvrir" options={{ href: null }} />
+        <Tabs.Screen name="orders" options={{ href: null }} />
+        <Tabs.Screen name="artisan-home" options={{ href: null }} />
+        <Tabs.Screen name="artisan-availability" options={{ href: null }} />
+        <Tabs.Screen name="agency-disputes" options={{ href: null }} />
+        <Tabs.Screen name="shop-home" options={{ href: null }} />
+        <Tabs.Screen name="shop-catalog" options={{ href: null }} />
+        <Tabs.Screen name="shop-orders" options={{ href: null }} />
+      </Tabs>
+    );
+  }
+
+  // ── AGENCE / ENTREPRISE BTP (mode AGENCE) ────────────────────────────
   if (role === 'AGENCE_HOTE' || role === 'ENTREPRISE_BTP') {
     return (
       <Tabs screenOptions={{ tabBarActiveTintColor: COLORS.agency, tabBarInactiveTintColor: '#9BA8B4', tabBarStyle, tabBarLabelStyle: tabLabelStyle, tabBarShowLabel: true, header: () => <FixAIHeader accentColor={COLORS.agency} /> }}>
