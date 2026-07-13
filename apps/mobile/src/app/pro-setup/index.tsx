@@ -96,8 +96,10 @@ export default function ProSetupScreen() {
   const removeAdminDoc = (i: number) => setAdminDocs(prev => prev.filter((_, idx) => idx !== i));
 
   useEffect(() => {
-    if (selected === 'ARTISAN' && agencies.length === 0) {
-      api.get('/users/agencies').then(r => setAgencies(r.data ?? [])).catch(() => setAgencies([]));
+    if (selected === 'ARTISAN') {
+      api.get('/users/agencies')
+        .then(r => setAgencies(Array.isArray(r.data) ? r.data : []))
+        .catch(() => setAgencies([]));
     }
   }, [selected]);
 

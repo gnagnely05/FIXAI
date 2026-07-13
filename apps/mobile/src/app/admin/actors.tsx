@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  SafeAreaView, ActivityIndicator, RefreshControl, Alert, TextInput,
+  SafeAreaView, ActivityIndicator, RefreshControl, Alert, TextInput, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '../../services/api';
@@ -68,51 +68,44 @@ export default function ActorsScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleSuspend = (actor: Actor) => {
-    Alert.alert(
-      'Suspendre',
-      `Suspendre le compte de ${actor.firstName} ${actor.lastName} ?`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Suspendre',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.patch(`/admin/actors/${actor.id}/suspend`);
-              load();
-            } catch { Alert.alert('Erreur', 'Action impossible.'); }
-          },
-        },
-      ]
-    );
+  const confirmAction = (message: string): boolean => {
+    if (Platform.OS === 'web') {
+      return typeof window !== 'undefined' ? window.confirm(message) : true;
+    }
+    return true; // sur natif on gère via Alert ci-dessous
+  };
+
+  const handleSuspend = async (actor: Actor) => {
+    const msg = `Suspendre le compte de ${actor.firstName} ${actor.lastName} ?`;
+    const run = async () => {
+      try { await api.patch(`/admin/actors/${actor.id}/suspend`); load(); }
+      catch (e: any) { Alert.alert('Erreur', e?.response?.data?.message ?? 'Action impossible.'); }
+    };
+    if (Platform.OS === 'web') { if (confirmAction(msg)) await run(); return; }
+    Alert.alert('Suspendre', msg, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Suspendre', style: 'destructive', onPress: run },
+    ]);
   };
 
   const handleActivate = async (actor: Actor) => {
     try {
       await api.patch(`/admin/actors/${actor.id}/activate`);
       load();
-    } catch { Alert.alert('Erreur', 'Action impossible.'); }
+    } catch (e: any) { Alert.alert('Erreur', e?.response?.data?.message ?? 'Action impossible.'); }
   };
 
-  const handleDelete = (actor: Actor) => {
-    Alert.alert(
-      'Supprimer',
-      `Supprimer définitivement le compte de ${actor.firstName} ${actor.lastName} ? Cette action est irréversible.`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.delete(`/admin/actors/${actor.id}`);
-              setActors(prev => prev.filter(a => a.id !== actor.id));
-            } catch { Alert.alert('Erreur', 'Suppression impossible.'); }
-          },
-        },
-      ]
-    );
+  const handleDelete = async (actor: Actor) => {
+    const msg = `Supprimer définitivement le compte de ${actor.firstName} ${actor.lastName} ? Cette action est irréversible.`;
+    const run = async () => {
+      try { await api.delete(`/admin/actors/${actor.id}`); setActors(prev => prev.filter(a => a.id !== actor.id)); }
+      catch (e: any) { Alert.alert('Erreur', e?.response?.data?.message ?? 'Suppression impossible.'); }
+    };
+    if (Platform.OS === 'web') { if (confirmAction(msg)) await run(); return; }
+    Alert.alert('Supprimer', msg, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Supprimer', style: 'destructive', onPress: run },
+    ]);
   };
 
   const roleMeta = ROLES.find(r => r.id === roleFilter) ?? ROLES[0];
