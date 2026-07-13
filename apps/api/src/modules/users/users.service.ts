@@ -25,6 +25,20 @@ export class UsersService {
     return this.usersRepo.findOne({ where: { email } });
   }
 
+  /** Liste des agences / entreprises BTP auxquelles un artisan peut s'affilier. */
+  async findAgencies(): Promise<Array<{ id: string; name: string; city?: string; role: string }>> {
+    const rows = await this.usersRepo.find({
+      where: [{ role: UserRole.AGENCE_HOTE }, { role: UserRole.ENTREPRISE_BTP }],
+      order: { agencyName: 'ASC' },
+    });
+    return rows.map(u => ({
+      id: u.id,
+      name: u.agencyName || `${u.firstName} ${u.lastName}`.trim() || 'Agence',
+      city: u.city,
+      role: u.role,
+    }));
+  }
+
   async updateProfile(
     id: string,
     updates: Partial<Pick<UserEntity,
@@ -87,6 +101,7 @@ export class UsersService {
     radiusKm?: number;
     documents?: Array<{ type: string; url: string }>;
     contractAccepted?: boolean;
+    agencyId?: string;
   }): Promise<UserEntity> {
     const user = await this.findById(id);
     if (user.role !== UserRole.CLIENT) {
@@ -112,6 +127,7 @@ export class UsersService {
     if (data.btpMode) updates.btpMode = data.btpMode as any;
     if (data.radiusKm) updates.radiusKm = data.radiusKm;
     if (data.contractAccepted) updates.proContractAcceptedAt = new Date();
+    if (data.agencyId) updates.agencyId = data.agencyId;
     await this.usersRepo.update(id, updates);
 
     // Enregistrement des pièces justificatives (CNI, selfie, docs administratifs)

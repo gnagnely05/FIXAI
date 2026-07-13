@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   TextInput, ActivityIndicator, SafeAreaView, Image,
@@ -7,6 +7,9 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../hooks/useAuth';
+import { api } from '../../services/api';
+
+interface Agency { id: string; name: string; city?: string; role: string }
 
 /** Ouvre la galerie et renvoie une data URI (base64) exploitable sur web et natif. */
 async function pickImageAsDataUri(): Promise<string | null> {
@@ -66,6 +69,8 @@ export default function ProSetupScreen() {
   const [form, setForm] = useState({
     specialty: '', city: '', agencyName: '', shopName: '', address: '', description: '', btpMode: 'AGENCE',
   });
+  const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [agencyId, setAgencyId] = useState<string>('');
   const [customSpecialty, setCustomSpecialty] = useState('');
   const [showCustomSpecialty, setShowCustomSpecialty] = useState(false);
   const [customCity, setCustomCity] = useState('');
@@ -90,6 +95,12 @@ export default function ProSetupScreen() {
   };
   const removeAdminDoc = (i: number) => setAdminDocs(prev => prev.filter((_, idx) => idx !== i));
 
+  useEffect(() => {
+    if (selected === 'ARTISAN' && agencies.length === 0) {
+      api.get('/users/agencies').then(r => setAgencies(r.data ?? [])).catch(() => setAgencies([]));
+    }
+  }, [selected]);
+
   const proType = PRO_TYPES.find(p => p.role === selected);
 
   const handleChoose = (role: ProRole) => {
@@ -102,6 +113,9 @@ export default function ProSetupScreen() {
     if (!selected) return;
     if ((selected === 'ARTISAN') && !form.specialty) {
       return setError('Veuillez choisir votre spécialité.');
+    }
+    if (selected === 'ARTISAN' && !agencyId) {
+      return setError('Vous devez vous affilier à une agence pour continuer.');
     }
     if (['ARTISAN', 'AGENCE_HOTE', 'ENTREPRISE_BTP'].includes(selected) && !form.city) {
       return setError('Veuillez sélectionner votre ville.');
@@ -140,6 +154,7 @@ export default function ProSetupScreen() {
         btpMode: selected === 'ENTREPRISE_BTP' ? form.btpMode : undefined,
         documents: documents.length ? documents : undefined,
         contractAccepted: true,
+        agencyId: selected === 'ARTISAN' ? agencyId : undefined,
       });
       // Navigation directe (pas de dépendance à un bouton d'Alert non fiable sur web)
       router.replace('/(tabs)');
@@ -244,6 +259,32 @@ export default function ProSetupScreen() {
               numberOfLines={3}
               style={[styles.fieldInput, { minHeight: 80, textAlignVertical: 'top' }]}
             />
+
+            <SectionLabel>Affiliez-vous à une agence *</SectionLabel>
+            <Text style={styles.docHint}>Tout artisan doit être rattaché à une agence ou une entreprise BTP.</Text>
+            {agencies.length === 0 ? (
+              <Text style={styles.docHint}>Aucune agence disponible pour le moment. Réessayez plus tard.</Text>
+            ) : (
+              <View style={{ marginBottom: 16, gap: 8 }}>
+                {agencies.map(a => (
+                  <TouchableOpacity
+                    key={a.id}
+                    style={[styles.agencyRow, agencyId === a.id && styles.agencyRowActive]}
+                    onPress={() => { setAgencyId(a.id); setError(''); }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name={agencyId === a.id ? 'radio-button-on' : 'radio-button-off'}
+                      size={20} color={agencyId === a.id ? '#1B8A2E' : '#9CA3AF'}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.agencyName}>{a.name}</Text>
+                      <Text style={styles.agencyMeta}>{a.role === 'ENTREPRISE_BTP' ? 'Entreprise BTP' : 'Agence'}{a.city ? ` · ${a.city}` : ''}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </>
         )}
 
@@ -548,6 +589,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, marginBottom: 20,
   },
   docHint: { fontSize: 12, color: '#6B7280', marginBottom: 12, marginTop: -4, lineHeight: 17 },
+  agencyRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E5E7EB',
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
+  },
+  agencyRowActive: { borderColor: '#1B8A2E', backgroundColor: '#F0F9F1' },
+  agencyName: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  agencyMeta: { fontSize: 12, color: '#6B7280', marginTop: 2 },
   docEmpty: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     borderWidth: 1.5, borderColor: '#C4B5E8', borderStyle: 'dashed',

@@ -25,6 +25,10 @@ let UsersController = UsersController_1 = class UsersController {
     async getProfile(req) {
         return this.usersService.findById(req.user.sub);
     }
+    /** Liste des agences / BTP pour l'affiliation d'un artisan. */
+    async getAgencies() {
+        return this.usersService.findAgencies();
+    }
     async updateProfile(req, body) {
         return this.usersService.updateProfile(req.user.sub, body);
     }
@@ -61,6 +65,12 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.Get)('agencies'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getAgencies", null);
 __decorate([
     (0, common_1.Patch)('me'),
     __param(0, (0, common_1.Request)()),

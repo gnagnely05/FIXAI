@@ -15,6 +15,12 @@ export class UsersController {
     return this.usersService.findById(req.user.sub);
   }
 
+  /** Liste des agences / BTP pour l'affiliation d'un artisan. */
+  @Get('agencies')
+  async getAgencies() {
+    return this.usersService.findAgencies();
+  }
+
   @Patch('me')
   async updateProfile(
     @Request() req: { user: { sub: string } },
@@ -42,6 +48,7 @@ export class UsersController {
       radiusKm?: number;
       documents?: Array<{ type: string; url: string }>;
       contractAccepted?: boolean;
+      agencyId?: string;
     },
   ) {
     try {

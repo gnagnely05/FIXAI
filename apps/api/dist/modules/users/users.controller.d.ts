@@ -10,6 +10,13 @@ export declare class UsersController {
             sub: string;
         };
     }): Promise<UserEntity>;
+    /** Liste des agences / BTP pour l'affiliation d'un artisan. */
+    getAgencies(): Promise<{
+        id: string;
+        name: string;
+        city?: string;
+        role: string;
+    }[]>;
     updateProfile(req: {
         user: {
             sub: string;
@@ -34,6 +41,7 @@ export declare class UsersController {
             url: string;
         }>;
         contractAccepted?: boolean;
+        agencyId?: string;
     }): Promise<UserEntity>;
     switchRole(req: {
         user: {

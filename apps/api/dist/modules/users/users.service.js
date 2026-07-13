@@ -34,6 +34,19 @@ let UsersService = class UsersService {
     async findByEmail(email) {
         return this.usersRepo.findOne({ where: { email } });
     }
+    /** Liste des agences / entreprises BTP auxquelles un artisan peut s'affilier. */
+    async findAgencies() {
+        const rows = await this.usersRepo.find({
+            where: [{ role: user_role_enum_1.UserRole.AGENCE_HOTE }, { role: user_role_enum_1.UserRole.ENTREPRISE_BTP }],
+            order: { agencyName: 'ASC' },
+        });
+        return rows.map(u => ({
+            id: u.id,
+            name: u.agencyName || `${u.firstName} ${u.lastName}`.trim() || 'Agence',
+            city: u.city,
+            role: u.role,
+        }));
+    }
     async updateProfile(id, updates) {
         // Ne garder que les champs autorisés et définis
         const allowed = [
@@ -108,6 +121,8 @@ let UsersService = class UsersService {
             updates.radiusKm = data.radiusKm;
         if (data.contractAccepted)
             updates.proContractAcceptedAt = new Date();
+        if (data.agencyId)
+            updates.agencyId = data.agencyId;
         await this.usersRepo.update(id, updates);
         // Enregistrement des pièces justificatives (CNI, selfie, docs administratifs)
         if (data.documents?.length) {
