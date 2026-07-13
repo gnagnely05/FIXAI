@@ -88,6 +88,7 @@ export function useAuth() {
       storage.removeItem(ACCESS_TOKEN_KEY),
       storage.removeItem(REFRESH_TOKEN_KEY),
       storage.removeItem(USER_KEY),
+      storage.removeItem('fixai_last_pro_role'), // nettoyage clé globale héritée
     ]);
 
     delete api.defaults.headers.common['Authorization'];
@@ -115,12 +116,12 @@ export function useAuth() {
   }, []);
 
   const switchRole = useCallback(async (role: string) => {
-    // Mémorise le dernier rôle pro pour pouvoir y revenir facilement
-    if (role !== 'CLIENT') {
-      await storage.setItem('fixai_last_pro_role', role);
-    }
     const response = await api.patch<User>('/users/me/switch-role', { role });
     const user = response.data as unknown as User;
+    // Mémorise le dernier rôle pro PAR UTILISATEUR (évite les fuites entre comptes)
+    if (role !== 'CLIENT' && user?.id) {
+      await storage.setItem(`fixai_last_pro_role:${user.id}`, role);
+    }
     await storage.setItem(USER_KEY, JSON.stringify(user));
     setState(prev => ({ ...prev, user }));
     return user;
@@ -129,7 +130,7 @@ export function useAuth() {
   const upgradeToPro = useCallback(async (data: Record<string, any>) => {
     const response = await api.patch<{ user: User }>('/users/me/upgrade-pro', data);
     const user = response.data as unknown as User;
-    if (data.role) await storage.setItem('fixai_last_pro_role', String(data.role));
+    if (data.role && user?.id) await storage.setItem(`fixai_last_pro_role:${user.id}`, String(data.role));
     await storage.setItem(USER_KEY, JSON.stringify(user));
     setState(prev => ({ ...prev, user }));
     return user;

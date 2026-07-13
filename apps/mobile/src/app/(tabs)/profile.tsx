@@ -81,8 +81,10 @@ export default function ProfileScreen() {
   const [switching, setSwitching] = useState(false);
 
   useEffect(() => {
-    storage.getItem('fixai_last_pro_role').then(setLastProRole);
-  }, [user?.role]);
+    // Clé par utilisateur : évite qu'un compte hérite du rôle pro d'un autre
+    if (!user?.id) { setLastProRole(null); return; }
+    storage.getItem(`fixai_last_pro_role:${user.id}`).then(setLastProRole);
+  }, [user?.id, user?.role]);
 
   if (isLoading) return null;
   if (!user) return <GuestProfile />;
