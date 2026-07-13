@@ -20,10 +20,12 @@ const user_entity_1 = require("./entities/user.entity");
 const user_role_enum_1 = require("../../common/enums/user-role.enum");
 const verification_status_enum_1 = require("../../common/enums/verification-status.enum");
 const document_entity_1 = require("../documents/entities/document.entity");
+const artisan_entity_1 = require("../artisans/entities/artisan.entity");
 let UsersService = class UsersService {
-    constructor(usersRepo, docsRepo) {
+    constructor(usersRepo, docsRepo, artisansRepo) {
         this.usersRepo = usersRepo;
         this.docsRepo = docsRepo;
+        this.artisansRepo = artisansRepo;
     }
     async findById(id) {
         const user = await this.usersRepo.findOne({ where: { id } });
@@ -97,11 +99,14 @@ let UsersService = class UsersService {
         if (!allowed.includes(data.role)) {
             throw new common_1.ConflictException('Type de profil pro invalide');
         }
-        // Plus de validation manuelle : tous les profils pro sont actifs immédiatement
-        // dès que les informations sont renseignées.
+        // Les artisans doivent être validés par leur agence → statut en attente.
+        // Les autres profils pro sont actifs immédiatement.
+        const isArtisan = data.role === user_role_enum_1.UserRole.ARTISAN;
         const updates = {
             role: data.role,
-            verificationStatus: verification_status_enum_1.VerificationStatus.ACTIVE,
+            verificationStatus: isArtisan
+                ? verification_status_enum_1.VerificationStatus.AFFILIATION_REQUESTED
+                : verification_status_enum_1.VerificationStatus.ACTIVE,
         };
         if (data.specialty)
             updates.specialty = data.specialty;
@@ -124,6 +129,29 @@ let UsersService = class UsersService {
         if (data.agencyId)
             updates.agencyId = data.agencyId;
         await this.usersRepo.update(id, updates);
+        // Création du profil artisan (visible par l'agence pour validation)
+        if (isArtisan) {
+            const existing = await this.artisansRepo.findOne({ where: { user: { id } }, relations: ['user'] });
+            const specialty = artisan_entity_1.ArtisanSpecialty[data.specialty]
+                ?? artisan_entity_1.ArtisanSpecialty.MENUISERIE;
+            if (existing) {
+                await this.artisansRepo.update(existing.id, {
+                    specialty, city: data.city ?? existing.city ?? 'Abidjan',
+                    bio: data.description ?? existing.bio, isVerified: false, isAvailable: false,
+                });
+            }
+            else {
+                const artisan = this.artisansRepo.create({
+                    user: { id },
+                    specialty,
+                    city: data.city ?? 'Abidjan',
+                    bio: data.description,
+                    isVerified: false,
+                    isAvailable: false,
+                });
+                await this.artisansRepo.save(artisan);
+            }
+        }
         // Enregistrement des pièces justificatives (CNI, selfie, docs administratifs)
         if (data.documents?.length) {
             const docs = data.documents
@@ -144,7 +172,9 @@ exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.UserEntity)),
     __param(1, (0, typeorm_1.InjectRepository)(document_entity_1.DocumentEntity)),
+    __param(2, (0, typeorm_1.InjectRepository)(artisan_entity_1.ArtisanEntity)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

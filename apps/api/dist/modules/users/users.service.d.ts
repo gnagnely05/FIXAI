@@ -2,10 +2,12 @@ import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { DocumentEntity } from '../documents/entities/document.entity';
+import { ArtisanEntity } from '../artisans/entities/artisan.entity';
 export declare class UsersService {
     private readonly usersRepo;
     private readonly docsRepo;
-    constructor(usersRepo: Repository<UserEntity>, docsRepo: Repository<DocumentEntity>);
+    private readonly artisansRepo;
+    constructor(usersRepo: Repository<UserEntity>, docsRepo: Repository<DocumentEntity>, artisansRepo: Repository<ArtisanEntity>);
     findById(id: string): Promise<UserEntity>;
     findByEmail(email: string): Promise<UserEntity | null>;
     /** Liste des agences / entreprises BTP auxquelles un artisan peut s'affilier. */

@@ -5,6 +5,7 @@ import { UserEntity } from './entities/user.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { VerificationStatus } from '../../common/enums/verification-status.enum';
 import { DocumentEntity, DocumentType } from '../documents/entities/document.entity';
+import { ArtisanEntity, ArtisanSpecialty } from '../artisans/entities/artisan.entity';
 
 @Injectable()
 export class UsersService {
@@ -13,6 +14,8 @@ export class UsersService {
     private readonly usersRepo: Repository<UserEntity>,
     @InjectRepository(DocumentEntity)
     private readonly docsRepo: Repository<DocumentEntity>,
+    @InjectRepository(ArtisanEntity)
+    private readonly artisansRepo: Repository<ArtisanEntity>,
   ) {}
 
   async findById(id: string): Promise<UserEntity> {
@@ -112,11 +115,14 @@ export class UsersService {
       throw new ConflictException('Type de profil pro invalide');
     }
 
-    // Plus de validation manuelle : tous les profils pro sont actifs immédiatement
-    // dès que les informations sont renseignées.
+    // Les artisans doivent être validés par leur agence → statut en attente.
+    // Les autres profils pro sont actifs immédiatement.
+    const isArtisan = data.role === UserRole.ARTISAN;
     const updates: Partial<UserEntity> = {
       role: data.role,
-      verificationStatus: VerificationStatus.ACTIVE,
+      verificationStatus: isArtisan
+        ? VerificationStatus.AFFILIATION_REQUESTED
+        : VerificationStatus.ACTIVE,
     };
     if (data.specialty) updates.specialty = data.specialty;
     if (data.city) updates.city = data.city;
@@ -129,6 +135,29 @@ export class UsersService {
     if (data.contractAccepted) updates.proContractAcceptedAt = new Date();
     if (data.agencyId) updates.agencyId = data.agencyId;
     await this.usersRepo.update(id, updates);
+
+    // Création du profil artisan (visible par l'agence pour validation)
+    if (isArtisan) {
+      const existing = await this.artisansRepo.findOne({ where: { user: { id } }, relations: ['user'] });
+      const specialty = ArtisanSpecialty[data.specialty as keyof typeof ArtisanSpecialty]
+        ?? ArtisanSpecialty.MENUISERIE;
+      if (existing) {
+        await this.artisansRepo.update(existing.id, {
+          specialty, city: data.city ?? existing.city ?? 'Abidjan',
+          bio: data.description ?? existing.bio, isVerified: false, isAvailable: false,
+        });
+      } else {
+        const artisan = this.artisansRepo.create({
+          user: { id } as UserEntity,
+          specialty,
+          city: data.city ?? 'Abidjan',
+          bio: data.description,
+          isVerified: false,
+          isAvailable: false,
+        });
+        await this.artisansRepo.save(artisan);
+      }
+    }
 
     // Enregistrement des pièces justificatives (CNI, selfie, docs administratifs)
     if (data.documents?.length) {
