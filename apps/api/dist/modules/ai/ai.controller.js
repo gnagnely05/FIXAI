@@ -54,7 +54,8 @@ let AiController = AiController_1 = class AiController {
     renovationQuote(req, dto) {
         return this.service.diagnoseRenovation(req.user.sub, dto.messages, dto.imageUrls ?? [], dto.clientTurns ?? 4);
     }
-    // Pas de guard — Réparation (dépannage) : gratuit, accessible sans connexion
+    // Réparation (dépannage) : connexion requise (portefeuille/paiement) mais
+    // SANS quota IA — le diagnostic reste gratuit.
     async diagnose(dto) {
         try {
             return await this.service.diagnose(dto.serviceType, dto.messages, dto.imageUrls ?? [], dto.clientTurns ?? 1);
@@ -139,6 +140,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "renovationQuote", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)('diagnose'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),

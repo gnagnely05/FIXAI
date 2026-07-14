@@ -69,7 +69,9 @@ export class AiController {
     return this.service.diagnoseRenovation(req.user.sub, dto.messages, dto.imageUrls ?? [], dto.clientTurns ?? 4);
   }
 
-  // Pas de guard — Réparation (dépannage) : gratuit, accessible sans connexion
+  // Réparation (dépannage) : connexion requise (portefeuille/paiement) mais
+  // SANS quota IA — le diagnostic reste gratuit.
+  @UseGuards(JwtAuthGuard)
   @Post('diagnose')
   async diagnose(@Body() dto: DiagnoseDto) {
     try {

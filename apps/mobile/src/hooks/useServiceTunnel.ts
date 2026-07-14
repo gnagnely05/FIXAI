@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
+import { api } from '../services/api';
 
 export type ServiceType = 'DEPANNAGE' | 'RENOVATION' | 'DECORATION';
 
@@ -90,12 +91,12 @@ export function useServiceTunnel(serviceType: ServiceType) {
       const allMsgs = [...messages, userMessage];
       const messageTexts = allMsgs.map(m => m.content);
       const clientTurns = allMsgs.filter(m => m.role === 'user').length;
-      const response = await axios.post(`${API_BASE_URL}/ai/diagnose`, {
+      const response = await api.post('/ai/diagnose', {
         serviceType,
         messages: messageTexts,
         imageUrls: images,
         clientTurns,
-      });
+      }, { timeout: 120000 });
       const result: DiagnosisResult = response.data;
       setDiagnosisResult(result);
 
@@ -125,10 +126,13 @@ export function useServiceTunnel(serviceType: ServiceType) {
       const status = error?.response?.status;
       const detail = error?.response?.data?.message ?? error?.message ?? 'Erreur inconnue';
       console.error('Diagnosis error:', status, detail, error?.response?.data);
+      const content = status === 401
+        ? 'Connectez-vous pour lancer une demande de réparation (nécessaire pour le paiement de l\'artisan).'
+        : `Désolé, une erreur s'est produite (${status ?? 'réseau'}: ${detail}). Veuillez réessayer.`;
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Désolé, une erreur s'est produite (${status ?? 'réseau'}: ${detail}). Veuillez réessayer.`,
+        content,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
