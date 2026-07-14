@@ -2,13 +2,14 @@ import {
   Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThan, MoreThanOrEqual } from 'typeorm';
 import { SubscriptionPlanEntity } from './entities/subscription-plan.entity';
 import {
   UserSubscriptionEntity,
   SubscriptionBilling,
   SubscriptionState,
 } from './entities/user-subscription.entity';
+import { AiUsageLogEntity } from './entities/ai-usage-log.entity';
 
 export interface AiQuotaCheck {
   allowed: boolean;
@@ -27,7 +28,16 @@ export class SubscriptionsService {
     private readonly planRepo: Repository<SubscriptionPlanEntity>,
     @InjectRepository(UserSubscriptionEntity)
     private readonly subRepo: Repository<UserSubscriptionEntity>,
+    @InjectRepository(AiUsageLogEntity)
+    private readonly usageRepo: Repository<AiUsageLogEntity>,
   ) {}
+
+  /** Nombre de requêtes IA consommées par l'utilisateur depuis le début du mois. */
+  private async countMonthlyUsage(userId: string): Promise<number> {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    return this.usageRepo.count({ where: { userId, createdAt: MoreThanOrEqual(monthStart) } });
+  }
 
   // ─── Plans (admin) ────────────────────────────────────────────────────────
 
@@ -105,46 +115,35 @@ export class SubscriptionsService {
 
   async checkAiQuota(userId: string): Promise<AiQuotaCheck> {
     const sub = await this.getActiveSub(userId);
+    // Usage mensuel réel (journal), valable pour abonnés et gratuits
+    const used = await this.countMonthlyUsage(userId);
 
     if (!sub) {
-      // No subscription → Standard free limits (use default plan config)
       const freePlan = await this.planRepo.findOne({ where: { name: 'Standard', isActive: true } });
       const limit = freePlan?.aiRequestsPerMonth ?? 5;
-      const freeUsage = await this.countFreeMonthlyUsage(userId);
       return {
-        allowed: freeUsage < limit,
+        allowed: limit === 0 || used < limit,
         isPro: false,
-        requestsUsed: freeUsage,
+        requestsUsed: used,
         requestsLimit: limit,
         plan: freePlan,
       };
     }
 
-    this.resetMonthlyQuotaIfNeeded(sub);
-
     const limit = sub.plan.aiRequestsPerMonth;
     const unlimited = limit === 0;
-
     return {
-      allowed: unlimited || sub.aiRequestsUsed < limit,
+      allowed: unlimited || used < limit,
       isPro: true,
-      requestsUsed: sub.aiRequestsUsed,
+      requestsUsed: used,
       requestsLimit: limit,
       plan: sub.plan,
     };
   }
 
-  async consumeAiRequest(userId: string): Promise<void> {
-    const sub = await this.getActiveSub(userId);
-    if (!sub) {
-      // Free usage tracked separately (no increment needed — checkAiQuota counts DB records)
-      return;
-    }
-    this.resetMonthlyQuotaIfNeeded(sub);
-    if (sub.plan.aiRequestsPerMonth !== 0) {
-      sub.aiRequestsUsed += 1;
-      await this.subRepo.save(sub);
-    }
+  async consumeAiRequest(userId: string, service?: string): Promise<void> {
+    // Journalise chaque requête facturée (abonnés comme gratuits)
+    await this.usageRepo.save(this.usageRepo.create({ userId, service }));
   }
 
   async assertAiAllowed(userId: string): Promise<void> {

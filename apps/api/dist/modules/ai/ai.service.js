@@ -133,6 +133,13 @@ let AiService = AiService_1 = class AiService {
     pingOpenRouter() {
         return this.openRouter.ping();
     }
+    /** Diagnostic Rénovation AVEC quota (connexion requise). */
+    async diagnoseRenovation(userId, messages, imageUrls, clientTurns = 4) {
+        await this.subscriptions.assertAiAllowed(userId);
+        const result = await this.diagnose('RENOVATION', messages, imageUrls, clientTurns);
+        await this.subscriptions.consumeAiRequest(userId, 'RENOVATION');
+        return result;
+    }
     /**
      * Devis final à partir du constat de l'artisan (étape 3 du diagnostic).
      * Renvoie un prix ferme en FCFA + une justification courte.

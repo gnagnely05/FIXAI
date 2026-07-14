@@ -26,6 +26,19 @@ export declare class AiService {
         reply?: string;
         error?: string;
     }>;
+    /** Diagnostic Rénovation AVEC quota (connexion requise). */
+    diagnoseRenovation(userId: string, messages: string[], imageUrls: string[], clientTurns?: number): Promise<{
+        summary: string;
+        detectedIssue: string;
+        question: string;
+        options: string[];
+        estimatedPriceMinXof: number;
+        estimatedPriceMaxXof: number;
+        requiresDiagnostic: boolean;
+        diagnosticFeeXof: number;
+        readyForDecision: boolean;
+        artisanSummary: string;
+    }>;
     /**
      * Devis final à partir du constat de l'artisan (étape 3 du diagnostic).
      * Renvoie un prix ferme en FCFA + une justification courte.

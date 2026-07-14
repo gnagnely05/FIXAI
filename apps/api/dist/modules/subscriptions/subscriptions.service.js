@@ -19,11 +19,19 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const subscription_plan_entity_1 = require("./entities/subscription-plan.entity");
 const user_subscription_entity_1 = require("./entities/user-subscription.entity");
+const ai_usage_log_entity_1 = require("./entities/ai-usage-log.entity");
 let SubscriptionsService = SubscriptionsService_1 = class SubscriptionsService {
-    constructor(planRepo, subRepo) {
+    constructor(planRepo, subRepo, usageRepo) {
         this.planRepo = planRepo;
         this.subRepo = subRepo;
+        this.usageRepo = usageRepo;
         this.logger = new common_1.Logger(SubscriptionsService_1.name);
+    }
+    /** Nombre de requêtes IA consommées par l'utilisateur depuis le début du mois. */
+    async countMonthlyUsage(userId) {
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        return this.usageRepo.count({ where: { userId, createdAt: (0, typeorm_2.MoreThanOrEqual)(monthStart) } });
     }
     // ─── Plans (admin) ────────────────────────────────────────────────────────
     async createPlan(dto) {
@@ -81,41 +89,32 @@ let SubscriptionsService = SubscriptionsService_1 = class SubscriptionsService {
     // ─── Quota check + consumption ────────────────────────────────────────────
     async checkAiQuota(userId) {
         const sub = await this.getActiveSub(userId);
+        // Usage mensuel réel (journal), valable pour abonnés et gratuits
+        const used = await this.countMonthlyUsage(userId);
         if (!sub) {
-            // No subscription → Standard free limits (use default plan config)
             const freePlan = await this.planRepo.findOne({ where: { name: 'Standard', isActive: true } });
             const limit = freePlan?.aiRequestsPerMonth ?? 5;
-            const freeUsage = await this.countFreeMonthlyUsage(userId);
             return {
-                allowed: freeUsage < limit,
+                allowed: limit === 0 || used < limit,
                 isPro: false,
-                requestsUsed: freeUsage,
+                requestsUsed: used,
                 requestsLimit: limit,
                 plan: freePlan,
             };
         }
-        this.resetMonthlyQuotaIfNeeded(sub);
         const limit = sub.plan.aiRequestsPerMonth;
         const unlimited = limit === 0;
         return {
-            allowed: unlimited || sub.aiRequestsUsed < limit,
+            allowed: unlimited || used < limit,
             isPro: true,
-            requestsUsed: sub.aiRequestsUsed,
+            requestsUsed: used,
             requestsLimit: limit,
             plan: sub.plan,
         };
     }
-    async consumeAiRequest(userId) {
-        const sub = await this.getActiveSub(userId);
-        if (!sub) {
-            // Free usage tracked separately (no increment needed — checkAiQuota counts DB records)
-            return;
-        }
-        this.resetMonthlyQuotaIfNeeded(sub);
-        if (sub.plan.aiRequestsPerMonth !== 0) {
-            sub.aiRequestsUsed += 1;
-            await this.subRepo.save(sub);
-        }
+    async consumeAiRequest(userId, service) {
+        // Journalise chaque requête facturée (abonnés comme gratuits)
+        await this.usageRepo.save(this.usageRepo.create({ userId, service }));
     }
     async assertAiAllowed(userId) {
         const quota = await this.checkAiQuota(userId);
@@ -146,7 +145,9 @@ exports.SubscriptionsService = SubscriptionsService = SubscriptionsService_1 = _
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(subscription_plan_entity_1.SubscriptionPlanEntity)),
     __param(1, (0, typeorm_1.InjectRepository)(user_subscription_entity_1.UserSubscriptionEntity)),
+    __param(2, (0, typeorm_1.InjectRepository)(ai_usage_log_entity_1.AiUsageLogEntity)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository])
 ], SubscriptionsService);
 //# sourceMappingURL=subscriptions.service.js.map

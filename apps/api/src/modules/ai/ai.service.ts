@@ -164,6 +164,19 @@ export class AiService {
     return this.openRouter.ping();
   }
 
+  /** Diagnostic Rénovation AVEC quota (connexion requise). */
+  async diagnoseRenovation(
+    userId: string,
+    messages: string[],
+    imageUrls: string[],
+    clientTurns = 4,
+  ) {
+    await this.subscriptions.assertAiAllowed(userId);
+    const result = await this.diagnose('RENOVATION', messages, imageUrls, clientTurns);
+    await this.subscriptions.consumeAiRequest(userId, 'RENOVATION');
+    return result;
+  }
+
   /**
    * Devis final à partir du constat de l'artisan (étape 3 du diagnostic).
    * Renvoie un prix ferme en FCFA + une justification courte.

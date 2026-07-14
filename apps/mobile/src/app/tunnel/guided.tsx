@@ -138,7 +138,7 @@ export default function GuidedChat() {
         const description =
           `Projet de rénovation — ${finalAnswers.room}. Travaux : ${(finalAnswers.works ?? []).join(', ')}. ` +
           `Ampleur : ${finalAnswers.scale}. Budget : ${finalAnswers.budget}.`;
-        const res = await api.post('/ai/diagnose', {
+        const res = await api.post('/ai/renovation-quote', {
           serviceType: 'RENOVATION', messages: [description],
           imageUrls: finalAnswers.photo ? [finalAnswers.photo] : [], clientTurns: 4,
         }, { timeout: 120000 });
@@ -158,7 +158,10 @@ export default function GuidedChat() {
       }
       setDone(true);
     } catch (e: any) {
-      const msg = e?.response?.data?.message ?? e?.message ?? 'Une erreur est survenue.';
+      const status = e?.response?.status;
+      let msg = e?.response?.data?.message ?? e?.message ?? 'Une erreur est survenue.';
+      if (status === 401) msg = 'Connectez-vous pour lancer un projet de rénovation.';
+      else if (status === 403) msg = Array.isArray(msg) ? msg.join(' ') : msg; // quota dépassé
       push({ role: 'ai', text: `❌ ${Array.isArray(msg) ? msg.join(' ') : msg}` });
     } finally {
       setLoading(false);

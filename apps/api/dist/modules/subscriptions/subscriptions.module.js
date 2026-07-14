@@ -13,12 +13,13 @@ const subscriptions_service_1 = require("./subscriptions.service");
 const subscriptions_controller_1 = require("./subscriptions.controller");
 const subscription_plan_entity_1 = require("./entities/subscription-plan.entity");
 const user_subscription_entity_1 = require("./entities/user-subscription.entity");
+const ai_usage_log_entity_1 = require("./entities/ai-usage-log.entity");
 let SubscriptionsModule = class SubscriptionsModule {
 };
 exports.SubscriptionsModule = SubscriptionsModule;
 exports.SubscriptionsModule = SubscriptionsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([subscription_plan_entity_1.SubscriptionPlanEntity, user_subscription_entity_1.UserSubscriptionEntity])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([subscription_plan_entity_1.SubscriptionPlanEntity, user_subscription_entity_1.UserSubscriptionEntity, ai_usage_log_entity_1.AiUsageLogEntity])],
         providers: [subscriptions_service_1.SubscriptionsService],
         controllers: [subscriptions_controller_1.SubscriptionsController],
         exports: [subscriptions_service_1.SubscriptionsService],

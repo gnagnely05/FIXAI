@@ -33,6 +33,7 @@ const product_entity_1 = require("./modules/catalog/entities/product.entity");
 const product_order_entity_1 = require("./modules/catalog/entities/product-order.entity");
 const subscription_plan_entity_1 = require("./modules/subscriptions/entities/subscription-plan.entity");
 const user_subscription_entity_1 = require("./modules/subscriptions/entities/user-subscription.entity");
+const ai_usage_log_entity_1 = require("./modules/subscriptions/entities/ai-usage-log.entity");
 const document_entity_1 = require("./modules/documents/entities/document.entity");
 const commission_config_entity_1 = require("./modules/admin/entities/commission-config.entity");
 let AppModule = class AppModule {
@@ -62,6 +63,7 @@ exports.AppModule = AppModule = __decorate([
                         user_entity_1.User, artisan_entity_1.Artisan, order_entity_1.OrderEntity, depannage_request_entity_1.DepannageRequest, renovation_project_entity_1.RenovationProject,
                         payment_entity_1.Payment, product_entity_1.ProductEntity, product_order_entity_1.ProductOrderEntity, subscription_plan_entity_1.SubscriptionPlanEntity,
                         user_subscription_entity_1.UserSubscriptionEntity, document_entity_1.DocumentEntity, commission_config_entity_1.CommissionConfigEntity,
+                        ai_usage_log_entity_1.AiUsageLogEntity,
                     ],
                     synchronize: config.get('NODE_ENV') !== 'production',
                     logging: config.get('NODE_ENV') === 'development',

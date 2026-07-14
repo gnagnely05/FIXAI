@@ -45,6 +45,22 @@ export declare class AiController {
         length?: number;
         error?: string;
     }>;
+    renovationQuote(req: {
+        user: {
+            sub: string;
+        };
+    }, dto: DiagnoseDto): Promise<{
+        summary: string;
+        detectedIssue: string;
+        question: string;
+        options: string[];
+        estimatedPriceMinXof: number;
+        estimatedPriceMaxXof: number;
+        requiresDiagnostic: boolean;
+        diagnosticFeeXof: number;
+        readyForDecision: boolean;
+        artisanSummary: string;
+    }>;
     diagnose(dto: DiagnoseDto): Promise<{
         summary: string;
         detectedIssue: string;

@@ -24,6 +24,7 @@ import { ProductEntity } from './modules/catalog/entities/product.entity';
 import { ProductOrderEntity } from './modules/catalog/entities/product-order.entity';
 import { SubscriptionPlanEntity } from './modules/subscriptions/entities/subscription-plan.entity';
 import { UserSubscriptionEntity } from './modules/subscriptions/entities/user-subscription.entity';
+import { AiUsageLogEntity } from './modules/subscriptions/entities/ai-usage-log.entity';
 import { DocumentEntity } from './modules/documents/entities/document.entity';
 import { CommissionConfigEntity } from './modules/admin/entities/commission-config.entity';
 
@@ -52,6 +53,7 @@ import { CommissionConfigEntity } from './modules/admin/entities/commission-conf
           User, Artisan, OrderEntity, DepannageRequest, RenovationProject,
           Payment, ProductEntity, ProductOrderEntity, SubscriptionPlanEntity,
           UserSubscriptionEntity, DocumentEntity, CommissionConfigEntity,
+          AiUsageLogEntity,
         ],
         synchronize: config.get<string>('NODE_ENV') !== 'production',
         logging: config.get<string>('NODE_ENV') === 'development',

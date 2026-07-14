@@ -50,7 +50,11 @@ let AiController = AiController_1 = class AiController {
     selftestImage() {
         return this.service.pingOpenRouterImage();
     }
-    // Pas de guard — accessible sans connexion pour le tunnel de devis
+    // Rénovation — connexion obligatoire + consomme le quota IA
+    renovationQuote(req, dto) {
+        return this.service.diagnoseRenovation(req.user.sub, dto.messages, dto.imageUrls ?? [], dto.clientTurns ?? 4);
+    }
+    // Pas de guard — Réparation (dépannage) : gratuit, accessible sans connexion
     async diagnose(dto) {
         try {
             return await this.service.diagnose(dto.serviceType, dto.messages, dto.imageUrls ?? [], dto.clientTurns ?? 1);
@@ -125,6 +129,15 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AiController.prototype, "selftestImage", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('renovation-quote'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, diagnose_dto_1.DiagnoseDto]),
+    __metadata("design:returntype", void 0)
+], AiController.prototype, "renovationQuote", null);
 __decorate([
     (0, common_1.Post)('diagnose'),
     __param(0, (0, common_1.Body)()),

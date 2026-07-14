@@ -59,7 +59,17 @@ export class AiController {
     return this.service.pingOpenRouterImage();
   }
 
-  // Pas de guard — accessible sans connexion pour le tunnel de devis
+  // Rénovation — connexion obligatoire + consomme le quota IA
+  @UseGuards(JwtAuthGuard)
+  @Post('renovation-quote')
+  renovationQuote(
+    @Request() req: { user: { sub: string } },
+    @Body() dto: DiagnoseDto,
+  ) {
+    return this.service.diagnoseRenovation(req.user.sub, dto.messages, dto.imageUrls ?? [], dto.clientTurns ?? 4);
+  }
+
+  // Pas de guard — Réparation (dépannage) : gratuit, accessible sans connexion
   @Post('diagnose')
   async diagnose(@Body() dto: DiagnoseDto) {
     try {
