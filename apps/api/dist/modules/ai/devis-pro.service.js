@@ -108,6 +108,7 @@ Exemple: [{"originalText":"Ciment CPA 50 kg","quantity":20},{"originalText":"Sab
                 priceXof: match.priceXof,
                 unit: match.unit,
                 merchantName: match.merchantName,
+                merchantId: match.merchantId,
             },
             quantity,
             totalXof: Number(match.priceXof) * quantity,

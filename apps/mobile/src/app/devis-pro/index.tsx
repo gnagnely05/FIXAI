@@ -6,8 +6,8 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+import { router } from 'expo-router';
+import { api } from '../../services/api';
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const ALLOWED_DOC_TYPES = ['application/pdf'];
@@ -22,7 +22,7 @@ interface QuoteFile {
 interface QuoteLineResult {
   originalText: string;
   status: 'MATCHED' | 'UNAVAILABLE' | 'UNINTERPRETED';
-  product?: { id: string; name: string; priceXof: number; unit?: string; merchantName: string };
+  product?: { id: string; name: string; priceXof: number; unit?: string; merchantName: string; merchantId?: string };
   quantity?: number;
   totalXof?: number;
 }
@@ -83,6 +83,36 @@ export default function DevisProScreen() {
   const [files, setFiles] = useState<QuoteFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<DevisResult | null>(null);
+  const [ordering, setOrdering] = useState(false);
+
+  async function orderProducts() {
+    if (!result) return;
+    const orderable = result.matched.filter(m => m.product?.merchantId && m.product?.id);
+    if (orderable.length === 0) {
+      Alert.alert('Aucun produit commandable', 'Les produits trouvés n\'ont pas de magasin associé.');
+      return;
+    }
+    setOrdering(true);
+    try {
+      // Un identifiant de session Devis Pro (le lien requis par le backend)
+      const linkedDevisProId = `devispro-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      // Regrouper par magasin (une commande par marchand)
+      const byMerchant: Record<string, Array<{ productId: string; qty: number }>> = {};
+      for (const m of orderable) {
+        const mid = m.product!.merchantId!;
+        (byMerchant[mid] ??= []).push({ productId: m.product!.id, qty: m.quantity ?? 1 });
+      }
+      for (const [merchantId, items] of Object.entries(byMerchant)) {
+        await api.post('/product-orders', { merchantId, items, linkedDevisProId });
+      }
+      Alert.alert('Commande passée', 'Votre commande a été transmise. Retrouvez-la dans Mes Projets.');
+      router.replace('/(tabs)/orders');
+    } catch (e: any) {
+      Alert.alert('Erreur', e?.response?.data?.message ?? 'Impossible de passer la commande.');
+    } finally {
+      setOrdering(false);
+    }
+  }
 
   async function pickImage() {
     if (files.length >= 3) {
@@ -156,18 +186,12 @@ export default function DevisProScreen() {
     setLoading(true);
     setResult(null);
     try {
-      const res = await fetch(`${API_BASE}/devis-pro/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          files: files.map(f => ({ base64: f.base64, mimeType: f.mimeType, name: f.name })),
-        }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: DevisResult = await res.json();
-      setResult(data);
-    } catch {
-      Alert.alert('Erreur', 'Impossible d\'analyser le devis. Vérifiez votre connexion.');
+      const res = await api.post('/devis-pro/analyze', {
+        files: files.map(f => ({ base64: f.base64, mimeType: f.mimeType, name: f.name })),
+      }, { timeout: 120000 });
+      setResult(res.data);
+    } catch (e: any) {
+      Alert.alert('Erreur', e?.response?.data?.message ?? 'Impossible d\'analyser le devis.');
     } finally {
       setLoading(false);
     }
@@ -219,6 +243,15 @@ export default function DevisProScreen() {
               <Text style={styles.totalValue}>{formatPrice(result.totalEstimateXof)}</Text>
             </View>
           )}
+
+          {result.matched.some(m => m.product?.merchantId) && (
+            <TouchableOpacity style={[styles.orderBtn, ordering && styles.analyzeBtnDisabled]} onPress={orderProducts} disabled={ordering}>
+              {ordering
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={styles.orderBtnText}>🛒 Commander ces produits ({formatPrice(result.totalEstimateXof)})</Text>}
+            </TouchableOpacity>
+          )}
+
           <Text style={styles.disclaimer}>
             Les prix proviennent uniquement du catalogue réel FixAI. Aucun prix n'est inventé par l'IA.
           </Text>
@@ -229,6 +262,11 @@ export default function DevisProScreen() {
 }
 
 const styles = StyleSheet.create({
+  orderBtn: {
+    backgroundColor: '#2E7D32', borderRadius: 14, paddingVertical: 16,
+    alignItems: 'center', marginTop: 16,
+  },
+  orderBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   container: { flex: 1, backgroundColor: '#F8F4FC' },
   content: { padding: 20, paddingBottom: 60 },
   title: { fontSize: 28, fontWeight: '800', color: '#6B3FA0', marginBottom: 4 },

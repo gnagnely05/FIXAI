@@ -12,7 +12,7 @@ export interface QuoteFile {
 export interface QuoteLineResult {
     originalText: string;
     status: 'MATCHED' | 'UNAVAILABLE' | 'UNINTERPRETED';
-    product?: Pick<ProductEntity, 'id' | 'name' | 'priceXof' | 'unit' | 'merchantName'>;
+    product?: Pick<ProductEntity, 'id' | 'name' | 'priceXof' | 'unit' | 'merchantName' | 'merchantId'>;
     quantity?: number;
     totalXof?: number;
 }

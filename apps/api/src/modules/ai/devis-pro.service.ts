@@ -20,7 +20,7 @@ export interface QuoteFile {
 export interface QuoteLineResult {
   originalText: string;
   status: 'MATCHED' | 'UNAVAILABLE' | 'UNINTERPRETED';
-  product?: Pick<ProductEntity, 'id' | 'name' | 'priceXof' | 'unit' | 'merchantName'>;
+  product?: Pick<ProductEntity, 'id' | 'name' | 'priceXof' | 'unit' | 'merchantName' | 'merchantId'>;
   quantity?: number;
   totalXof?: number;
 }
@@ -146,6 +146,7 @@ Exemple: [{"originalText":"Ciment CPA 50 kg","quantity":20},{"originalText":"Sab
         priceXof: match.priceXof,
         unit: match.unit,
         merchantName: match.merchantName,
+        merchantId: match.merchantId,
       },
       quantity,
       totalXof: Number(match.priceXof) * quantity,
